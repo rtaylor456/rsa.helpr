@@ -31,6 +31,11 @@ handle_date <- function(x) {
   return(date)
 }
 
+handle_excel_date <- function(x){
+  date <- as.Date(as.numeric(x), origin = "1899-12-30")
+  return(date)
+}
+
 handle_year <- function(x) {
   year <- as.numeric(gsub("\\D*(\\d{4})\\D*", "\\1", x))
   return(year)
@@ -71,4 +76,20 @@ handle_blanks <- function(x) {
   # Identify rows with values equal to " " or "NULL" in the specified column
   x[x %in% c(" ", "NULL")] <- 0
   return(x)
+}
+
+handle_id_repeats <- function(df){
+  df_clean <- df |>
+    group_by(Participant_ID, E1_Year_911, E2_Quarter_911) |>
+    mutate(occurrences_per_quarter = n()) |>
+    # select(Participant_ID, E1_Year_911, E2_Quarter_911, E7_Application_Date_911,
+    #        occurrences_per_quarter) |>
+
+    # convert date variables to actual date representation, as this is the
+    #    raw data
+    mutate_at(vars(matches("E7_Application_Date_911")),
+              ~as.Date(as.numeric(.), origin = "1899-12-30")) |>
+    slice(which.max(E7_Application_Date_911)) |>
+    ungroup()
+  return(df_clean)
 }

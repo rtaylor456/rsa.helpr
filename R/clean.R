@@ -1,4 +1,4 @@
-#' Clean the data! Clean and reorganize an RSA-911 dataset.
+#' Clean the data! Clean and reorganize a PYexit RSA-911 dataset.
 #'
 #' This function is a one-stop for cleaning and restructuring an RSA-911 dataset
 #'   in order to prepare it for analysis and visualization. Processed include
@@ -30,7 +30,7 @@
 #' @export
 #' @import data.table
 #' @import tidyverse
-clean <- function(data, na_check = TRUE, na_file = FALSE,
+py_clean <- function(data, na_check = TRUE, na_file = FALSE,
                   full_table_print = FALSE,
                   unidentified_to_0 = FALSE,
                   convert_sex = FALSE,
@@ -201,5 +201,46 @@ clean <- function(data, na_check = TRUE, na_file = FALSE,
   }
 
   cat("Data has been detoxed\n")
+  return(data)
+}
+
+
+utah_clean <- function(data, na_check = TRUE, na_file = FALSE,
+                       full_table_print = FALSE,
+                       unidentified_to_0 = FALSE,
+                       convert_sex = FALSE,
+                       remove_desc = TRUE,
+                       remove_strictly_na = FALSE){
+  # remove unnecessary variables - description variables
+  # convert date variables
+  # remove redundancies in ids
+  # add in a new variable that counts redundancies
+  # separate variables with semicolons-disability
+  # convert NAs to 0s
+  # save variables as appropriate variable types - factor, numeric, etc.
+
+  # Ensure data is a data.table
+  setDT(data)
+
+  # DESCRIPTION columns
+  if (remove_desc){
+    desc_cols <- grep("(?i)_desc", names(data), value = TRUE, perl = TRUE)
+
+    # data_selected <- data[, setdiff(names(data), desc_cols), with = FALSE]
+    data[, (desc_cols) := NULL]
+  }
+
+  # DATE columns
+  date_cols <- grep("(?i)_Date|(?i)_Skill_Gain", names(data), value = TRUE,
+                    perl = TRUE)
+
+  data[, (date_cols) := lapply(.SD, handle_excel_date), .SDcols = date_cols]
+
+
+  # HANDLE DUPLICATES IN PARTICIPANTS
+
+
+
+  # return the cleaned dataset
   return(data)
 }
