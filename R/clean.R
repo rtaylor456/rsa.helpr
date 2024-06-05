@@ -222,7 +222,7 @@ utah_clean <- function(data, na_check = TRUE, na_file = FALSE,
   # Ensure data is a data.table
   setDT(data)
 
-  # DESCRIPTION columns
+  # DESCRIPTION columns - unnecessary for analysis
   if (remove_desc){
     desc_cols <- grep("(?i)_desc", names(data), value = TRUE, perl = TRUE)
 
@@ -230,16 +230,63 @@ utah_clean <- function(data, na_check = TRUE, na_file = FALSE,
     data[, (desc_cols) := NULL]
   }
 
-  # DATE columns
-  date_cols <- grep("(?i)_Date|(?i)_Skill_Gain", names(data), value = TRUE,
+  # DATE columns - in excel date format
+  # start, extension, end
+  date_cols <- grep("(?i)_date|(?i)_skill_gain|(?i)_start|(?i)_end_|(?i)_extension",
+                    names(data), value = TRUE,
                     perl = TRUE)
 
   data[, (date_cols) := lapply(.SD, handle_excel_date), .SDcols = date_cols]
 
-  # PROVIDER
+  # PROVIDER and PURCHASE columns - values 0 or 1
+  prov_purch_cols <- grep("(?i)_provide|(?i)_purchase", names(data),
+                          value = TRUE, perl = TRUE)
+
+  data[, (prov_purch_cols) := lapply(.SD, handle_blanks),
+       .SDcols = prov_purch_cols]
+
+  # AMT and TITLE columns (TITLEI columns are funds expended for different
+  #   services)
+  # WAGE columns
+  amt_cols <- grep("(?i)_amt|(?i)_title|(?i)_wage|(?i)_amount|(?i)_amnt",
+                   names(data), value = TRUE, perl = TRUE)
+
+  # VENDOR columns - should be values 1,2,3,4 or blank
+  vendor_cols <- grep("(?i)_vendor", names(data), value = TRUE, perl = TRUE)
+
+  # HOURS columns
+  hours_cols <- grep("(?i)_hour|(?i)_hr", names(data),
+                     value = TRUE, perl = TRUE)
+  # COMP columns
+  comp_cols <- grep("(?i)_comp", names(data), value = TRUE, perl = TRUE)
+  comp_cols <- comp_cols[!grepl("provide|amt|desc|date", comp_cols,
+                                ignore.case = TRUE)]
+  # come back to later
+
+  # AGE column
+  # Rename the column and convert to numeric
+  setnames(data, "Age at Application", "Age_at_Application")
+  # data[, Age_at_Application := as.numeric(Age_at_Application)]
+
+  # DEMOGRAPHIC columns
+  # e10-e16, e42, e49, e54-e60, e62-e73,
+  demographic_cols <- grep("^(E1[0-6]_|(E42|E49|E5[4-9]|E6[2-7]|E7[0-3])_)",
+                           names(data), value = TRUE, perl = TRUE)
+  data[, (demographic_cols) := lapply(.SD, function(x) {
+    handle_nines(x, unidentified_to_0)
+  }), .SDcols = demographic_cols]
 
   # HANDLE DUPLICATES IN PARTICIPANTS
 
+
+  # Convert variables to correct types
+  numeric_cols <- unique(c(amt_cols, hours_cols,"Age_at_Application",
+                    "E1_Year_911", "E2_Quarter_911"))
+  data[, (numeric_cols) := lapply(.SD, as.numeric), .SDcols = numeric_cols]
+
+  ## Convert all other columns to factors
+  factor_cols <- setdiff(names(data), c(numeric_cols, date_cols))
+  data[, (factor_cols) := lapply(.SD, as.factor), .SDcols = factor_cols]
 
   # return the cleaned dataset
   return(data)

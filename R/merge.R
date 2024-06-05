@@ -7,7 +7,7 @@ rsa_merge <- function(data, scores,
                        all = FALSE)
   # find the number of rows where we have data from both the original dataset and
   #   the new scores dataset
-  complete_rows <- data_merged[complete.cases(data_merged$Pre.Post,
+  complete_rows <- data_merged[complete.cases(data_merged$Difference,
                                               data_merged$E7_Application_Date_911), ]
   num_complete_rows <- nrow(complete_rows)
 
@@ -25,10 +25,3 @@ rsa_merge <- function(data, scores,
 
 }
 
-# merge the datasets
-data_merged <- merge(data, scores2,
-                     by.x = "Participant_ID",
-                     by.y = "Participant.ID",
-                     all = FALSE) # all = TRUE adds all rows
-
-View(data_merged)

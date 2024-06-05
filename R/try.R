@@ -1,3 +1,46 @@
+data |> select(-(contains("_date") |
+                   contains("_skill_gain") |
+                   contains("_desc") |
+                   contains("_provide") |
+                   contains("purchase") |
+                   contains("amt") |
+                   contains("title") |
+                   contains("vendor") |
+                   contains("wage") |
+                   contains("hour") |
+                   contains("comp")|
+                   contains("start") | contains("extension") | contains("_end_")
+                 )) |>
+  select(-matches("^(E1[0-6]_|(E42|E49|E5[4-9]|E6[2-7]|E7[0-3])_)")) |>
+  names()
+
+data |> select(-(contains("_date") |
+                   contains("_skill_gain") |
+                   contains("_desc") |
+                   contains("_provide") |
+                   contains("purchase") |
+                   contains("amt") |
+                   contains("title") |
+                   contains("vendor") |
+                   contains("wage") |
+                   contains("hour") |
+                   contains("comp") |
+                   contains("start") | contains("extension") | contains("_end_")
+                 )) |>
+  select(-matches("^(E1[0-6]_|(E42|E49|E5[4-9]|E6[2-7]|E7[0-3])_)")) |>
+  # select(contains("start") | contains("extension") | contains("_end_")) |>
+  lapply(unique)
+
+
+
+
+
+
+
+
+
+
+# OLD work
 data_merged <- readRDS("data-raw/data_merged.rds")
 
 py20 <- read.csv("data-raw/original/PY20exit.csv")
