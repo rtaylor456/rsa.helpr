@@ -200,7 +200,7 @@ py_clean <- function(data, na_check = TRUE, na_file = FALSE,
     analyze_nas(data, na_file = na_file, full_table_print = full_table_print)
   }
 
-  cat("Data has been detoxed\n")
+  cat("Dataset has been cleaned\n")
   return(data)
 }
 
@@ -236,9 +236,9 @@ utah_clean <- function(data, na_check = TRUE, na_file = FALSE,
 
   data[, (date_cols) := lapply(.SD, handle_excel_date), .SDcols = date_cols]
 
+  # PROVIDER
 
   # HANDLE DUPLICATES IN PARTICIPANTS
-
 
 
   # return the cleaned dataset
