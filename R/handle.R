@@ -1,23 +1,3 @@
-#' Separate disability
-#'
-#' @import tidyverse
-separate_disability <- function(df) {
-  df %>%
-    tidyr::separate(E43_Primary_Disability_911,
-                    into = c("E43_Primary_Impairment_911",
-                             "E43_Primary_Cause_911"),
-                    sep = ";") %>%
-    tidyr::separate(E44_Secondary_Disability_911,
-                    into = c("E44_Secondary_Impairment_911",
-                             "E44_Secondary_Cause_911"),
-                    sep = ";")
-}
-
-separate_disability <- function(var) {
-  tidyr::separate(var, into = c(""))
-}
-
-
 #' Convert date variable.
 #'
 #' This function converts a RSA-911 date variable written in order YYYYMMDD as
@@ -68,28 +48,9 @@ handle_sex <- function(x, convert_sex = FALSE) {
   return(sex)
 }
 
-# for(col in comp_type_cols) {
-#   data[data[[col]] %in% c(" ", "NULL"), col] <- 0
-# }
 
 handle_blanks <- function(x) {
   # Identify rows with values equal to " " or "NULL" in the specified column
   x[x %in% c(" ", "NULL")] <- 0
   return(x)
-}
-
-handle_id_repeats <- function(df){
-  df_clean <- df |>
-    group_by(Participant_ID, E1_Year_911, E2_Quarter_911) |>
-    mutate(occurrences_per_quarter = n()) |>
-    # select(Participant_ID, E1_Year_911, E2_Quarter_911, E7_Application_Date_911,
-    #        occurrences_per_quarter) |>
-
-    # convert date variables to actual date representation, as this is the
-    #    raw data
-    mutate_at(vars(matches("E7_Application_Date_911")),
-              ~as.Date(as.numeric(.), origin = "1899-12-30")) |>
-    slice(which.max(E7_Application_Date_911)) |>
-    ungroup()
-  return(df_clean)
 }
