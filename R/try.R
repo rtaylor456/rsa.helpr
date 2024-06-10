@@ -93,13 +93,15 @@ data |> select(-(contains("_date") |
 #                                               than 0)
 # E78_Secondary_Enrollment_911 - 0, 1,2, NULL (Nulls --> 0)
 
+# E355_Exit_Reason_911 - 2-19, NULL -- 02, 03, 04, 06, 07, 08, 13-22
+
+
 # E84_PostSecondary_Enrollment_911 - 0, 1, 2, 3, NULL (null -> 0)
 #   factor, possibly ordinal 0, 3, 2, 1 --> better
 
 
 # E354_Exit_Type_911 - 0, 3, 4, 6, 7, NULL -- 1, 2, 3, 4, 5, 6, 7, 0
 #   potentially ordinal factor
-# E355_Exit_Reason_911 - 2-19, NULL -- 02, 03, 04, 06, 07, 08, 13-22
 
 # E356_Exit_Work_Status_911 - 1, 2, 4, 5, NULL -- 1, 2, 3, 4, 5, 7
 #   1: competitive employment

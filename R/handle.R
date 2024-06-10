@@ -23,6 +23,7 @@ handle_year <- function(x) {
 
 
 handle_nines <- function(x, unidentified_to_0 = FALSE) {
+  x <- as.numeric(x)
   # Replace NA values with 9
   x[is.na(x)] <- 9
 
@@ -36,6 +37,7 @@ handle_nines <- function(x, unidentified_to_0 = FALSE) {
 
 
 handle_sex <- function(x, convert_sex = FALSE) {
+  x <- as.numeric(x)
   if (convert_sex) {
     sex <- ifelse(x == 2, 0, x)
   } else {
@@ -52,5 +54,17 @@ handle_sex <- function(x, convert_sex = FALSE) {
 handle_blanks <- function(x) {
   # Identify rows with values equal to " " or "NULL" in the specified column
   x[x %in% c(" ", "NULL")] <- 0
+  return(x)
+}
+
+handle_code <- function(x){
+  x[x %in% c(" ", "NULL", NA, "NA", "")] <- NA
+  return(x)
+}
+
+
+handle_values <- function(x, values){
+  x <- as.numeric(x)
+  x[is.na(x) | !(x %in% values)] <- 0
   return(x)
 }
