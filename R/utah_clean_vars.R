@@ -187,11 +187,14 @@ data[, (date_cols) := lapply(.SD, handle_excel_date), .SDcols = date_cols]
 # E395_App_Medical_911 - 0, 1-7 - limit of 3 types
 # E396_Exit_Public_Support_911 - 0, 1-4
 # E397_Exit_Medical_911 - 0, 1-7 - limit of 3 types
+# E74_SWD_Age_911
 
 # COMP columns - can enter a max of 3 values
 comp_cols <- grep("(?i)_comp_", names(data), value = TRUE, perl = TRUE)
 comp_cols <- comp_cols[!grepl("provide|amt|desc|date", comp_cols,
                               ignore.case = TRUE)]
+
+
 
 # HANDLE DISABILITY columns
 # call separate_disability function

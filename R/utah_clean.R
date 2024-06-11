@@ -4,13 +4,8 @@ utah_clean <- function(data, na_check = TRUE, na_file = FALSE,
                        convert_sex = FALSE,
                        remove_desc = TRUE,
                        remove_strictly_na = FALSE){
-  # remove unnecessary variables - description variables
-  # convert date variables
   # remove redundancies in ids
   # add in a new variable that counts redundancies
-  # separate variables with semicolons-disability
-  # convert NAs to 0s
-  # save variables as appropriate variable types - factor, numeric, etc.
 
   # Ensure data is a data.table
   setDT(data)
@@ -28,7 +23,8 @@ utah_clean <- function(data, na_check = TRUE, na_file = FALSE,
 
   # ADMIN columns
   # remove the extra administrative columns
-  extra_cols <- grep("(?i)_data_", names(data), value = TRUE, perl = TRUE)
+  extra_cols <- grep("(?i)_data_(?!.*(?i)_desc)", names(data),
+                     value = TRUE, perl = TRUE)
   data[, (extra_cols) := NULL]
 
 
@@ -37,7 +33,7 @@ utah_clean <- function(data, na_check = TRUE, na_file = FALSE,
   ######################
   # CODE columns
   # different kinds of values--zip code, agency code, etc. -- all factors
-  code_cols <- grep("(?i)_code_|(?i)_plan_occ|(?i)_referral_source|(?i)_exit_occ",
+  code_cols <- grep("((?i)_code_|(?i)_plan_occ|(?i)_referral_source|(?i)_exit_occ)(?!.*(?i)_desc)",
                     names(data), value = TRUE, perl = TRUE)
 
   data[, (code_cols) := lapply(.SD, handle_blanks),
@@ -45,25 +41,25 @@ utah_clean <- function(data, na_check = TRUE, na_file = FALSE,
 
 
   # VENDOR columns - should be values 1,2,3,4 or blank
-  vendor_cols <- grep("(?i)_vendor", names(data), value = TRUE, perl = TRUE)
+  vendor_cols <- grep("(?i)_vendor(?!.*(?i)_desc)", names(data),
+                      value = TRUE, perl = TRUE)
 
   data[, (vendor_cols) := lapply(.SD, function(x){
-    handle_sex(x, values = c(1, 2, 3, 4))
-    }),
-       .SDcols = vendor_cols]
+    handle_values(x, values = c(1, 2, 3, 4))
+    }), .SDcols = vendor_cols]
 
   ### 1, 0, 9 columns: ###
   # PROVIDER and PURCHASE columns
-  prov_purch_cols <- grep("(?i)_provide|(?i)_purchase", names(data),
-                          value = TRUE, perl = TRUE)
+  prov_purch_cols <- grep("((?i)_provide|(?i)_purchase)(?!.*(?i)_desc)",
+                          names(data), value = TRUE, perl = TRUE)
 
 
   # DEMOGRAPHIC columns - 0, 1, 9
   # e10-e16, e42, e49, e54-e60, e62-e73,
-  demographic_cols <- grep("^(E1[0-6]_|(E42|E49|E5[4-9]|E6[2-7]|E7[0-3])_)",
+  demographic_cols <- grep("^(E1[0-6]_|(E42|E49|E5[4-9]|E6[2-7]|E7[0-3])_)(?!.*(?i)_desc)",
                            names(data), value = TRUE, perl = TRUE)
 
-  other_binary_cols <- grep("^(E60_|E68_|E69_|E392_|E400_|VR_Case_Type_Flag)",
+  other_binary_cols <- grep("^(E60_|E68_|E69_|E392_|E400_|VR_Case_Type_Flag)(?!.*(?i)_desc)",
                             names(data), value = TRUE, perl = TRUE)
 
   binary_cols <- c(prov_purch_cols, demographic_cols, other_binary_cols)
@@ -73,7 +69,7 @@ utah_clean <- function(data, na_check = TRUE, na_file = FALSE,
 
 
   # SEX column
-  sex_cols <- grep("(?i)_sex|(?i)_gender", names(data),
+  sex_cols <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
                    value = TRUE, perl = TRUE)
 
   data[, (sex_cols) := lapply(.SD, function(x) handle_sex(x, convert_sex)),
@@ -84,7 +80,7 @@ utah_clean <- function(data, na_check = TRUE, na_file = FALSE,
   #                                               than 0)
   # E78_Secondary_Enrollment_911 - 0, 1,2, NULL (Nulls --> 0)
 
-  other_factor_cols <- grep("(?i)_disability_priority|(?i)_secondary_enrollment",
+  other_factor_cols <- grep("((?i)_disability_priority|(?i)_secondary_enrollment)(?!.*(?i)_desc)",
                             names(data),
                             value = TRUE, perl = TRUE)
 
@@ -95,13 +91,13 @@ utah_clean <- function(data, na_check = TRUE, na_file = FALSE,
 
   # E355_Exit_Reason_911 - 2-19, NULL -- 02, 03, 04, 06, 07, 08, 13-22
 
-  exit_reason_col <- grep("(?i)_exit_reason", names(data),
+  exit_reason_cols <- grep("(?i)_exit_reason(?!.*(?i)_desc)", names(data),
                           value = TRUE, perl = TRUE)
 
-  data[, (exit_reason_col) := lapply(.SD, function(x){
-    handle_values(x, c(02, 03, 04, 06, 07, 08, 13-22))
+  data[, (exit_reason_cols) := lapply(.SD, function(x){
+    handle_values(x, c(02, 03, 04, 06, 07, 08, 13:22))
     }),
-    .SDcols = exit_reason_col]
+    .SDcols = exit_reason_cols]
 
 
   ######################
@@ -109,10 +105,44 @@ utah_clean <- function(data, na_check = TRUE, na_file = FALSE,
   ######################
 
   # E84_PostSecondary_Enrollment_911
+  post_sec_cols <- grep("(?i)_postsecondary_enroll(?!.*(?i)_desc|(?i)_date)",
+                         names(data), value = TRUE, perl = TRUE)
+
+  data[, (post_sec_cols) := lapply(.SD, function(x){
+    handle_values(x, 0:3, blank_value = 9)
+  }),
+  .SDcols = post_sec_cols]
+
   # E354_Exit_Type_911
   # E356_Exit_Work_Status_911
+  exit_var_cols <- grep("((?i)_exit_type_|(?i)_exit_work_)(?!.*(?i)_desc|(?i)_date)",
+                         names(data), value = TRUE, perl = TRUE)
+
+  data[, (exit_var_cols) := lapply(.SD, function(x){
+    handle_values(x, 0:7, blank_value = 0)
+  }),
+  .SDcols = exit_var_cols]
+
   # E378_PostExit_Credential_911
+  exit_cred_cols <- grep("(?i)_postexit_credential(?!.*(?i)_desc|(?i)_date)",
+                         names(data), value = TRUE, perl = TRUE)
+
+  data[, (exit_cred_cols) := lapply(.SD, function(x){
+    handle_values(x, 1:8, blank_value = 0)
+  }),
+  .SDcols = exit_cred_cols]
+
+
   # EMPLOYMENT columns
+  # 1-4, 9, 0 --factors--potentially ordinal...
+  employ_cols <- grep("(?i)_employ", names(data), value = TRUE, perl = TRUE)
+  employ_cols <- comp_cols[!grepl("wage|match", employ_cols,
+                                  ignore.case = TRUE)]
+
+  data[, (employ_cols) := lapply(.SD, function(x){
+    handle_values(x, c(0, 1, 2, 3, 4, 9), blank_value = 9)
+  }),
+  .SDcols = employ_cols]
 
 
   ######################
@@ -120,42 +150,82 @@ utah_clean <- function(data, na_check = TRUE, na_file = FALSE,
   ######################
 
   # E1_Year_911
-  year_cols <- grep("(?i)_year|(?i)_yr_", names(data), value = TRUE, perl = TRUE)
+  year_cols <- grep("(?i)_year|(?i)_yr_(?!.*(?i)_desc)", names(data),
+                    value = TRUE, perl = TRUE)
 
 
   # E2_Quarter_911
-  quarter <- grep("(?i)_quarter|(?i)_qt_", names(data), value = TRUE, perl = TRUE)
+  quarter_cols <- grep("(?i)_quarter|(?i)_qt_(?!.*(?i)_desc)", names(data),
+                       value = TRUE, perl = TRUE)
 
   # AGE column
   # Rename the column and convert to numeric
   setnames(data, "Age at Application", "Age_at_Application")
-  data[, Age_at_Application := as.numeric(Age_at_Application)]
 
 
   # AMT and TITLE columns (TITLEI columns are funds expended for different
   #   services)
   # WAGE columns
-  amt_cols <- grep("(?i)_amt|(?i)_title|(?i)_wage|(?i)_amount|(?i)_amnt",
+  amt_cols <- grep("(?i)_amt|(?i)_title|(?i)_wage|(?i)_amount|(?i)_amnt(?!.*(?i)_desc)",
                    names(data), value = TRUE, perl = TRUE)
 
   # HOURS columns
-  hours_cols <- grep("(?i)_hour|(?i)_hr", names(data),
+  hours_cols <- grep("(?i)_hours_|(?i)_hrs_(?!.*(?i)_desc)", names(data),
                      value = TRUE, perl = TRUE)
 
+  numeric_cols <- c(year_cols, quarter_cols, "Age_at_Application",
+                    amt_cols, hours_cols)
+
+  data[, (numeric_cols) := lapply(.SD, as.numeric),
+       .SDcols = numeric_cols]
 
   ######################
   ## DATE             ##
   ######################
   # DATE columns - in excel date format
   # start, extension, end
-  date_cols <- grep("(?i)_date|(?i)_skill_gain|(?i)_start|(?i)_end_|(?i)_extension",
+  date_cols <- grep("(?i)_date|(?i)_skill_gain|(?i)_start|(?i)_end_|(?i)_extension(?!.*(?i)_desc)",
                     names(data), value = TRUE,
                     perl = TRUE)
 
   data[, (date_cols) := lapply(.SD, handle_excel_date), .SDcols = date_cols]
 
 
+  ########################
+  ## SPECIAL CHARACTERS ##
+  ########################
+  # E394_App_Public_Support_911 - 0, 1-4
+  # E395_App_Medical_911 - 0, 1-7 - limit of 3 types
+  # E396_Exit_Public_Support_911 - 0, 1-4
+  # E397_Exit_Medical_911 - 0, 1-7 - limit of 3 types
 
+  special_cols <- grep("((?i)_app_pub|(?i)_app_med|(?i)_exit_pub|(?i)_exit_med)(?!.*(?i)_Desc)",
+                       names(data), value = TRUE, perl = TRUE)
+
+  # COMP columns - can enter a max of 3 values
+  comp <- grep("(?i)_comp_(?!.*(?i)_desc)", names(data), value = TRUE,
+                    perl = TRUE)
+  comp_cols <- comp[!grepl("provide|amt|date", comp,
+                                ignore.case = TRUE)]
+
+  # DISABILITY columns
+  disability_cols <- grep("(?i)(primary|secondary).*disability(?!.*(?i)_desc)",
+                          names(data), value = TRUE, perl = TRUE)
+
+  all_special_cols <- c(special_cols, comp_cols, disability_cols)
+
+  data <- handle_splits(data, all_special_cols)
+
+  ##############################################################################
+  ########################
+  ## Type conversion    ##
+  ########################
+
+  # for now, convert everything to factors except numeric_cols
+
+  # Convert all other columns to factors
+  factor_cols <- unique(setdiff(names(data), numeric_cols))
+  data[, (factor_cols) := lapply(.SD, as.factor), .SDcols = factor_cols]
 
   # return the cleaned dataset
   return(data)
