@@ -13,7 +13,12 @@ library(tidyverse)
 
 metadata_numeric <- data_aggregate |>
   group_by(Participant_ID) |>
+  mutate(enroll_length = ) |>
   summarize(across(where(is.numeric),
                    ~ median(., na.rm = TRUE)))
 
 View(metadata_numeric)
+
+
+
+
