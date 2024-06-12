@@ -136,7 +136,7 @@ utah_clean <- function(data, na_check = TRUE, na_file = FALSE,
   # EMPLOYMENT columns
   # 1-4, 9, 0 --factors--potentially ordinal...
   employ_cols <- grep("(?i)_employ", names(data), value = TRUE, perl = TRUE)
-  employ_cols <- comp_cols[!grepl("wage|match", employ_cols,
+  employ_cols <- employ_cols[!grepl("wage|match", employ_cols,
                                   ignore.case = TRUE)]
 
   data[, (employ_cols) := lapply(.SD, function(x){
@@ -198,14 +198,15 @@ utah_clean <- function(data, na_check = TRUE, na_file = FALSE,
   # E395_App_Medical_911 - 0, 1-7 - limit of 3 types
   # E396_Exit_Public_Support_911 - 0, 1-4
   # E397_Exit_Medical_911 - 0, 1-7 - limit of 3 types
+  # E74_SWD_Age_911 - two values, ages
 
-  special_cols <- grep("((?i)_app_pub|(?i)_app_med|(?i)_exit_pub|(?i)_exit_med)(?!.*(?i)_Desc)",
+  special_cols <- grep("((?i)_app_pub|(?i)_app_med|(?i)_exit_pub|(?i)_exit_med|(?i)_swd_age_)(?!.*(?i)_Desc)",
                        names(data), value = TRUE, perl = TRUE)
 
   # COMP columns - can enter a max of 3 values
-  comp <- grep("(?i)_comp_(?!.*(?i)_desc)", names(data), value = TRUE,
+  comp_cols <- grep("(?i)_comp_(?!.*(?i)_desc)", names(data), value = TRUE,
                     perl = TRUE)
-  comp_cols <- comp[!grepl("provide|amt|date", comp,
+  comp_cols <- comp_cols[!grepl("provide|amt|date", comp_cols,
                                 ignore.case = TRUE)]
 
   # DISABILITY columns
@@ -214,7 +215,8 @@ utah_clean <- function(data, na_check = TRUE, na_file = FALSE,
 
   all_special_cols <- c(special_cols, comp_cols, disability_cols)
 
-  data <- handle_splits(data, all_special_cols)
+  # uncomment this once I've got the function to stop crashing the computer
+  # data <- handle_splits(data, all_special_cols)
 
   ##############################################################################
   ########################

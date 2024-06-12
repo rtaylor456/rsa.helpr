@@ -1,5 +1,7 @@
 # read in data
 data <- readRDS("data-raw/data_merged.rds")
+data_clean <- read.csv("data-raw/data_clean.csv")
+
 dim(data)
 # preliminary cleaning
 data_clean <- utah_clean(data)
