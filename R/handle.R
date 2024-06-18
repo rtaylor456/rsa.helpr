@@ -137,4 +137,3 @@ handle_splits <- function(data, var_names){
 
   return(data)
 }
-

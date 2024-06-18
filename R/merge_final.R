@@ -5,7 +5,7 @@ data_clean <- read.csv("data-raw/data_clean.csv")
 View(data_clean)
 
 data_aggregate <- data_clean |>
-  select(-X) |>
+  # select(-X) |>
   # remove the rows that don't contain an application date --these are pretty
   #   empty anyway
   filter(!is.na(E7_Application_Date_911)) |>
@@ -49,10 +49,9 @@ View(data_merged)
 dim(data_merged)
 length(unique(data_merged$Participant_ID)) # 329
 
+
 # save the data set
-write.csv(data_merged, file = "data-raw/data_merged.csv", row.names = FALSE)
+write_csv(data_merged, file = "data-raw/data_merged.csv")
 
 data_merged <- read.csv("data-raw/data_merged.csv")
-# for some reason, when we write a csv, it adds in an extra obs#/id variable, X
-#   or X.1
 View(data_merged)

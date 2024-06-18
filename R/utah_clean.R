@@ -1,3 +1,4 @@
+library(data.table)
 utah_clean <- function(data, na_check = TRUE, na_file = FALSE,
                        full_table_print = FALSE,
                        unidentified_to_0 = FALSE,
@@ -226,9 +227,20 @@ utah_clean <- function(data, na_check = TRUE, na_file = FALSE,
   # for now, convert everything to factors except numeric_cols
 
   # Convert all other columns to factors
-  factor_cols <- unique(setdiff(names(data), numeric_cols))
+  factor_cols <- unique(setdiff(names(data), c(numeric_cols, date_cols)))
   data[, (factor_cols) := lapply(.SD, as.factor), .SDcols = factor_cols]
 
   # return the cleaned dataset
   return(data)
 }
+
+
+data <- readRDS("data-raw/data_merged.rds")
+
+data_clean <- utah_clean(data)
+
+write.csv(data_clean, file = "data-raw/data_clean.csv")
+
+# check <- read.csv("data-raw/data_clean.csv")
+
+

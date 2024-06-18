@@ -7,15 +7,15 @@ View(scores)
 unique(scores$Service)
 
 # Pivot the DataFrame
-scores_wide <- scores |>
-  pivot_wider(names_from = Pre.Post, values_from = Score,
-              names_prefix = "Score_") |>
-  arrange(Participant.ID, Service)
-View(scores_wide)
+# scores_wide <- scores |>
+#   pivot_wider(names_from = Pre.Post, values_from = Score,
+#               names_prefix = "Score_") |>
+#   arrange(Participant.ID, Service)
+# View(scores_wide)
 
 
 scores$Completed <- mdy_hms(gsub(" \\(MST\\)", "", scores$Completed))
-class(Completed)
+class(scores$Completed)
 View(scores)
 
 # scores$Pre.Post[scores$Pre.Post == "Pre"]
@@ -62,7 +62,7 @@ final_data <- merged_data |>
 View(final_data)
 
 
-write.csv(final_data, file = "data-raw/scores_clean.csv")
+write_csv(final_data, file = "data-raw/scores_clean.csv")
 
 scores_clean <- read.csv("data-raw/scores_clean.csv")
 View(scores_clean)
