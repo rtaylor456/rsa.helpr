@@ -1,8 +1,9 @@
+# utah_clean function
 library(data.table)
 utah_clean <- function(data, na_check = TRUE, na_file = FALSE,
                        full_table_print = FALSE,
-                       unidentified_to_0 = TRUE,
-                       convert_sex = TRUE,
+                       unidentified_to_0 = FALSE,
+                       convert_sex = FALSE,
                        remove_desc = TRUE,
                        remove_strictly_na = FALSE){
   # remove redundancies in ids
@@ -47,7 +48,7 @@ utah_clean <- function(data, na_check = TRUE, na_file = FALSE,
 
   data[, (vendor_cols) := lapply(.SD, function(x){
     handle_values(x, values = c(1, 2, 3, 4))
-    }), .SDcols = vendor_cols]
+  }), .SDcols = vendor_cols]
 
   ### 1, 0, 9 columns: ###
   # PROVIDER and PURCHASE columns
@@ -65,7 +66,7 @@ utah_clean <- function(data, na_check = TRUE, na_file = FALSE,
 
   binary_cols <- c(prov_purch_cols, demographic_cols, other_binary_cols)
 
-  data[, (binary_cols) := lapply(.SD, function(x) handle_nines(x, unidentified_to_0)),
+  data[, (binary_cols) := lapply(.SD, handle_nines),
        .SDcols = binary_cols]
 
 
@@ -87,18 +88,18 @@ utah_clean <- function(data, na_check = TRUE, na_file = FALSE,
 
   data[, (other_factor_cols) := lapply(.SD, function(x){
     handle_values(x, c(0, 1, 2))
-    }),
-    .SDcols = other_factor_cols]
+  }),
+  .SDcols = other_factor_cols]
 
   # E355_Exit_Reason_911 - 2-19, NULL -- 02, 03, 04, 06, 07, 08, 13-22
 
   exit_reason_cols <- grep("(?i)_exit_reason(?!.*(?i)_desc)", names(data),
-                          value = TRUE, perl = TRUE)
+                           value = TRUE, perl = TRUE)
 
   data[, (exit_reason_cols) := lapply(.SD, function(x){
     handle_values(x, c(02, 03, 04, 06, 07, 08, 13:22))
-    }),
-    .SDcols = exit_reason_cols]
+  }),
+  .SDcols = exit_reason_cols]
 
 
   ######################
@@ -107,17 +108,17 @@ utah_clean <- function(data, na_check = TRUE, na_file = FALSE,
 
   # E84_PostSecondary_Enrollment_911
   post_sec_cols <- grep("(?i)_postsecondary_enroll(?!.*(?i)_desc|(?i)_date)",
-                         names(data), value = TRUE, perl = TRUE)
+                        names(data), value = TRUE, perl = TRUE)
 
   data[, (post_sec_cols) := lapply(.SD, function(x){
-    handle_values(x, 0:3, blank_value = 0)
+    handle_values(x, 0:3, blank_value = 9)
   }),
   .SDcols = post_sec_cols]
 
   # E354_Exit_Type_911
   # E356_Exit_Work_Status_911
   exit_var_cols <- grep("((?i)_exit_type_|(?i)_exit_work_)(?!.*(?i)_desc|(?i)_date)",
-                         names(data), value = TRUE, perl = TRUE)
+                        names(data), value = TRUE, perl = TRUE)
 
   data[, (exit_var_cols) := lapply(.SD, function(x){
     handle_values(x, 0:7, blank_value = 0)
@@ -138,17 +139,13 @@ utah_clean <- function(data, na_check = TRUE, na_file = FALSE,
   # 1-4, 9, 0 --factors--potentially ordinal...
   employ_cols <- grep("(?i)_employ", names(data), value = TRUE, perl = TRUE)
   employ_cols <- employ_cols[!grepl("wage|match", employ_cols,
-                                  ignore.case = TRUE)]
+                                    ignore.case = TRUE)]
 
   data[, (employ_cols) := lapply(.SD, function(x){
-    handle_values(x, c(0, 1, 2, 3, 4, 9), blank_value = 0)
+    handle_values(x, c(0, 1, 2, 3, 4, 9), blank_value = 9)
   }),
   .SDcols = employ_cols]
 
-  data[, (employ_cols) := lapply(.SD, function(x){
-    handle_nines(x, unidentified_to_0)
-  }),
-  .SDcols = employ_cols]
 
   ######################
   ## NUMERIC          ##
@@ -237,14 +234,3 @@ utah_clean <- function(data, na_check = TRUE, na_file = FALSE,
   # return the cleaned dataset
   return(data)
 }
-
-
-data <- readRDS("data-raw/data_merged.rds")
-
-data_clean <- utah_clean(data)
-
-write.csv(data_clean, file = "data-raw/data_clean.csv")
-
-# check <- read.csv("data-raw/data_clean.csv")
-
-
