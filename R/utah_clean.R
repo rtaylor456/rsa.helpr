@@ -54,7 +54,6 @@ utah_clean <- function(data, na_check = TRUE, na_file = FALSE,
   prov_purch_cols <- grep("((?i)_provide|(?i)_purchase)(?!.*(?i)_desc)",
                           names(data), value = TRUE, perl = TRUE)
 
-
   # DEMOGRAPHIC columns - 0, 1, 9
   # e10-e16, e42, e49, e54-e60, e62-e73,
   demographic_cols <- grep("^(E1[0-6]_|(E42|E49|E5[4-9]|E6[2-7]|E7[0-3])_)(?!.*(?i)_desc)",
