@@ -1,3 +1,5 @@
+library(tidyverse)
+
 data <- readRDS("data-raw/data_merged.rds")
 
 data_clean <- utah_clean(data)
@@ -42,7 +44,6 @@ get_mode <- function(x) {
 }
 
 library(lubridate)
-library(tidyverse)
 
 metadata <- data_merged |>
   mutate(Provider = as.factor(Provider)) |>
@@ -84,4 +85,9 @@ nrow(metadata) # 329
 length(unique(metadata$Participant_ID)) # 329
 
 View(metadata)
+
+
+scores2 <- read.csv("data-raw/trt_data_4_8_2024.csv")
+
+View(scores2)
 
