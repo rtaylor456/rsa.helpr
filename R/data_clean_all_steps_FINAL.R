@@ -10,7 +10,7 @@ data_aggregate <- data_clean |>
   #   empty anyway
   filter(!is.na(E7_Application_Date_911)) |>
   group_by(Participant_ID, E1_Year_911, E2_Quarter_911) |>
-  mutate(occurences_per_quarter = n()) |>
+  mutate(occurrences_per_quarter = n()) |>
   arrange(E7_Application_Date_911) |>
   slice(1) |>
   # for some reason, this stopped working...
