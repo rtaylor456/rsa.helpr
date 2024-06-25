@@ -89,7 +89,7 @@ names(data_with_multiple_scores)
 data_with_multiple_scores[["CSS"]]
 View(data_with_multiple_scores[["ISA"]])
 
-pivoted_data <- data_with_multiple_scores %>%
+pivoted_data <- data_with_multiple_scores |>
   lapply(function(df) {
     pivot_wider(df, names_from = Pre.Post, values_from = Score,
               names_prefix = "Score_")
@@ -111,6 +111,34 @@ ggplot(pivoted_data[["ISA"]], aes(x = unlist(Completed), y = unlist(Score_Post))
   labs(title = "Post scores across time",
        x = "Date when completed",
        y = "Post scores") +
+  theme_minimal()
+
+
+library(ggplot2)
+
+# Convert 'participant.id' to a factor for better plotting
+df$participant.id <- as.factor(df$participant.id)
+
+isa <- as.data.frame(pivoted_data[["ISA"]]) |>
+  mutate(Participant.ID = as.factor(Participant.ID)) |>
+  mutate(Score_Pre = as.numeric(Score_Pre))
+
+
+# Create the line plot
+ggplot(isa, aes(x = Completed)) +
+  geom_line(aes(y = Score_Pre, color = Participant.ID,
+                linetype = "Pre")) +
+  geom_point(aes(y = score_pre, color = participant.id)) +
+  geom_line(aes(y = score_post, color = participant.id,
+                linetype = "Post")) +
+  geom_point(aes(y = score_post, color = participant.id,
+                 shape = "Post")) +
+  labs(title = "Trend of Scores Over Time for Each Participant",
+       x = "Time/Order of Test",
+       y = "Score",
+       color = "Participant",
+       linetype = "Score Type",
+       shape = "Score Type") +
   theme_minimal()
 
 
