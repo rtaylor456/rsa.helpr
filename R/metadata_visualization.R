@@ -1,3 +1,5 @@
+data <- readRDS("data-raw/data_merged.rds")
+
 # apply cleaning function
 data_clean <- utah_clean(data)
 
@@ -149,8 +151,17 @@ boxplot(Median_Difference_Score ~ E45_Disability_Priority_911,
 # boxplot(Median_Difference_Score ~ E16_Veteran_Status_911,
 #         data = metadata_clean)
 
+
+overall_median <- median(metadata_clean$Median_Difference_Score)
+overall_median # 14.29
+
 boxplot(Median_Difference_Score ~ Provider,
-        data = metadata_clean) # Remove default x-axis labels
+        data = metadata_clean,
+        main = "Median Difference Scores Across Providers",
+        ylab = "Median Difference Score")
+abline(h = overall_median, lty = 2, col = "blue")
+
+
 
 # Add custom x-axis labels
 axis(1, at = 1:length(unique(metadata_clean$Provider)),

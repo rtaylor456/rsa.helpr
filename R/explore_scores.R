@@ -1,10 +1,53 @@
 # This script will involve exploring the pre-post and difference scores for the
 #    different 10 tests to look for any univariate impacts
 
+
+metadata_clean <- metadata |>
+  # remove rows where median_difference is missing
+  filter(!is.na(metadata$Median_Difference_Score)) |>
+  # Remove columns that contain strictly NA values
+  select(where(~ !all(is.na(.)))) |>
+  separate_disability()
+# So, we have 226 observations to work with
+
+
+table(metadata_clean$Provider)
+# CCC CETC  COP  CSD HKNC  LSI NSSD PARC  RTI  SPA  SUU Turn USDB  USU  UVU  WSU
+# 24    0    4    0    3   90    4    5    9   13   19   38    1   12    4    0
+
+# providers for which we have enough data to consider
+providers_use <- c("CCC", "LSI", "SUU", "Turn")
+
+metadata_clean2 <- metadata_clean |>
+  filter(Provider %in% providers_use)
+
+unique(metadata_clean2$Provider)
+
+metadata_clean2$Provider <- factor(metadata_clean2$Provider,
+                                   levels = unique(metadata_clean2$Provider))
+
+overall_median <- median(metadata_clean$Median_Difference_Score)
+overall_median # 14.29
+
+boxplot(Median_Difference_Score ~ Provider,
+        data = metadata_clean2,
+        main = "Median Difference Scores Across Providers",
+        ylab = "Median Difference Score")
+abline(h = overall_median, lty = 2, col = "blue")
+
+
+
 # look at the distribution of each of the scores
 
 differences <- metadata |>
-  select(contains("difference"))
+  select(contains("difference") &
+           -contains("Median_Difference_Score"))
+
+# find the overall median for all differences scores
+differences_scores_vector <- as.vector(unlist(differences))
+differences_median <- median(differences_scores_vector, na.rm = TRUE)
+differences_median # 8.89
+
 
 differences |>
   lapply(function(x) sum(!is.na(x)))
@@ -27,10 +70,30 @@ differences |>
   lapply(function(x) summary(x, na.rm = TRUE))
 
 
+## boxplots
+boxplot(metadata$Difference_CPSO, metadata$Difference_CSS,
+        metadata$Difference_EMP, metadata$Difference_FL,
+        metadata$Difference_ILOM, metadata$Difference_ISA,
+        metadata$Difference_JOBEX, metadata$Difference_JS,
+        metadata$Difference_QWEX, metadata$Difference_WBLE,
+        names = c("CPSO", "CSS", "EMP", "FL", "ILOM",
+                  "ISA", "JOBEX", "JS", "QWEX", "WBLE"),
+        main = "Distributions of Difference Scores",
+        ylab = "Scores",
+        xlab = "Test Category")
+abline(h = differences_median, lty = 2, col = "blue")
+
+
+
 
 ## looking at pre scores
 pre_scores <- metadata |>
   select(contains("pre_"))
+
+# find the overall median for all pre scores
+pre_scores_vector <- as.vector(unlist(pre_scores))
+pre_median <- median(pre_scores_vector, na.rm = TRUE)
+pre_median # 60.61
 
 pre_scores |>
   lapply(function(x) sum(!is.na(x))) # no pre scores for QWEX? why?
@@ -47,6 +110,12 @@ for (col in colnames(pre_scores)){
 ## looking at pre scores
 post_scores <- metadata |>
   select(contains("post_"))
+
+# find the overall median for all post scores
+post_scores_vector <- as.vector(unlist(post_scores))
+post_median <- median(post_scores_vector, na.rm = TRUE)
+post_median # 74.07
+
 
 post_scores |>
   lapply(function(x) sum(!is.na(x))) # we do have post scores for QWEX
@@ -70,7 +139,7 @@ boxplot(metadata$Pre_Score_CPSO, metadata$Pre_Score_CSS,
         main = "Distributions of Pre-Scores",
         ylab = "Scores",
         xlab = "Test Category")
-abline(h = 60, lty = 2, col = "blue")
+abline(h = pre_median, lty = 2, col = "blue")
 
 
 boxplot(metadata$Post_Score_CPSO, metadata$Post_Score_CSS,
@@ -83,8 +152,8 @@ boxplot(metadata$Post_Score_CPSO, metadata$Post_Score_CSS,
         main = "Distributions of Post-Scores",
         ylab = "Scores",
         xlab = "Test Category")
-abline(h = 60, lty = 2, col = "blue")
-abline(h = 76, lty = 2, col = "red")
+abline(h = pre_median, lty = 2, col = "blue")
+abline(h = post_median, lty = 2, col = "red")
 
 
 
