@@ -73,13 +73,26 @@ metadata <- data_merged |>
   # handle factor variables--keep only the most common values for each
   #   participant
   mutate(across(where(is.factor), ~ as.factor(get_mode(.)))) |>
+
+  # calculate
+  rowwise() |>
+  mutate(
+    Differences_Available = sum(!is.na(c_across(starts_with("Difference_") ))),
+    Median_Difference_Score = median(c_across(starts_with("Difference_")),
+                                     na.rm = TRUE)
+  ) |>
   ungroup() |>
 
   # Summarise to condense rows, keeping one row per participant
   group_by(Participant_ID) |>
   summarise(across(everything(), first)) |>
 
-  ungroup()
+  ungroup() |>
+  # remove columns where all values are NA
+  select(where(~ !all(is.na(.)))) |>
+  # apply my handmade function to handle disability columns
+  separate_disability()
+
 
 nrow(metadata) # 329
 length(unique(metadata$Participant_ID)) # 329

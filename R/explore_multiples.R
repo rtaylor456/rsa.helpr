@@ -74,10 +74,10 @@ for (service in names(subset_list)) {
 }
 
 # find the number of unique participants across all tests
-all_participants <- unlist(lapply(participants_with_multiple_scores,
-                                  function(df) df$Participant.ID))
-total_unique_participants <- length(unique(all_participants))
-
+# all_participants <- unlist(lapply(participants_with_multiple_scores,
+#                                   function(df) df$Participant.ID))
+# total_unique_participants <- length(unique(all_participants))
+#
 # total_unique_participants
 
 
@@ -107,6 +107,10 @@ pivoted_data <- data_with_multiple_scores |>
               names_prefix = "Score_")
     }
     )
+
+# get the distribution of providers for each test
+pivoted_data |> lapply(function(df) pull(select(df, Provider))) |>
+  lapply(table)
 
 # try <- pivot_wider(data_with_multiple_scores[["ISA"]],
 #                    names_from = Pre.Post, values_from = Score,
@@ -160,7 +164,7 @@ pivoted_data <- data_with_multiple_scores |>
 # [10] "EMP"
 
 library(ggplot2)
-library(RColorBrewer)
+# library(RColorBrewer)
 
 # CSS
 css_plot <- as.data.frame(pivoted_data[["CSS"]]) |>
@@ -177,6 +181,7 @@ css_plot <- as.data.frame(pivoted_data[["CSS"]]) |>
   scale_x_datetime(date_breaks = "1 month", date_labels = "%b %d") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 css_plot
+
 
 
 # FL

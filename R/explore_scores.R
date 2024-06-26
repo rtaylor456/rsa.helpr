@@ -4,10 +4,11 @@
 
 metadata_clean <- metadata |>
   # remove rows where median_difference is missing
-  filter(!is.na(metadata$Median_Difference_Score)) |>
-  # Remove columns that contain strictly NA values
-  select(where(~ !all(is.na(.)))) |>
-  separate_disability()
+  filter(!is.na(metadata$Median_Difference_Score))
+
+  # # Remove columns that contain strictly NA values
+  # select(where(~ !all(is.na(.)))) |>
+  # separate_disability()
 # So, we have 226 observations to work with
 
 
@@ -16,10 +17,12 @@ table(metadata_clean$Provider)
 # 24    0    4    0    3   90    4    5    9   13   19   38    1   12    4    0
 
 # providers for which we have enough data to consider
-providers_use <- c("CCC", "LSI", "SUU", "Turn")
+providers_use <- c("CCC", "LSI", "SPA", "SUU", "Turn")
 
 metadata_clean2 <- metadata_clean |>
   filter(Provider %in% providers_use)
+
+
 
 unique(metadata_clean2$Provider)
 
