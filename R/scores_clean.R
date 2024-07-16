@@ -52,6 +52,7 @@ merged_data <- full_join(
   by = c("Participant.ID", "Service", "Provider")
 )
 
+
 final_data <- merged_data |>
   pivot_wider(
     names_from = Service,
