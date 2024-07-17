@@ -32,6 +32,16 @@ clean_utah <- function(data,
   data[, (extra_cols) := NULL]
 
 
+  # EXTRA columns that occurs when writing to csv in R--who knows why
+  # Remove column X or x if it exists
+  if ("X" %in% names(data)) {
+    data[, X := NULL]
+  }
+  if ("x" %in% names(data)) {
+    data[, x := NULL]
+  }
+
+
   ######################
   ## FACTORS: nominal ##
   ######################
@@ -262,6 +272,8 @@ clean_utah <- function(data,
     data <- data |>
       select(where(~ !all(is.na(.))))
   }
+
+
 
   data <- data |>
     arrange(E1_Year_911, E2_Quarter_911)

@@ -630,14 +630,16 @@ shinyApp(ui = ui, server = server)
 ################################################################################
 
 library(shiny)
+library(shinyFeedback)
 library(DT)
 library(data.table)
 library(tidyverse)
 
-options(shiny.maxRequestSize = 500 * 1024^2)  # 500MB
+options(shiny.maxRequestSize = 1000 * 1024^2)  # 1000MB
 
 # Define UI
 ui <- fluidPage(
+  useShinyFeedback(),  # Include shinyFeedback
   titlePanel("Data Dashboard"),
   sidebarLayout(
     sidebarPanel(
@@ -689,6 +691,9 @@ server <- function(input, output) {
   read_and_clean_rsa_data <- reactive({
     req(input$rsa_data)
 
+    # Show feedback message
+    showFeedbackWarning("rsa_data", "Processing RSA-911 data...")
+
     # Read all RSA-911 CSV files and combine them
     df_list <- lapply(input$rsa_data$datapath, read.csv)
     df_combined <- do.call(rbind, df_list)
@@ -709,6 +714,9 @@ server <- function(input, output) {
   read_and_clean_scores_data <- reactive({
     req(input$scores_data)
 
+    # Show feedback message
+    showFeedbackWarning("scores_data", "Processing scores data...")
+
     # Read all scores data files and combine them
     df_scores_list <- lapply(input$scores_data$datapath, read.csv)
     df_scores_combined <- do.call(rbind, df_scores_list)
@@ -724,6 +732,9 @@ server <- function(input, output) {
   merged_data <- reactive({
     req(read_and_clean_rsa_data(), read_and_clean_scores_data())
 
+    # Show feedback message
+    showFeedbackWarning("generate_metadata", "Merging data...")
+
     # Perform merge using merge_scores function
     merged <- merge_scores(read_and_clean_rsa_data(),
                            read_and_clean_scores_data(),
@@ -737,12 +748,18 @@ server <- function(input, output) {
   generate_metadata <- eventReactive(input$generate_metadata, {
     req(merged_data())
 
+    # Show feedback message
+    showFeedbackWarning("generate_metadata", "Generating metadata...")
+
     # Generate metadata using create_metadata function
     metadata <- create_metadata(merged_data())
 
     # Convert metadata to a data frame for display
     metadata_df <- as.data.frame(t(metadata))
     colnames(metadata_df) <- "Value"  # Optional: customize column name
+
+    # Hide feedback message
+    hideFeedback("generate_metadata")
 
     return(metadata_df)
   })
