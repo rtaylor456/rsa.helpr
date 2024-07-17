@@ -84,24 +84,24 @@ shinyApp(ui = ui, server = server)
 
 
 ###########################################################
-ui <- fluidPage(
-  fileInput("upload", NULL, buttonLabel = "Upload...", multiple = TRUE),
-  tableOutput("files")
-)
-
-server <- function(input, output, session) {
-  options(shiny.maxRequestSize = 10 * 1024^2)
-  output$files <- renderTable(input$upload)
-}
-
-# Run the application
-shinyApp(ui = ui, server = server)
+# ui <- fluidPage(
+#   fileInput("upload", NULL, buttonLabel = "Upload...", multiple = TRUE),
+#   tableOutput("files")
+# )
+#
+# server <- function(input, output, session) {
+#   options(shiny.maxRequestSize = 10 * 1024^2)
+#   output$files <- renderTable(input$upload)
+# }
+#
+# # Run the application
+# shinyApp(ui = ui, server = server)
 ############################################################
 
 library(shiny)
 
 # Set maximum request size (e.g., 250MB)
-options(shiny.maxRequestSize = 250 * 1024^2)  # 250MB
+options(shiny.maxRequestSize = 500 * 1024^2)  # 500MB
 
 # Define UI
 ui <- fluidPage(
@@ -133,7 +133,7 @@ shinyApp(ui = ui, server = server)
 library(shiny)
 library(DT)  # for interactive tables
 
-options(shiny.maxRequestSize = 250 * 1024^2)  # 250MB
+options(shiny.maxRequestSize = 500 * 1024^2)  # 500MB
 
 # Define UI
 ui <- fluidPage(
