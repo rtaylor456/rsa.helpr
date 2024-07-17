@@ -20,6 +20,12 @@ clean_scores <- function(data,
   # Remove the count column
   data[, count := NULL]
 
+  # Convert to factors
+  data[, c("Participant.ID", "Service", "Provider",
+           "Has_Multiple_Scores") := lapply(.SD, as.factor),
+       .SDcols = c("Participant.ID", "Service", "Provider",
+                   "Has_Multiple_Scores")]
+
   # Group by Participant.ID, Service and calculate the Time_Passed_Days
   data[, Time_Passed_Days := as.numeric(difftime(max(Completed),
                                                       min(Completed),

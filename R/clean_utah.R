@@ -2,11 +2,12 @@ library(data.table)
 library(tidyverse)
 
 clean_utah <- function(data,
-                       aggregate = TRUE,
+                       aggregate = FALSE,
                        unidentified_to_0 = TRUE,
                        convert_sex = TRUE,
+                       clean_specials = FALSE,
                        remove_desc = TRUE,
-                       remove_strictly_na = FALSE){
+                       remove_strictly_na = TRUE){
   # remove redundancies in ids
   # add in a new variable that counts redundancies
 
@@ -165,8 +166,13 @@ clean_utah <- function(data,
                        value = TRUE, perl = TRUE)
 
   # AGE column
-  # Rename the column and convert to numeric
-  setnames(data, "Age at Application", "Age_at_Application")
+  # Rename the column
+  # age_cols <- grep("(?i)age.*app|app.*age(?!.*(?i)_desc)", names(data),
+  #                  value = TRUE, perl = TRUE)
+  age_cols <- grep("(?i)^(?=.*age)(?=.*app)(?!.*(desc|amt))", names(data),
+                   value = TRUE, perl = TRUE)
+
+  names(data)[names(data) %in% age_cols] <- "Age_At_Application"
 
 
   # AMT and TITLE columns (TITLEI columns are funds expended for different
@@ -179,7 +185,7 @@ clean_utah <- function(data,
   hours_cols <- grep("(?i)_hours_|(?i)_hrs_(?!.*(?i)_desc)", names(data),
                      value = TRUE, perl = TRUE)
 
-  numeric_cols <- c(year_cols, quarter_cols, "Age_at_Application",
+  numeric_cols <- c(year_cols, quarter_cols, "Age_At_Application",
                     amt_cols, hours_cols)
 
 
@@ -226,6 +232,10 @@ clean_utah <- function(data,
   # uncomment this once I've got the function to stop crashing the computer
   # data <- handle_splits(data, all_special_cols)
 
+  if (clean_specials == TRUE){
+    data <- separate_disability(data)
+  }
+
   ##############################################################################
   ########################
   ## Type conversion    ##
@@ -237,7 +247,6 @@ clean_utah <- function(data,
   factor_cols <- unique(setdiff(names(data), c(numeric_cols, date_cols)))
   data[, (factor_cols) := lapply(.SD, as.factor), .SDcols = factor_cols]
 
-
   # DATA AGGREGATION
   if (aggregate == TRUE){
     data <- data |>
@@ -248,6 +257,14 @@ clean_utah <- function(data,
       slice(1) |>
       ungroup()
   }
+
+  if (remove_strictly_na == TRUE){
+    data <- data |>
+      select(where(~ !all(is.na(.))))
+  }
+
+  data <- data |>
+    arrange(E1_Year_911, E2_Quarter_911)
 
   # return the cleaned dataset
   return(data)
