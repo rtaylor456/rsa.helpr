@@ -46,8 +46,7 @@ clean_scores <- function(data,
   if (aggregate == TRUE){
     # Find the earliest 'Pre' record for each Participant.ID, Provider, Service
     pre_data <- pre_data[order(Completed), .SD[1],
-                             by = .(Participant.ID, Provider, Service,
-                                    Completed)]
+                             by = .(Participant.ID, Provider, Service)]
 
     # Find the latest 'Post' record for each Participant.ID, Provider, Service
     post_data <- post_data[order(-Completed), .SD[1],
@@ -91,6 +90,9 @@ clean_scores <- function(data,
   return(scores_final)
 
 }
+
+
+
 
 
 

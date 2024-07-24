@@ -138,14 +138,35 @@ handle_splits <- function(data, var_names){
   return(data)
 }
 
+# separate_disability <- function(df) {
+#   df %>%
+#     tidyr::separate(E43_Primary_Disability_911,
+#                     into = c("E43_Primary_Impairment_911",
+#                              "E43_Primary_Cause_911"),
+#                     sep = ";") %>%
+#     tidyr::separate(E44_Secondary_Disability_911,
+#                     into = c("E44_Secondary_Impairment_911",
+#                              "E44_Secondary_Cause_911"),
+#                     sep = ";")
+# }
+
 separate_disability <- function(df) {
-  df %>%
-    tidyr::separate(E43_Primary_Disability_911,
-                    into = c("E43_Primary_Impairment_911",
-                             "E43_Primary_Cause_911"),
-                    sep = ";") %>%
-    tidyr::separate(E44_Secondary_Disability_911,
-                    into = c("E44_Secondary_Impairment_911",
-                             "E44_Secondary_Cause_911"),
-                    sep = ";")
+  # Convert to data.table if not already
+  setDT(df)
+
+  # Separate E43_Primary_Disability_911 into E43_Primary_Impairment_911 and
+  #   E43_Primary_Cause_911
+  df[, c("E43_Primary_Impairment_911",
+         "E43_Primary_Cause_911") := tstrsplit(E43_Primary_Disability_911,
+                                               ";",
+                                               fixed = TRUE)]
+
+  # Separate E44_Secondary_Disability_911 into E44_Secondary_Impairment_911 and
+  #   E44_Secondary_Cause_911
+  df[, c("E44_Secondary_Impairment_911",
+         "E44_Secondary_Cause_911") := tstrsplit(E44_Secondary_Disability_911,
+                                                 ";",
+                                                 fixed = TRUE)]
+
+  return(df)
 }

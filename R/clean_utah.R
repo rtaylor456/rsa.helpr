@@ -243,7 +243,8 @@ clean_utah <- function(data,
   # data <- handle_splits(data, all_special_cols)
 
   if (clean_specials == TRUE){
-    data <- separate_disability(data)
+    data <- handle_splits(data, all_special_cols)
+    # data <- separate_disability(data)
   }
 
   ##############################################################################
@@ -282,4 +283,5 @@ clean_utah <- function(data,
   return(data)
 
 }
+
 
