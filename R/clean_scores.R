@@ -86,6 +86,18 @@ clean_scores <- function(data,
       names_glue = "{.value}_{Service}"
     )
 
+  # Reshape the data
+  # scores_final <- dcast(
+  #   merged_data,
+  #   formula = . ~ Service,
+  #   value.var = c("Pre_Score", "Post_Score", "Difference", "Time_Passed_Days"),
+  #   fun.aggregate = list
+  # )
+  #
+  # # Adjust column names to match names_glue pattern
+  # setnames(scores_final, old = names(scores_final)[grep("^(Pre_Score|Post_Score|Difference|Time_Passed_Days)_", names(scores_final))],
+  #          new = gsub("^(Pre_Score|Post_Score|Difference|Time_Passed_Days)_(.+)", "\\1_\\2", names(scores_final)))
+
 
   return(scores_final)
 

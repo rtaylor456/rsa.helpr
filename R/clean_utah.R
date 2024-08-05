@@ -42,6 +42,60 @@ clean_utah <- function(data,
   }
 
 
+
+  ######################
+  ## NUMERIC          ##
+  ######################
+
+  # E1_Year_911
+  year_cols <- grep("(?i)_year|(?i)_yr_(?!.*(?i)_desc)", names(data),
+                    value = TRUE, perl = TRUE)
+
+
+  # E2_Quarter_911
+  quarter_cols <- grep("(?i)_quarter|(?i)_qt_(?!.*(?i)_desc)", names(data),
+                       value = TRUE, perl = TRUE)
+
+  # AGE column
+  # Rename the column
+  # age_cols <- grep("(?i)age.*app|app.*age(?!.*(?i)_desc)", names(data),
+  #                  value = TRUE, perl = TRUE)
+  age_cols <- grep("(?i)^(?=.*age)(?=.*app)(?!.*(desc|amt))", names(data),
+                   value = TRUE, perl = TRUE)
+
+  names(data)[names(data) %in% age_cols] <- "Age_At_Application"
+
+
+  # AMT and TITLE columns (TITLEI columns are funds expended for different
+  #   services)
+  # WAGE columns
+  amt_cols <- grep("(?i)_amt|(?i)_title|(?i)_wage|(?i)_amount|(?i)_amnt(?!.*(?i)_desc)",
+                   names(data), value = TRUE, perl = TRUE)
+
+  # HOURS columns
+  hours_cols <- grep("(?i)_hours_|(?i)_hrs_(?!.*(?i)_desc)", names(data),
+                     value = TRUE, perl = TRUE)
+
+  numeric_cols <- c(year_cols, quarter_cols, "Age_At_Application",
+                    amt_cols, hours_cols)
+
+
+
+  data[, (numeric_cols) := lapply(.SD, as.numeric),
+       .SDcols = numeric_cols]
+
+  ######################
+  ## DATE             ##
+  ######################
+  # DATE columns - in excel date format
+  # start, extension, end
+  date_cols <- grep("(?i)_date|(?i)_skill_gain|(?i)_start|(?i)_end_|(?i)_extension(?!.*(?i)_desc)",
+                    names(data), value = TRUE,
+                    perl = TRUE)
+
+  data[, (date_cols) := lapply(.SD, handle_excel_date), .SDcols = date_cols]
+
+
   ######################
   ## FACTORS: nominal ##
   ######################
@@ -162,57 +216,37 @@ clean_utah <- function(data,
   }),
   .SDcols = employ_cols]
 
-  ######################
-  ## NUMERIC          ##
-  ######################
 
-  # E1_Year_911
-  year_cols <- grep("(?i)_year|(?i)_yr_(?!.*(?i)_desc)", names(data),
-                    value = TRUE, perl = TRUE)
+  # GRADE LEVEL - based on age
+  data[, Grade_Level := fifelse(Age_At_Application < 5, "<5",
+                          fifelse((Age_At_Application >= 5 &
+                                     Age_At_Application < 8), "5-7",
+                          fifelse((Age_At_Application >= 8 &
+                                     Age_At_Application < 11), "8-10",
+                          fifelse((Age_At_Application >= 11 &
+                                     Age_At_Application < 14), "11-13",
+                          fifelse((Age_At_Application >= 14 &
+                                     Age_At_Application < 17), "14-16",
+                          fifelse((Age_At_Application >= 17 &
+                                     Age_At_Application < 20), "17-19",
+                          fifelse((Age_At_Application >= 20 &
+                                     Age_At_Application < 23), "20-22",
+                          fifelse((Age_At_Application >= 23 &
+                                     Age_At_Application < 26), "23-25",
+                          fifelse((Age_At_Application >= 26 &
+                                     Age_At_Application < 31), "26-30",
+                          fifelse((Age_At_Application >= 31 &
+                                     Age_At_Application <= 50), "31-50",
+                          fifelse(Age_At_Application > 50, "40+",
+                                  NA_character_)))))))))))]
 
-
-  # E2_Quarter_911
-  quarter_cols <- grep("(?i)_quarter|(?i)_qt_(?!.*(?i)_desc)", names(data),
-                       value = TRUE, perl = TRUE)
-
-  # AGE column
-  # Rename the column
-  # age_cols <- grep("(?i)age.*app|app.*age(?!.*(?i)_desc)", names(data),
-  #                  value = TRUE, perl = TRUE)
-  age_cols <- grep("(?i)^(?=.*age)(?=.*app)(?!.*(desc|amt))", names(data),
-                   value = TRUE, perl = TRUE)
-
-  names(data)[names(data) %in% age_cols] <- "Age_At_Application"
-
-
-  # AMT and TITLE columns (TITLEI columns are funds expended for different
-  #   services)
-  # WAGE columns
-  amt_cols <- grep("(?i)_amt|(?i)_title|(?i)_wage|(?i)_amount|(?i)_amnt(?!.*(?i)_desc)",
-                   names(data), value = TRUE, perl = TRUE)
-
-  # HOURS columns
-  hours_cols <- grep("(?i)_hours_|(?i)_hrs_(?!.*(?i)_desc)", names(data),
-                     value = TRUE, perl = TRUE)
-
-  numeric_cols <- c(year_cols, quarter_cols, "Age_At_Application",
-                    amt_cols, hours_cols)
-
-
-
-  data[, (numeric_cols) := lapply(.SD, as.numeric),
-       .SDcols = numeric_cols]
-
-  ######################
-  ## DATE             ##
-  ######################
-  # DATE columns - in excel date format
-  # start, extension, end
-  date_cols <- grep("(?i)_date|(?i)_skill_gain|(?i)_start|(?i)_end_|(?i)_extension(?!.*(?i)_desc)",
-                    names(data), value = TRUE,
-                    perl = TRUE)
-
-  data[, (date_cols) := lapply(.SD, handle_excel_date), .SDcols = date_cols]
+  # Convert Grade_Level to an ordered factor
+  data[, Grade_Level := factor(Grade_Level,
+                                   levels = c("<5", "5-7", "8-10", "11-13",
+                                              "14-16", "17-19", "20-22",
+                                              "23-25", "26-30", "31-50",
+                                              "40+"),
+                                   ordered = TRUE)]
 
 
   ########################
@@ -263,11 +297,21 @@ clean_utah <- function(data,
     data <- data |>
       filter(!is.na(E7_Application_Date_911)) |>
       group_by(Participant_ID, E1_Year_911, E2_Quarter_911) |>
-      mutate(occurrences_per_quarter = n()) |>
+      mutate(Occurrences_Per_Quarter = n()) |>
       arrange(E7_Application_Date_911) |>
       slice(1) |>
       ungroup()
   }
+
+  # if (aggregate == TRUE){
+  #   data <- data[!is.na(E7_Application_Date_911),
+  #                .(Occurrences_Per_Quarter = .N),
+  #                by = .(Participant_ID, E1_Year_911, E2_Quarter_911)
+  #                ][order(E7_Application_Date_911)
+  #                  ][, .SD[1], by = .(Participant_ID, E1_Year_911,
+  #                                     E2_Quarter_911)]
+  # }
+
 
   if (remove_strictly_na == TRUE){
     data <- data |>

@@ -85,7 +85,9 @@ ui <- fluidPage(
                                                  "Upload New Dataset")),
                          conditionalPanel(
                            condition = "input.data_choice == 'Upload New Dataset'",
-                           fileInput("new_data", "Upload New Dataset", accept = c(".csv"))
+                           fileInput("new_data", "Upload New Dataset",
+                                     accept = c(".csv")),
+                           uiOutput("validation_message")
                            # radioButtons("dataset_type", "Select Dataset Type",
                            #              choices = c("RSA-911" = "rsa",
                            #                          "Scores" = "scores",
@@ -104,8 +106,12 @@ ui <- fluidPage(
               tabPanel('Visualizations',
                        sidebarPanel(
                          h4("Visualization Options"),
-                         selectInput("visualization_choice", "Select Visualization",
-                                     choices = c("None", "Enrollment Length Histogram"))
+                         selectInput("visualization_choice",
+                                     "Select Visualization",
+                                     choices = c(" ",
+                                                 "Demographics",
+                                                 "Trends Across Grade Level",
+                                                 "Trends Over Time"))
                        ),
                        mainPanel(
                          uiOutput("visualization_ui")
@@ -217,9 +223,9 @@ server <- function(input, output, session) {
     n_rows <- nrow(df)
     n_cols <- ncol(df)
     unique_ids <- length(unique(df$Participant_ID))
-    cat("Number of Rows:", n_rows, "\n")
-    cat("Number of Columns:", n_cols, "\n")
-    cat("Unique Participant IDs:", unique_ids, "\n")
+    cat("Number of Rows:", format(n_rows, big.mark = ","), "\n")
+    cat("Number of Columns:", format(n_cols, big.mark = ","), "\n")
+    cat("Unique Participant IDs:", format(unique_ids, big.mark = ","), "\n")
   })
 
   # Render the summary for scores data
@@ -228,9 +234,9 @@ server <- function(input, output, session) {
     n_rows <- nrow(df)
     n_cols <- ncol(df)
     unique_ids <- length(unique(df$Participant.ID))
-    cat("Number of Rows:", n_rows, "\n")
-    cat("Number of Columns:", n_cols, "\n")
-    cat("Unique Participant IDs:", unique_ids, "\n")
+    cat("Number of Rows:", format(n_rows, big.mark = ","), "\n")
+    cat("Number of Columns:", format(n_cols, big.mark = ","), "\n")
+    cat("Unique Participant IDs:", format(unique_ids, big.mark = ","), "\n")
   })
 
   # Render the summary for merged data
@@ -239,9 +245,9 @@ server <- function(input, output, session) {
     n_rows <- nrow(df)
     n_cols <- ncol(df)
     unique_ids <- length(unique(df$Participant_ID))
-    cat("Number of Rows:", n_rows, "\n")
-    cat("Number of Columns:", n_cols, "\n")
-    cat("Unique Participant IDs:", unique_ids, "\n")
+    cat("Number of Rows:", format(n_rows, big.mark = ","), "\n")
+    cat("Number of Columns:", format(n_cols, big.mark = ","), "\n")
+    cat("Unique Participant IDs:", format(unique_ids, big.mark = ","), "\n")
   })
 
   # Render the summary for metadata
@@ -250,9 +256,18 @@ server <- function(input, output, session) {
     n_rows <- nrow(df)
     n_cols <- ncol(df)
     unique_ids <- length(unique(df$Participant_ID))
-    cat("Number of Rows:", n_rows, "\n")
-    cat("Number of Columns:", n_cols, "\n")
-    cat("Unique Participant IDs:", unique_ids, "\n")
+    cat("Number of Rows:", format(n_rows, big.mark = ","), "\n")
+    cat("Number of Columns:", format(n_cols, big.mark = ","), "\n")
+    cat("Unique Participant IDs:", format(unique_ids, big.mark = ","), "\n")
+  })
+
+  # Render selected data UI
+  output$data_ui <- renderUI({
+    if (input$data_choice == "Upload New Dataset" && !is.null(rv$new_data)) {
+      h3("Uploaded Data")
+    } else {
+      h3(input$data_choice)
+    }
   })
 
   # Download handler for RSA-911 data
@@ -329,38 +344,6 @@ server <- function(input, output, session) {
     }
   })
 
-  # Render visualization options UI
-  output$visualization_ui <- renderUI({
-    if (input$visualization_choice == "Enrollment Length Histogram") {
-      plotOutput("histogram_enrollment_length")
-    } else {
-      NULL
-    }
-  })
-
-  # Render histogram for enrollment length
-  output$histogram_enrollment_length <- renderPlot({
-    data <- selected_data()
-    if (is.null(data)) {
-      return()
-    }
-    if ("Participant_ID" %in% colnames(data)) {
-      # Ensure the enrollment length column exists
-      if ("Enroll_Length" %in% colnames(data)) {
-        ggplot(data, aes(x = Enroll_Length)) +
-          geom_histogram(binwidth = 1, fill = "blue", color = "black") +
-          labs(title = "Histogram of Enrollment Length", x = "Enrollment Length", y = "Frequency")
-      } else {
-        ggplot() +
-          labs(title = "No Enrollment Length Data", x = "", y = "") +
-          geom_text(aes(x = 1, y = 1, label = "Enrollment Length column not found"), size = 5, color = "red")
-      }
-    } else {
-      ggplot() +
-        labs(title = "Invalid Data Type", x = "", y = "") +
-        geom_text(aes(x = 1, y = 1, label = "Data is not RSA-911"), size = 5, color = "red")
-    }
-  })
 
   # Dynamically render UI for data messages and file input
   output$data_ui <- renderUI({
@@ -378,6 +361,7 @@ server <- function(input, output, session) {
       NULL
     }
   })
+
 
   # Render the selected data table
   output$table_selected_data <- renderDT({
@@ -401,8 +385,8 @@ server <- function(input, output, session) {
     }
     n_rows <- nrow(data)
     n_cols <- ncol(data)
-    cat("Number of Rows:", n_rows, "\n")
-    cat("Number of Columns:", n_cols, "\n")
+    cat("Number of Rows:", format(n_rows, big.mark = ","), "\n")
+    cat("Number of Columns:", format(n_cols, big.mark = ","), "\n")
   })
 
   # Render status message
@@ -413,8 +397,79 @@ server <- function(input, output, session) {
     }
     return(NULL)
   })
+
+  # output$data_select_check <- renderText({
+  #   data <- selected_data()
+  #   choice <- input$data_choice
+  #   dataset_type <- input$dataset_type
+  #   if (choice == "Upload New Data" && dataset_type == "rsa"){
+  #     return("No data available. Please ensure data has been cleaned or uploaded.")
+  #   }
+  #   return(NULL)
+  # })
+
+  # Render visualization options UI
+  # output$visualization_ui <- renderUI({
+  #   if (input$visualization_choice == "Enrollment Length Histogram") {
+  #     plotOutput("histogram_enrollment_length")
+  #   } else {
+  #     NULL
+  #   }
+  # })
+
+  # Render the UI for visualization options
+  # output$visualization_ui <- renderUI({
+  #   if (input$data_choice %in% c("Use Cleaned Merged Data", "Use Generated Metadata")) {
+  #     switch(input$visualization_choice,
+  #            "Demographics" = plotOutput("plot_demographics"),
+  #            "Trends Across Grade Level" = plotOutput("plot_trends_grade_level"),
+  #            "Trends Over Time" = plotOutput("plot_trends_over_time"),
+  #            NULL)
+  #   } else {
+  #     if (input$visualization_choice == "Demographics") {
+  #       # plotOutput("histogram_enrollment_length")
+  #     } else if (input$visualization_choice == "Trends Across Grade Level ") {
+  #
+  #     } else if () {
+  #
+  #     } else {
+  #       NULL
+  #     }
+  #   }
+  # })
+
+  # Render histogram for enrollment length
+  # output$histogram_enrollment_length <- renderPlot({
+  #   data <- selected_data()
+  #   if (is.null(data)) {
+  #     return()
+  #   }
+  #   if ("Participant_ID" %in% colnames(data)) {
+  #     # Ensure the enrollment length column exists
+  #     if ("Enroll_Length" %in% colnames(data)) {
+  #       ggplot(data, aes(x = Enroll_Length)) +
+  #         geom_histogram(binwidth = 1, fill = "blue", color = "black") +
+  #         labs(title = "Histogram of Enrollment Length",
+  #              x = "Enrollment Length", y = "Frequency")
+  #     } else {
+  #       ggplot() +
+  #         labs(title = "No Enrollment Length Data", x = "", y = "") +
+  #         geom_text(aes(x = 1, y = 1,
+  #                       label = "Enrollment Length column not found"),
+  #                   size = 5, color = "red")
+  #     }
+  #   } else {
+  #     ggplot() +
+  #       labs(title = "Invalid Data Type", x = "", y = "") +
+  #       geom_text(aes(x = 1, y = 1, label = "Data is not RSA-911"),
+  #                 size = 5, color = "red")
+  #   }
+  # })
+
+
 }
 
 # Run the application
 shinyApp(ui = ui, server = server)
+
 

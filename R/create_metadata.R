@@ -58,6 +58,67 @@ create_metadata <- function(data) {
 }
 
 
+## USING DATA.TABLE
+
+library(data.table)
+library(lubridate)
+
+create_metadata <- function(data) {
+  # Convert data to data.table if it's not already
+  data <- as.data.table(data)
+
+  # Ensure that factors and dates are treated correctly
+  data[, c("Provider", "Has_Multiple_Scores") := lapply(.SD, as.factor), .SDcols = c("Provider", "Has_Multiple_Scores")]
+
+  # Create enrollment length variable
+  data[, Overall_Quarter := ((E1_Year_911 - 2020) * 4 + E2_Quarter_911)]
+  data[, `:=`(Min_Overall_Quarter = min(Overall_Quarter),
+              Max_Overall_Quarter = max(Overall_Quarter),
+              Enroll_Length = Max_Overall_Quarter - Min_Overall_Quarter + 1),
+       by = Participant_ID]
+
+  # Create variables that count the number of years and quarters
+  data[, `:=`(Total_Years = uniqueN(E1_Year_911),
+              Total_Quarters = uniqueN(E2_Quarter_911)),
+       by = Participant_ID]
+
+  # Remove the year and quarter columns
+  data[, c("E1_Year_911", "E2_Quarter_911") := NULL]
+
+  # Convert numeric variables to medians
+  numeric_cols <- names(data)[sapply(data, is.numeric)]
+  data[, (numeric_cols) := lapply(.SD, median, na.rm = TRUE), .SDcols = numeric_cols]
+
+  # Handle date variables
+  date_cols <- names(data)[sapply(data, lubridate::is.Date)]
+  data[, (date_cols) := lapply(.SD, function(x) as.Date(ifelse(all(is.na(unique(x))), NA, max(x, na.rm = TRUE)))), .SDcols = date_cols]
+
+  # Handle factor variables
+  factor_cols <- names(data)[sapply(data, is.factor)]
+  get_mode <- function(x) {
+    uniq_x <- unique(x)
+    uniq_x[which.max(tabulate(match(x, uniq_x)))]
+  }
+  data[, (factor_cols) := lapply(.SD, get_mode), .SDcols = factor_cols]
+
+  # Calculate differences and medians
+  difference_cols <- grep("^Difference_", names(data), value = TRUE)
+  time_cols <- grep("^Time_Passed_Days", names(data), value = TRUE)
+
+  data[, `:=`(Differences_Available = sum(!is.na(.SD)),
+              Median_Difference_Score = median(.SD, na.rm = TRUE),
+              Median_Time_Passed_Days = median(.SD, na.rm = TRUE)),
+       .SDcols = c(difference_cols, time_cols), by = Participant_ID]
+
+  # Summarise to condense rows, keeping one row per participant
+  metadata <- data[, lapply(.SD, first), by = Participant_ID]
+
+  return(metadata)
+}
+
+
+
+
 # metadata <- data_merged |>
 #   # mutate(Provider = as.factor(Provider)) |>
 #   mutate(across(c(Provider, Has_Multiple_Scores), ~ as.factor(.))) |>
