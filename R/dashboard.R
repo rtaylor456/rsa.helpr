@@ -14,42 +14,90 @@ ui <- fluidPage(
                        sidebarPanel(
                          # RSA-911 Data Upload and Clean Options
                          fluidRow(
-                           column(12, h4("RSA-911 Data Upload and Clean Options")),
-                           column(12, h4("(Please upload in CSV or xlsx format)")),
-                           column(12, fileInput("rsa_data", "Choose RSA-911 File(s)", accept = c(".csv"), multiple = TRUE)),
-                           column(12, checkboxInput("aggregate_utah", "Aggregate Data", value = FALSE)),
-                           column(12, checkboxInput("unidentified_to_0", "Convert Unidentified to 0", value = TRUE)),
-                           column(12, checkboxInput("convert_sex", "Convert Sex", value = TRUE)),
-                           column(12, checkboxInput("clean_specials", "Clean Specials", value = FALSE)),
-                           column(12, checkboxInput("remove_desc", "Remove Description Columns", value = TRUE)),
-                           column(12, checkboxInput("remove_strictly_na", "Remove Strictly NA Columns", value = TRUE)),
-                           column(12, downloadButton("download_rsa", "Download Cleaned RSA-911 Data"))
+                           column(12,
+                                  h4("RSA-911 Data Upload and Clean Options")),
+                           column(12,
+                                  h4("(Please upload in CSV or xlsx format)")),
+                           column(12,
+                                  fileInput("rsa_data",
+                                            "Choose RSA-911 File(s)",
+                                            accept = c(".csv"),
+                                            multiple = TRUE)),
+                           column(12,
+                                  checkboxInput("aggregate_utah",
+                                                "Aggregate Data",
+                                                value = FALSE)),
+                           column(12,
+                                  checkboxInput("unidentified_to_0",
+                                                "Convert Unidentified to 0",
+                                                value = TRUE)),
+                           column(12,
+                                  checkboxInput("convert_sex", "Convert Sex",
+                                                value = TRUE)),
+                           column(12,
+                                  checkboxInput("clean_specials",
+                                                "Clean Specials",
+                                                value = FALSE)),
+                           column(12,
+                                  checkboxInput("remove_desc",
+                                                "Remove Description Columns",
+                                                value = TRUE)),
+                           column(12,
+                                  checkboxInput("remove_strictly_na",
+                                                "Remove Strictly NA Columns",
+                                                value = TRUE)),
+                           column(12,
+                                  downloadButton("download_rsa",
+                                                 "Download Cleaned RSA-911 Data"))
                          ),
                          tags$hr(style = "margin: 20px 0;"),  # Add larger space
 
                          # Scores Data Upload and Clean Options
                          fluidRow(
-                           column(12, h4("Scores Data Upload and Clean Options")),
-                           column(12, fileInput("scores_data", "Choose Scores Data File(s)", accept = c(".csv"), multiple = TRUE)),
-                           column(12, checkboxInput("aggregate_scores", "Aggregate Data", value = TRUE)),
-                           column(12, downloadButton("download_scores", "Download Cleaned Scores Data"))
+                           column(12,
+                                  h4("Scores Data Upload and Clean Options")),
+                           column(12,
+                                  fileInput("scores_data",
+                                            "Choose Scores Data File(s)",
+                                            accept = c(".csv"),
+                                            multiple = TRUE)),
+                           column(12,
+                                  checkboxInput("aggregate_scores",
+                                                "Aggregate Data",
+                                                value = TRUE)),
+                           column(12,
+                                  downloadButton("download_scores",
+                                                     "Download Cleaned Scores Data"))
                          ),
                          tags$hr(style = "margin: 20px 0;"),  # Add larger space
 
                          # Merge Options
                          fluidRow(
                            column(12, h4("Merge Options")),
-                           column(6, textInput("quarterly_ID", "Quarterly Data ID Column", value = "Participant_ID")),
-                           column(6, textInput("scores_ID", "Scores Data ID Column", value = "Participant.ID")),
-                           column(12, downloadButton("download_merged", "Download Cleaned Merged Data"))
+                           column(6,
+                                  textInput("quarterly_ID",
+                                            "Quarterly Data ID Column",
+                                            value = "Participant_ID")),
+                           column(6,
+                                  textInput("scores_ID",
+                                            "Scores Data ID Column",
+                                            value = "Participant.ID")),
+                           column(12,
+                                  downloadButton("download_merged",
+                                                 "Download Cleaned Merged Data"))
                          ),
                          tags$hr(style = "margin: 20px 0;"),  # Add larger space
 
                          # Metadata Generation
                          fluidRow(
-                           column(12, h4("Metadata Generation")),
-                           column(12, actionButton("generate_metadata", "Generate Metadata")),
-                           column(12, downloadButton("download_metadata", "Download Cleaned Metadata"))
+                           column(12,
+                                  h4("Metadata Generation")),
+                           column(12,
+                                  actionButton("generate_metadata",
+                                               "Generate Metadata")),
+                           column(12,
+                                  downloadButton("download_metadata",
+                                                 "Download Cleaned Metadata"))
                          )
                        ),
 
@@ -87,7 +135,8 @@ ui <- fluidPage(
                            condition = "input.data_choice == 'Upload New Dataset'",
                            fileInput("new_data", "Upload New Dataset",
                                      accept = c(".csv")),
-                           uiOutput("validation_message")
+                           # uiOutput("validation_message"),
+                           uiOutput("data_select_check")
                            # radioButtons("dataset_type", "Select Dataset Type",
                            #              choices = c("RSA-911" = "rsa",
                            #                          "Scores" = "scores",
@@ -99,7 +148,9 @@ ui <- fluidPage(
                        mainPanel(
                          uiOutput("data_ui"),  # Use uiOutput to dynamically render the content
                          DTOutput("table_selected_data"),
-                         verbatimTextOutput("summary_selected_data")
+                         verbatimTextOutput("summary_selected_data"),
+                         uiOutput("validation_message")
+                         # uiOutput("data_select_check")
                        )
               ),
               # tabPanel('Visualizations'),
@@ -389,82 +440,86 @@ server <- function(input, output, session) {
     cat("Number of Columns:", format(n_cols, big.mark = ","), "\n")
   })
 
-  # Render status message
-  output$data_status <- renderText({
-    data <- selected_data()
-    if (is.null(data) && input$data_choice %in% c("Use Cleaned RSA-911 Data", "Use Cleaned Scores Data", "Use Cleaned Merged Data", "Use Generated Metadata")) {
-      return("No data available. Please ensure data has been cleaned or uploaded.")
+
+  output$data_select_check <- renderText({
+    # Ensure new data is uploaded
+    req(input$new_data)
+
+    # Read the uploaded data
+    data <- read.csv(input$new_data$datapath)
+
+    # Check the conditions
+    choice <- input$data_choice
+    dataset_type <- input$dataset_type
+
+    if (choice == "Upload New Dataset") {
+
+      if (dataset_type == "rsa") {
+        # Check for the presence of required variables and absence of excluded variables
+        include_patterns <- "(?i)application|(?i)gender|(?i)sex|(?i)plan|(?i)disability"
+        exclude_patterns <- "(?i)score"
+
+        included_variables <- grep(include_patterns, names(data), value = TRUE, perl = TRUE)
+        excluded_variables <- grep(exclude_patterns, included_variables, value = TRUE, perl = TRUE)
+
+        if (length(included_variables) < 1 || length(excluded_variables) > 0) {
+          return("THIS DOES NOT APPEAR TO BE AN RSA-911 DATASET. Please ensure it is classified correctly and contains RSA-911 variables and no score variables.")
+        }
+      }
+
+      else if (dataset_type == "scores") {
+        # Check for the presence of required variables and absence of excluded variables
+        include_patterns <- "(?i)score"
+        exclude_patterns <- "(?i)application|(?i)gender|(?i)sex|(?i)plan|(?i)disability"
+
+        included_variables <- grep(include_patterns, names(data), value = TRUE, perl = TRUE)
+        excluded_variables <- grep(exclude_patterns, included_variables, value = TRUE, perl = TRUE)
+
+        if (length(included_variables) < 1 || length(excluded_variables) > 0) {
+          return("THIS DOES NOT APPEAR TO BE A SCORES DATASET. Please ensure it is classified correctly and contains score variables and no RSA-911 variables.")
+        }
+      }
+
+      else if (dataset_type == "merged") {
+        # Check for the presence of required variables and absence of excluded variables
+        demo_patterns <- "(?i)application|(?i)gender|(?i)sex|(?i)plan|(?i)disability"
+        score_patterns <- "(?i)score"
+
+        demo_variables <- grep(demo_patterns, names(data), value = TRUE, perl = TRUE)
+        score_variables <- grep(score_patterns, names(data), value = TRUE, perl = TRUE)
+
+        if (length(demo_variables) < 1 || length(score_variables) < 1) {
+          return("THIS DOES NOT APPEAR TO BE A MERGED DATASET. Please ensure it is classified correctly and contains BOTH RSA-911 variables and score variables.")
+        }
+      }
+
+      else if (dataset_type == "metadata") {
+        # Check for the presence of required variables and absence of excluded variables
+        demo_patterns <- "(?i)application|(?i)gender|(?i)sex|(?i)plan|(?i)disability"
+        score_patterns <- "(?i)score"
+
+        demo_variables <- grep(demo_patterns, names(data), value = TRUE,
+                               perl = TRUE)
+        score_variables <- grep(score_patterns, names(data), value = TRUE,
+                                perl = TRUE)
+
+        participant_variable <- grep("(?i)participant|(?i)_ID", names(data), value = TRUE,
+                             perl = TRUE)
+
+        participants <- data[, participant_variable]
+
+        if ((length(demo_variables) < 1 || length(score_variables) < 1)) {
+          return("THIS DOES NOT APPEAR TO BE A METADATA DATASET. Please ensure it is classified correctly and contains BOTH RSA-911 variables and score variables.")
+        }
+        if (length(participants) != length(unique(participants))) {
+          return("THIS DOES NOT APPEAR TO BE A METADATA DATASET. Please ensure it is classified correctly and contains only one row per participant.")
+        }
+      }
+
     }
-    return(NULL)
+
+
   })
-
-  # output$data_select_check <- renderText({
-  #   data <- selected_data()
-  #   choice <- input$data_choice
-  #   dataset_type <- input$dataset_type
-  #   if (choice == "Upload New Data" && dataset_type == "rsa"){
-  #     return("No data available. Please ensure data has been cleaned or uploaded.")
-  #   }
-  #   return(NULL)
-  # })
-
-  # Render visualization options UI
-  # output$visualization_ui <- renderUI({
-  #   if (input$visualization_choice == "Enrollment Length Histogram") {
-  #     plotOutput("histogram_enrollment_length")
-  #   } else {
-  #     NULL
-  #   }
-  # })
-
-  # Render the UI for visualization options
-  # output$visualization_ui <- renderUI({
-  #   if (input$data_choice %in% c("Use Cleaned Merged Data", "Use Generated Metadata")) {
-  #     switch(input$visualization_choice,
-  #            "Demographics" = plotOutput("plot_demographics"),
-  #            "Trends Across Grade Level" = plotOutput("plot_trends_grade_level"),
-  #            "Trends Over Time" = plotOutput("plot_trends_over_time"),
-  #            NULL)
-  #   } else {
-  #     if (input$visualization_choice == "Demographics") {
-  #       # plotOutput("histogram_enrollment_length")
-  #     } else if (input$visualization_choice == "Trends Across Grade Level ") {
-  #
-  #     } else if () {
-  #
-  #     } else {
-  #       NULL
-  #     }
-  #   }
-  # })
-
-  # Render histogram for enrollment length
-  # output$histogram_enrollment_length <- renderPlot({
-  #   data <- selected_data()
-  #   if (is.null(data)) {
-  #     return()
-  #   }
-  #   if ("Participant_ID" %in% colnames(data)) {
-  #     # Ensure the enrollment length column exists
-  #     if ("Enroll_Length" %in% colnames(data)) {
-  #       ggplot(data, aes(x = Enroll_Length)) +
-  #         geom_histogram(binwidth = 1, fill = "blue", color = "black") +
-  #         labs(title = "Histogram of Enrollment Length",
-  #              x = "Enrollment Length", y = "Frequency")
-  #     } else {
-  #       ggplot() +
-  #         labs(title = "No Enrollment Length Data", x = "", y = "") +
-  #         geom_text(aes(x = 1, y = 1,
-  #                       label = "Enrollment Length column not found"),
-  #                   size = 5, color = "red")
-  #     }
-  #   } else {
-  #     ggplot() +
-  #       labs(title = "Invalid Data Type", x = "", y = "") +
-  #       geom_text(aes(x = 1, y = 1, label = "Data is not RSA-911"),
-  #                 size = 5, color = "red")
-  #   }
-  # })
 
 
 }
