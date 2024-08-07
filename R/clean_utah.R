@@ -1,5 +1,4 @@
 library(data.table)
-library(tidyverse)
 
 clean_utah <- function(data,
                        aggregate = FALSE,
@@ -293,39 +292,27 @@ clean_utah <- function(data,
   data[, (factor_cols) := lapply(.SD, as.factor), .SDcols = factor_cols]
 
   # DATA AGGREGATION
-  if (aggregate == TRUE){
-    data <- data |>
-      filter(!is.na(E7_Application_Date_911)) |>
-      group_by(Participant_ID, E1_Year_911, E2_Quarter_911) |>
-      mutate(Occurrences_Per_Quarter = n()) |>
-      arrange(E7_Application_Date_911) |>
-      slice(1) |>
-      ungroup()
+  if (aggregate) {
+    data <- data[!is.na(E7_Application_Date_911)]
+    # Order the data by Participant_ID, E1_Year_911, E2_Quarter_911, and E7_Application_Date_911
+    setorder(data, Participant_ID, E1_Year_911, E2_Quarter_911, -E7_Application_Date_911)
+
+    # Create a helper column to identify the first occurrence within each group
+    data[, Occurrences_Per_Quarter := .N, by = .(Participant_ID, E1_Year_911, E2_Quarter_911)]
+    data <- data[, .SD[1], by = .(Participant_ID, E1_Year_911, E2_Quarter_911)]
+
+    # Sort by year and quarter
+    setorder(data, E1_Year_911, E2_Quarter_911)
   }
 
-  # if (aggregate == TRUE){
-  #   data <- data[!is.na(E7_Application_Date_911),
-  #                .(Occurrences_Per_Quarter = .N),
-  #                by = .(Participant_ID, E1_Year_911, E2_Quarter_911)
-  #                ][order(E7_Application_Date_911)
-  #                  ][, .SD[1], by = .(Participant_ID, E1_Year_911,
-  #                                     E2_Quarter_911)]
-  # }
-
-
-  if (remove_strictly_na == TRUE){
-    data <- data |>
-      select(where(~ !all(is.na(.))))
+  # REMOVE COLUMNS WITH ONLY NAs
+  if (remove_strictly_na){
+    data <- data[, which(unlist(lapply(data, function(x)!all(is.na(x))))),
+                 with = FALSE]
   }
-
-
-
-  data <- data |>
-    arrange(E1_Year_911, E2_Quarter_911)
 
   # return the cleaned dataset
   return(data)
 
 }
-
 
