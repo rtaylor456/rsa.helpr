@@ -324,3 +324,75 @@ output$data_select_check <- renderDT({
 #
 # })
 
+
+# # Reactive expression to handle selected data
+# selected_data <- reactive({
+#   if (input$data_choice == "Upload New Dataset") {
+#
+#     # req(input$scores_data)
+#     req(input$new_data, input$dataset_type)
+#
+#     # file_paths <- input$scores_data$datapath
+#     file_paths <- input$new_data$datapath
+#
+#     # file_types <- tools::file_ext(input$scores_data$name)
+#     file_types <- tools::file_ext(input$new_data$name)
+#
+#     # df_scores_list <- mapply(function(path, type) {
+#     #   if (type == "csv") {
+#     #     read.csv(path, stringsAsFactors = FALSE, row.names = NULL)
+#     #   } else {
+#     #     read_excel(path)
+#     #   }
+#     # }, file_paths, file_types, SIMPLIFY = FALSE)
+#
+#     df_new_data_list <- mapply(function(path, type) {
+#       if (type == "csv") {
+#         read.csv(path, stringsAsFactors = FALSE, row.names = NULL)
+#       } else {
+#         read_excel(path)
+#       }
+#     }, file_paths, file_types, SIMPLIFY = FALSE)
+#
+#
+#
+#     # df_scores_list <- lapply(input$scores_data$datapath, read.csv)
+#
+#     # df_scores_combined <- do.call(rbind, df_scores_list)
+#     df_new_data_combined <- do.call(rbind, df_new_data_list)
+#
+#
+#     # req(input$new_data, input$dataset_type)
+#     # new_data <- read.csv(input$new_data$datapath)
+#
+#     # Store the new dataset based on the selected type
+#     # rv$new_data <- new_data
+#     rv$new_data <- df_new_data_combined
+#
+#     rv$dataset_type <- input$dataset_type
+#
+#     # return(new_data)
+#     return(df_new_data_combined)
+#
+#   } else {
+#     # Clear the new data when switching to cleaned data sources
+#     rv$new_data <- NULL
+#     rv$dataset_type <- NULL
+#
+#     # Check if data is available based on the selected choice
+#     if (input$data_choice == "Use Cleaned RSA-911 Data" && is.null(rv$rsa_data_cleaned)) {
+#       return(NULL)
+#     } else if (input$data_choice == "Use Cleaned Scores Data" && is.null(rv$scores_data_cleaned)) {
+#       return(NULL)
+#     } else if (input$data_choice == "Use Cleaned Merged Data" && is.null(rv$merged_data)) {
+#       return(NULL)
+#     } else if (input$data_choice == "Use Generated Metadata" && is.null(rv$metadata)) {
+#       return(NULL)
+#     }
+#     return(switch(input$data_choice,
+#                   "Use Cleaned RSA-911 Data" = rv$rsa_data_cleaned,
+#                   "Use Cleaned Scores Data" = rv$scores_data_cleaned,
+#                   "Use Cleaned Merged Data" = rv$merged_data,
+#                   "Use Generated Metadata" = rv$metadata))
+#   }
+# })

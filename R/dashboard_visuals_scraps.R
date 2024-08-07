@@ -201,3 +201,83 @@ output$visualization_ui <- renderUI({
   )
 })
 
+
+################################################################################
+# sidebarPanel(
+#   h4("Visualization Options"),
+#   selectInput("visualization_choice",
+#               "Select Visualization",
+#               choices = c(" ",
+#                           "Demographics",
+#                           "Trends Across Grade Level",
+#                           "Trends Over Time"))
+# ),
+# conditionalPanel(
+#   condition = "input.data_choice == 'Use Cleaned RSA-911 Data'",
+#   h4("Visualization Options"),
+#   selectInput("visualization_choice",
+#               "Select Visualization",
+#               choices = c(" ",
+#                           "Demographics",
+#                           "Trends Across Grade Level",
+#                           "Trends Over Time"))
+# ),
+
+
+# Render UI conditionally based on dataset type
+# output$visualization_ui <- renderUI({
+#   dataset_type <- input$dataset_type
+#   if (dataset_type == "rsa-911") {
+#     fluidPage(
+#       # Directly create visuals and captions for rsa-911 type
+#       plotOutput("rsa911_plot1"),
+#       # plotOutput("rsa911_plot2"),
+#       # Add other visuals and captions as needed
+#     )
+#   } else {
+#     fluidPage(
+#       selectInput("visualization_type", "Select Visualization",
+#                   choices = c("Demographics", "Trends Across Grade Level", "Trends Over Time")),
+#       uiOutput("visualizations_ui")
+#     )
+#   }
+# })
+
+output$visualization_ui <- renderUI({
+  req(input$data_choice)
+  req(input$dataset_type)
+
+
+  switch(input$data_choice,
+         "Use Generated Metadata" = {
+           hist(iris$Sepal.Length)
+         },
+         "Use Cleaned RSA-911 Data" = {
+           # Insert UI elements for RSA-911 data visualizations
+         },
+         "Use Cleaned Scores Data" = {
+           # Insert UI elements for scores data visualizations
+         },
+         "Use Cleaned Merged Data" = {
+           # Insert UI elements for merged data visualizations
+         },
+         "Upload New Dataset" = {
+           # Insert UI elements for new dataset visualizations
+         }
+  )
+})
+
+
+# Render the visuals for rsa-911 type
+output$rsa911_plot1 <- renderPlot({
+  rsa <- read_and_clean_rsa_data()
+  barplot(table(rsa$E9_Gender_911))
+})
+
+
+# output$rsa911_plot2 <- renderPlot({
+#   # Add code to generate the second plot for rsa-911
+# })
+
+
+

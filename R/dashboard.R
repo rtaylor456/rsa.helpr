@@ -155,17 +155,8 @@ ui <- fluidPage(
               ),
               # tabPanel('Visualizations'),
               tabPanel('Visualizations',
-                       # sidebarPanel(
-                       #   h4("Visualization Options"),
-                       #   selectInput("visualization_choice",
-                       #               "Select Visualization",
-                       #               choices = c(" ",
-                       #                           "Demographics",
-                       #                           "Trends Across Grade Level",
-                       #                           "Trends Over Time"))
-                       # ),
                        mainPanel(
-                         uiOutput("visualization_ui")
+                         uiOutput("visuals_ui")
                        )
               ),
 
@@ -189,7 +180,8 @@ server <- function(input, output, session) {
   # Helper function to read and combine multiple files
   read_and_combine_files <- function(file_paths, file_type) {
     if (file_type == "csv") {
-      df_list <- lapply(file_paths, read.csv, stringsAsFactors = FALSE, row.names = NULL)
+      df_list <- lapply(file_paths, read.csv,
+                        stringsAsFactors = FALSE, row.names = NULL)
     } else if (file_type == "xlsx") {
       df_list <- lapply(file_paths, read_excel)
     }
@@ -399,78 +391,6 @@ server <- function(input, output, session) {
     }
   )
 
-  # # Reactive expression to handle selected data
-  # selected_data <- reactive({
-  #   if (input$data_choice == "Upload New Dataset") {
-  #
-  #     # req(input$scores_data)
-  #     req(input$new_data, input$dataset_type)
-  #
-  #     # file_paths <- input$scores_data$datapath
-  #     file_paths <- input$new_data$datapath
-  #
-  #     # file_types <- tools::file_ext(input$scores_data$name)
-  #     file_types <- tools::file_ext(input$new_data$name)
-  #
-  #     # df_scores_list <- mapply(function(path, type) {
-  #     #   if (type == "csv") {
-  #     #     read.csv(path, stringsAsFactors = FALSE, row.names = NULL)
-  #     #   } else {
-  #     #     read_excel(path)
-  #     #   }
-  #     # }, file_paths, file_types, SIMPLIFY = FALSE)
-  #
-  #     df_new_data_list <- mapply(function(path, type) {
-  #       if (type == "csv") {
-  #         read.csv(path, stringsAsFactors = FALSE, row.names = NULL)
-  #       } else {
-  #         read_excel(path)
-  #       }
-  #     }, file_paths, file_types, SIMPLIFY = FALSE)
-  #
-  #
-  #
-  #     # df_scores_list <- lapply(input$scores_data$datapath, read.csv)
-  #
-  #     # df_scores_combined <- do.call(rbind, df_scores_list)
-  #     df_new_data_combined <- do.call(rbind, df_new_data_list)
-  #
-  #
-  #     # req(input$new_data, input$dataset_type)
-  #     # new_data <- read.csv(input$new_data$datapath)
-  #
-  #     # Store the new dataset based on the selected type
-  #     # rv$new_data <- new_data
-  #     rv$new_data <- df_new_data_combined
-  #
-  #     rv$dataset_type <- input$dataset_type
-  #
-  #     # return(new_data)
-  #     return(df_new_data_combined)
-  #
-  #   } else {
-  #     # Clear the new data when switching to cleaned data sources
-  #     rv$new_data <- NULL
-  #     rv$dataset_type <- NULL
-  #
-  #     # Check if data is available based on the selected choice
-  #     if (input$data_choice == "Use Cleaned RSA-911 Data" && is.null(rv$rsa_data_cleaned)) {
-  #       return(NULL)
-  #     } else if (input$data_choice == "Use Cleaned Scores Data" && is.null(rv$scores_data_cleaned)) {
-  #       return(NULL)
-  #     } else if (input$data_choice == "Use Cleaned Merged Data" && is.null(rv$merged_data)) {
-  #       return(NULL)
-  #     } else if (input$data_choice == "Use Generated Metadata" && is.null(rv$metadata)) {
-  #       return(NULL)
-  #     }
-  #     return(switch(input$data_choice,
-  #                   "Use Cleaned RSA-911 Data" = rv$rsa_data_cleaned,
-  #                   "Use Cleaned Scores Data" = rv$scores_data_cleaned,
-  #                   "Use Cleaned Merged Data" = rv$merged_data,
-  #                   "Use Generated Metadata" = rv$metadata))
-  #   }
-  # })
-
   # Reactive expression to handle selected data
   selected_data <- reactive({
     if (input$data_choice == "Upload New Dataset") {
@@ -655,35 +575,86 @@ server <- function(input, output, session) {
     }
   })
 
-  # Render UI conditionally based on dataset type
-  output$visualization_ui <- renderUI({
+  ## VISUALS
+  output$visuals_ui <- renderUI({
+    req(input$new_data)
+    data_choice <- input$data_choice
     dataset_type <- input$dataset_type
-    if (dataset_type == "rsa-911") {
-      fluidPage(
-        # Directly create visuals and captions for rsa-911 type
-        plotOutput("rsa911_plot1"),
-        # plotOutput("rsa911_plot2"),
-        # Add other visuals and captions as needed
+
+    if ((data_choice == "Use Cleaned RSA-911 Data") || (data_choice == "Upload New Dataset" && dataset_type == "rsa")) {
+      tabsetPanel(
+        tabPanel("Demographics",
+                 plotOutput("demographics_plot1"), plotOutput("demographics_plot2"),
+                 plotOutput("demographics_plot3"), plotOutput("demographics_plot4")),
+        tabPanel("Enrollment Length",
+                 plotOutput("enrollment_plot1"), plotOutput("enrollment_plot2"),
+                 plotOutput("enrollment_plot3"))
       )
-    } else {
-      fluidPage(
-        selectInput("visualization_type", "Select Visualization",
-                    choices = c("Demographics", "Trends Across Grade Level", "Trends Over Time")),
-        uiOutput("visualizations_ui")
+    } else if ((data_choice == "Use Cleaned Scores Data") || (data_choice == "Upload New Dataset" && dataset_type == "scores")) {
+      tabsetPanel(
+        tabPanel("Across Services",
+                 plotOutput("services_plot1"), plotOutput("services_plot2")),
+        tabPanel("Across Providers",
+                 plotOutput("providers_plot1"), plotOutput("providers_plot2"))
+      )
+    } else if ((data_choice == "Use Cleaned Merged Data") || (data_choice == "Upload New Dataset" && dataset_type == "merged")) {
+      tabsetPanel(
+        tabPanel("General Demographics",
+                 plotOutput("gen_demo_plot1"), plotOutput("gen_demo_plot2"),
+                 plotOutput("gen_demo_plot3"), plotOutput("gen_demo_plot4"), plotOutput("gen_demo_plot5")),
+        tabPanel("Demographics & Scores",
+                 plotOutput("demo_scores_plot1"), plotOutput("demo_scores_plot2"),
+                 plotOutput("demo_scores_plot3"), plotOutput("demo_scores_plot4"),
+                 plotOutput("demo_scores_plot5"), plotOutput("demo_scores_plot6"))
+      )
+    }  else if ((data_choice == "Use Generated Metadata") || (data_choice == "Upload New Dataset" && dataset_type == "metadata")) {
+      tabsetPanel(
+        tabPanel("General Demographics",
+                 plotOutput("meta_gen_demo_plot1"), plotOutput("meta_gen_demo_plot2"),
+                 plotOutput("meta_gen_demo_plot3"), plotOutput("meta_gen_demo_plot4"), plotOutput("meta_gen_demo_plot5")),
+        tabPanel("Demographics & Scores",
+                 plotOutput("meta_demo_scores_plot1"), plotOutput("meta_demo_scores_plot2"),
+                 plotOutput("meta_demo_scores_plot3"), plotOutput("meta_demo_scores_plot4"),
+                 plotOutput("meta_demo_scores_plot5"), plotOutput("meta_demo_scores_plot6"))
       )
     }
   })
 
-  # Render the visuals for rsa-911 type
-  output$rsa911_plot1 <- renderPlot({
-    rsa <- read_and_clean_rsa_data()
-    barplot(table(rsa$E9_Gender_911))
-  })
 
-
-  # output$rsa911_plot2 <- renderPlot({
-  #   # Add code to generate the second plot for rsa-911
-  # })
+  # Example plots (replace with actual plot generation logic)
+  output$demographics_plot1 <- renderPlot({ plot(rnorm(100)) })
+  output$demographics_plot2 <- renderPlot({ plot(rnorm(100)) })
+  output$demographics_plot3 <- renderPlot({ plot(rnorm(100)) })
+  output$demographics_plot4 <- renderPlot({ plot(rnorm(100)) })
+  output$enrollment_plot1 <- renderPlot({ plot(rnorm(100)) })
+  output$enrollment_plot2 <- renderPlot({ plot(rnorm(100)) })
+  output$enrollment_plot3 <- renderPlot({ plot(rnorm(100)) })
+  output$services_plot1 <- renderPlot({ plot(rnorm(100)) })
+  output$services_plot2 <- renderPlot({ plot(rnorm(100)) })
+  output$providers_plot1 <- renderPlot({ plot(rnorm(100)) })
+  output$providers_plot2 <- renderPlot({ plot(rnorm(100)) })
+  output$gen_demo_plot1 <- renderPlot({ plot(rnorm(100)) })
+  output$gen_demo_plot2 <- renderPlot({ plot(rnorm(100)) })
+  output$gen_demo_plot3 <- renderPlot({ plot(rnorm(100)) })
+  output$gen_demo_plot4 <- renderPlot({ plot(rnorm(100)) })
+  output$gen_demo_plot5 <- renderPlot({ plot(rnorm(100)) })
+  output$demo_scores_plot1 <- renderPlot({ plot(rnorm(100)) })
+  output$demo_scores_plot2 <- renderPlot({ plot(rnorm(100)) })
+  output$demo_scores_plot3 <- renderPlot({ plot(rnorm(100)) })
+  output$demo_scores_plot4 <- renderPlot({ plot(rnorm(100)) })
+  output$demo_scores_plot5 <- renderPlot({ plot(rnorm(100)) })
+  output$demo_scores_plot6 <- renderPlot({ plot(rnorm(100)) })
+  output$meta_gen_demo_plot1 <- renderPlot({ plot(rnorm(100)) })
+  output$meta_gen_demo_plot2 <- renderPlot({ plot(rnorm(100)) })
+  output$meta_gen_demo_plot3 <- renderPlot({ plot(rnorm(100)) })
+  output$meta_gen_demo_plot4 <- renderPlot({ plot(rnorm(100)) })
+  output$meta_gen_demo_plot5 <- renderPlot({ plot(rnorm(100)) })
+  output$meta_demo_scores_plot1 <- renderPlot({ plot(rnorm(100)) })
+  output$meta_demo_scores_plot2 <- renderPlot({ plot(rnorm(100)) })
+  output$meta_demo_scores_plot3 <- renderPlot({ plot(rnorm(100)) })
+  output$meta_demo_scores_plot4 <- renderPlot({ plot(rnorm(100)) })
+  output$meta_demo_scores_plot5 <- renderPlot({ plot(rnorm(100)) })
+  output$meta_demo_scores_plot6 <- renderPlot({ plot(rnorm(100)) })
 
 }
 
