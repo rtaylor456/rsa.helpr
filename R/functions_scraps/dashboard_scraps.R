@@ -213,32 +213,32 @@ output$data_select_check <- renderDT({
 # })
 
 # Render histogram for enrollment length
-# output$histogram_enrollment_length <- renderPlot({
-#   data <- selected_data()
-#   if (is.null(data)) {
-#     return()
-#   }
-#   if ("Participant_ID" %in% colnames(data)) {
-#     # Ensure the enrollment length column exists
-#     if ("Enroll_Length" %in% colnames(data)) {
-#       ggplot(data, aes(x = Enroll_Length)) +
-#         geom_histogram(binwidth = 1, fill = "blue", color = "black") +
-#         labs(title = "Histogram of Enrollment Length",
-#              x = "Enrollment Length", y = "Frequency")
-#     } else {
-#       ggplot() +
-#         labs(title = "No Enrollment Length Data", x = "", y = "") +
-#         geom_text(aes(x = 1, y = 1,
-#                       label = "Enrollment Length column not found"),
-#                   size = 5, color = "red")
-#     }
-#   } else {
-#     ggplot() +
-#       labs(title = "Invalid Data Type", x = "", y = "") +
-#       geom_text(aes(x = 1, y = 1, label = "Data is not RSA-911"),
-#                 size = 5, color = "red")
-#   }
-# })
+output$histogram_enrollment_length <- renderPlot({
+  data <- selected_data()
+  if (is.null(data)) {
+    return()
+  }
+  if ("Participant_ID" %in% colnames(data)) {
+    # Ensure the enrollment length column exists
+    if ("Enroll_Length" %in% colnames(data)) {
+      ggplot(data, aes(x = Enroll_Length)) +
+        geom_histogram(binwidth = 1, fill = "blue", color = "black") +
+        labs(title = "Histogram of Enrollment Length",
+             x = "Enrollment Length", y = "Frequency")
+    } else {
+      ggplot() +
+        labs(title = "No Enrollment Length Data", x = "", y = "") +
+        geom_text(aes(x = 1, y = 1,
+                      label = "Enrollment Length column not found"),
+                  size = 5, color = "red")
+    }
+  } else {
+    ggplot() +
+      labs(title = "Invalid Data Type", x = "", y = "") +
+      geom_text(aes(x = 1, y = 1, label = "Data is not RSA-911"),
+                size = 5, color = "red")
+  }
+})
 
 
 

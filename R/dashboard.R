@@ -174,7 +174,8 @@ server <- function(input, output, session) {
     merged_data = NULL,
     metadata = NULL,
     new_data = NULL,
-    dataset_type = NULL
+    dataset_type = NULL,
+    selected_data = NULL
   )
 
   # Helper function to read and combine multiple files
@@ -393,7 +394,19 @@ server <- function(input, output, session) {
 
   # Reactive expression to handle selected data
   selected_data <- reactive({
-    if (input$data_choice == "Upload New Dataset") {
+    if (input$data_choice == "Use Generated Metadata"){
+      return(rv$metadata)
+
+    } else if (input$data_choice == "Use Cleaned RSA-911 Data"){
+      return(rv$rsa_data_cleaned)
+
+    } else if (input$data_choice == "Use Cleaned Scores Data") {
+      return(rv$scores_data_cleaned)
+
+    } else if (input$data_choice == "Use Cleaned Merged Data") {
+      return(rv$merged_data)
+
+    } else if (input$data_choice == "Upload New Dataset") {
       req(input$new_data, input$dataset_type)
 
       # Read the first file
@@ -410,7 +423,8 @@ server <- function(input, output, session) {
       rv$new_data <- df_new_data
       rv$dataset_type <- input$dataset_type
 
-      return(df_new_data)
+      # return(df_new_data)
+      return(rv$new_data)
 
     } else {
       # Clear the new data when switching to cleaned data sources
@@ -581,6 +595,10 @@ server <- function(input, output, session) {
     data_choice <- input$data_choice
     dataset_type <- input$dataset_type
 
+    # Print debugging information
+    print(paste("Data Choice:", data_choice))
+    print(paste("Dataset Type:", dataset_type))
+
     if ((data_choice == "Use Cleaned RSA-911 Data") || (data_choice == "Upload New Dataset" && dataset_type == "rsa")) {
       tabsetPanel(
         tabPanel("Demographics",
@@ -621,34 +639,51 @@ server <- function(input, output, session) {
   })
 
 
-  # Example plots (replace with actual plot generation logic)
+  ## RSA-911 plots
   output$demographics_plot1 <- renderPlot({ plot(rnorm(100)) })
   output$demographics_plot2 <- renderPlot({ plot(rnorm(100)) })
   output$demographics_plot3 <- renderPlot({ plot(rnorm(100)) })
   output$demographics_plot4 <- renderPlot({ plot(rnorm(100)) })
+
   output$enrollment_plot1 <- renderPlot({ plot(rnorm(100)) })
   output$enrollment_plot2 <- renderPlot({ plot(rnorm(100)) })
   output$enrollment_plot3 <- renderPlot({ plot(rnorm(100)) })
+
+  ## SCORES plots
   output$services_plot1 <- renderPlot({ plot(rnorm(100)) })
+  # output$services_plot1 <- renderPlot({
+  # })
   output$services_plot2 <- renderPlot({ plot(rnorm(100)) })
+
   output$providers_plot1 <- renderPlot({ plot(rnorm(100)) })
   output$providers_plot2 <- renderPlot({ plot(rnorm(100)) })
+
+  ## MERGED plots
   output$gen_demo_plot1 <- renderPlot({ plot(rnorm(100)) })
   output$gen_demo_plot2 <- renderPlot({ plot(rnorm(100)) })
   output$gen_demo_plot3 <- renderPlot({ plot(rnorm(100)) })
   output$gen_demo_plot4 <- renderPlot({ plot(rnorm(100)) })
   output$gen_demo_plot5 <- renderPlot({ plot(rnorm(100)) })
+
   output$demo_scores_plot1 <- renderPlot({ plot(rnorm(100)) })
   output$demo_scores_plot2 <- renderPlot({ plot(rnorm(100)) })
   output$demo_scores_plot3 <- renderPlot({ plot(rnorm(100)) })
   output$demo_scores_plot4 <- renderPlot({ plot(rnorm(100)) })
   output$demo_scores_plot5 <- renderPlot({ plot(rnorm(100)) })
   output$demo_scores_plot6 <- renderPlot({ plot(rnorm(100)) })
+
+  ## METADATA plots
   output$meta_gen_demo_plot1 <- renderPlot({ plot(rnorm(100)) })
+  # output$meta_gen_demo_plot1 <- renderPlot({
+  #   data <- input$new_data
+  #   hist(data$Enroll_Length)
+  #   })
+
   output$meta_gen_demo_plot2 <- renderPlot({ plot(rnorm(100)) })
   output$meta_gen_demo_plot3 <- renderPlot({ plot(rnorm(100)) })
   output$meta_gen_demo_plot4 <- renderPlot({ plot(rnorm(100)) })
   output$meta_gen_demo_plot5 <- renderPlot({ plot(rnorm(100)) })
+
   output$meta_demo_scores_plot1 <- renderPlot({ plot(rnorm(100)) })
   output$meta_demo_scores_plot2 <- renderPlot({ plot(rnorm(100)) })
   output$meta_demo_scores_plot3 <- renderPlot({ plot(rnorm(100)) })
