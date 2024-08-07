@@ -1,7 +1,7 @@
 library(shiny)
 library(DT)
 library(data.table)
-library(tidyverse)
+library(readxl)
 
 options(shiny.maxRequestSize = 1000 * 1024^2)  # 500MB
 
@@ -21,7 +21,7 @@ ui <- fluidPage(
                            column(12,
                                   fileInput("rsa_data",
                                             "Choose RSA-911 File(s)",
-                                            accept = c(".csv"),
+                                            accept = c(".csv", ".xlsx"),
                                             multiple = TRUE)),
                            column(12,
                                   checkboxInput("aggregate_utah",
@@ -59,7 +59,7 @@ ui <- fluidPage(
                            column(12,
                                   fileInput("scores_data",
                                             "Choose Scores Data File(s)",
-                                            accept = c(".csv"),
+                                            accept = c(".csv", ".xlsx"),
                                             multiple = TRUE)),
                            column(12,
                                   checkboxInput("aggregate_scores",
@@ -134,7 +134,7 @@ ui <- fluidPage(
                          conditionalPanel(
                            condition = "input.data_choice == 'Upload New Dataset'",
                            fileInput("new_data", "Upload New Dataset",
-                                     accept = c(".csv")),
+                                     accept = c(".csv", ".xlsx")),
                            # uiOutput("validation_message"),
                            uiOutput("data_select_check")
                            # radioButtons("dataset_type", "Select Dataset Type",
@@ -155,15 +155,15 @@ ui <- fluidPage(
               ),
               # tabPanel('Visualizations'),
               tabPanel('Visualizations',
-                       sidebarPanel(
-                         h4("Visualization Options"),
-                         selectInput("visualization_choice",
-                                     "Select Visualization",
-                                     choices = c(" ",
-                                                 "Demographics",
-                                                 "Trends Across Grade Level",
-                                                 "Trends Over Time"))
-                       ),
+                       # sidebarPanel(
+                       #   h4("Visualization Options"),
+                       #   selectInput("visualization_choice",
+                       #               "Select Visualization",
+                       #               choices = c(" ",
+                       #                           "Demographics",
+                       #                           "Trends Across Grade Level",
+                       #                           "Trends Over Time"))
+                       # ),
                        mainPanel(
                          uiOutput("visualization_ui")
                        )
@@ -186,10 +186,35 @@ server <- function(input, output, session) {
     dataset_type = NULL
   )
 
+  # Helper function to read and combine multiple files
+  read_and_combine_files <- function(file_paths, file_type) {
+    if (file_type == "csv") {
+      df_list <- lapply(file_paths, read.csv, stringsAsFactors = FALSE, row.names = NULL)
+    } else if (file_type == "xlsx") {
+      df_list <- lapply(file_paths, read_excel)
+    }
+    df_combined <- do.call(rbind, df_list)
+    return(df_combined)
+  }
+
+
   # Function to read and clean RSA-911 CSV files
   read_and_clean_rsa_data <- reactive({
     req(input$rsa_data)
-    df_list <- lapply(input$rsa_data$datapath, read.csv)
+
+    file_paths <- input$rsa_data$datapath
+    file_types <- tools::file_ext(input$rsa_data$name)
+
+    df_list <- mapply(function(path, type) {
+      if (type == "csv") {
+        read.csv(path, stringsAsFactors = FALSE, row.names = NULL)
+      } else {
+        read_excel(path)
+      }
+    }, file_paths, file_types, SIMPLIFY = FALSE)
+
+    # df_list <- lapply(input$rsa_data$datapath, read.csv)
+
     df_combined <- do.call(rbind, df_list)
     df_cleaned <- clean_utah(df_combined,
                              aggregate = input$aggregate_utah,
@@ -205,7 +230,20 @@ server <- function(input, output, session) {
   # Function to read and clean scores data files
   read_and_clean_scores_data <- reactive({
     req(input$scores_data)
-    df_scores_list <- lapply(input$scores_data$datapath, read.csv)
+    file_paths <- input$scores_data$datapath
+    file_types <- tools::file_ext(input$scores_data$name)
+
+    df_scores_list <- mapply(function(path, type) {
+      if (type == "csv") {
+        read.csv(path, stringsAsFactors = FALSE, row.names = NULL)
+      } else {
+        read_excel(path, row.names = NULL)
+      }
+    }, file_paths, file_types, SIMPLIFY = FALSE)
+
+
+    # df_scores_list <- lapply(input$scores_data$datapath, read.csv)
+
     df_scores_combined <- do.call(rbind, df_scores_list)
     cleaned_scores <- clean_scores(df_scores_combined,
                                    aggregate = input$aggregate_scores)
@@ -361,17 +399,99 @@ server <- function(input, output, session) {
     }
   )
 
+  # # Reactive expression to handle selected data
+  # selected_data <- reactive({
+  #   if (input$data_choice == "Upload New Dataset") {
+  #
+  #     # req(input$scores_data)
+  #     req(input$new_data, input$dataset_type)
+  #
+  #     # file_paths <- input$scores_data$datapath
+  #     file_paths <- input$new_data$datapath
+  #
+  #     # file_types <- tools::file_ext(input$scores_data$name)
+  #     file_types <- tools::file_ext(input$new_data$name)
+  #
+  #     # df_scores_list <- mapply(function(path, type) {
+  #     #   if (type == "csv") {
+  #     #     read.csv(path, stringsAsFactors = FALSE, row.names = NULL)
+  #     #   } else {
+  #     #     read_excel(path)
+  #     #   }
+  #     # }, file_paths, file_types, SIMPLIFY = FALSE)
+  #
+  #     df_new_data_list <- mapply(function(path, type) {
+  #       if (type == "csv") {
+  #         read.csv(path, stringsAsFactors = FALSE, row.names = NULL)
+  #       } else {
+  #         read_excel(path)
+  #       }
+  #     }, file_paths, file_types, SIMPLIFY = FALSE)
+  #
+  #
+  #
+  #     # df_scores_list <- lapply(input$scores_data$datapath, read.csv)
+  #
+  #     # df_scores_combined <- do.call(rbind, df_scores_list)
+  #     df_new_data_combined <- do.call(rbind, df_new_data_list)
+  #
+  #
+  #     # req(input$new_data, input$dataset_type)
+  #     # new_data <- read.csv(input$new_data$datapath)
+  #
+  #     # Store the new dataset based on the selected type
+  #     # rv$new_data <- new_data
+  #     rv$new_data <- df_new_data_combined
+  #
+  #     rv$dataset_type <- input$dataset_type
+  #
+  #     # return(new_data)
+  #     return(df_new_data_combined)
+  #
+  #   } else {
+  #     # Clear the new data when switching to cleaned data sources
+  #     rv$new_data <- NULL
+  #     rv$dataset_type <- NULL
+  #
+  #     # Check if data is available based on the selected choice
+  #     if (input$data_choice == "Use Cleaned RSA-911 Data" && is.null(rv$rsa_data_cleaned)) {
+  #       return(NULL)
+  #     } else if (input$data_choice == "Use Cleaned Scores Data" && is.null(rv$scores_data_cleaned)) {
+  #       return(NULL)
+  #     } else if (input$data_choice == "Use Cleaned Merged Data" && is.null(rv$merged_data)) {
+  #       return(NULL)
+  #     } else if (input$data_choice == "Use Generated Metadata" && is.null(rv$metadata)) {
+  #       return(NULL)
+  #     }
+  #     return(switch(input$data_choice,
+  #                   "Use Cleaned RSA-911 Data" = rv$rsa_data_cleaned,
+  #                   "Use Cleaned Scores Data" = rv$scores_data_cleaned,
+  #                   "Use Cleaned Merged Data" = rv$merged_data,
+  #                   "Use Generated Metadata" = rv$metadata))
+  #   }
+  # })
+
   # Reactive expression to handle selected data
   selected_data <- reactive({
     if (input$data_choice == "Upload New Dataset") {
       req(input$new_data, input$dataset_type)
-      new_data <- read.csv(input$new_data$datapath)
+
+      # Read the first file
+      file_path <- input$new_data$datapath
+      file_type <- tools::file_ext(input$new_data$name)
+
+      df_new_data <- if (file_type == "csv") {
+        read.csv(file_path, stringsAsFactors = FALSE, row.names = NULL)
+      } else {
+        read_excel(file_path)
+      }
 
       # Store the new dataset based on the selected type
-      rv$new_data <- new_data
+      rv$new_data <- df_new_data
       rv$dataset_type <- input$dataset_type
 
-      return(new_data)
+      return(df_new_data)
+
     } else {
       # Clear the new data when switching to cleaned data sources
       rv$new_data <- NULL
@@ -440,13 +560,21 @@ server <- function(input, output, session) {
     cat("Number of Columns:", format(n_cols, big.mark = ","), "\n")
   })
 
-
   output$data_select_check <- renderText({
     # Ensure new data is uploaded
     req(input$new_data)
 
-    # Read the uploaded data
-    data <- read.csv(input$new_data$datapath)
+    # Determine file type
+    file_type <- tools::file_ext(input$new_data$name[1])
+
+    # Read the uploaded data based on file type
+    data <- if (file_type == "csv") {
+      read.csv(input$new_data$datapath[1], stringsAsFactors = FALSE)
+    } else if (file_type == "xlsx") {
+      read_excel(input$new_data$datapath[1])
+    } else {
+      return("Unsupported file type. Please upload a CSV or XLSX file.")
+    }
 
     # Check the conditions
     choice <- input$data_choice
@@ -460,7 +588,7 @@ server <- function(input, output, session) {
         exclude_patterns <- "(?i)score"
 
         included_variables <- grep(include_patterns, names(data), value = TRUE, perl = TRUE)
-        excluded_variables <- grep(exclude_patterns, included_variables, value = TRUE, perl = TRUE)
+        excluded_variables <- grep(exclude_patterns, names(data), value = TRUE, perl = TRUE)
 
         if (length(included_variables) < 1 || length(excluded_variables) > 0) {
           return("THIS DOES NOT APPEAR TO BE AN RSA-911 DATASET. Please ensure it is classified correctly and contains RSA-911 variables and no score variables.")
@@ -495,20 +623,28 @@ server <- function(input, output, session) {
 
       else if (dataset_type == "metadata") {
         # Check for the presence of required variables and absence of excluded variables
+        # demo_patterns <- "(?i)application|(?i)gender|(?i)sex|(?i)plan|(?i)disability"
+        # score_patterns <- "(?i)score"
+        #
+        # demo_variables <- grep(demo_patterns, names(data), value = TRUE, perl = TRUE)
+        # score_variables <- grep(score_patterns, names(data), value = TRUE, perl = TRUE)
+        #
+        # Check for the presence of required variables and absence of excluded variables
         demo_patterns <- "(?i)application|(?i)gender|(?i)sex|(?i)plan|(?i)disability"
         score_patterns <- "(?i)score"
 
-        demo_variables <- grep(demo_patterns, names(data), value = TRUE,
-                               perl = TRUE)
-        score_variables <- grep(score_patterns, names(data), value = TRUE,
-                                perl = TRUE)
+        demo_variables <- grep(demo_patterns, names(data), value = TRUE, perl = TRUE)
+        score_variables <- grep(score_patterns, names(data), value = TRUE, perl = TRUE)
 
-        participant_variable <- grep("(?i)participant|(?i)_ID", names(data), value = TRUE,
-                             perl = TRUE)
+        participant_variable <- grep("(?i)participant|(?i)_ID", names(data), value = TRUE, perl = TRUE)
 
-        participants <- data[, participant_variable]
+        if (length(participant_variable) == 0) {
+          return("Participant ID variable not found in the metadata dataset.")
+        }
 
-        if ((length(demo_variables) < 1 || length(score_variables) < 1)) {
+        participants <- data[[participant_variable]]
+
+        if (length(demo_variables) < 1 || length(score_variables) < 1) {
           return("THIS DOES NOT APPEAR TO BE A METADATA DATASET. Please ensure it is classified correctly and contains BOTH RSA-911 variables and score variables.")
         }
         if (length(participants) != length(unique(participants))) {
@@ -517,14 +653,42 @@ server <- function(input, output, session) {
       }
 
     }
-
-
   })
 
+  # Render UI conditionally based on dataset type
+  output$visualization_ui <- renderUI({
+    dataset_type <- input$dataset_type
+    if (dataset_type == "rsa-911") {
+      fluidPage(
+        # Directly create visuals and captions for rsa-911 type
+        plotOutput("rsa911_plot1"),
+        # plotOutput("rsa911_plot2"),
+        # Add other visuals and captions as needed
+      )
+    } else {
+      fluidPage(
+        selectInput("visualization_type", "Select Visualization",
+                    choices = c("Demographics", "Trends Across Grade Level", "Trends Over Time")),
+        uiOutput("visualizations_ui")
+      )
+    }
+  })
+
+  # Render the visuals for rsa-911 type
+  output$rsa911_plot1 <- renderPlot({
+    rsa <- read_and_clean_rsa_data()
+    barplot(table(rsa$E9_Gender_911))
+  })
+
+
+  # output$rsa911_plot2 <- renderPlot({
+  #   # Add code to generate the second plot for rsa-911
+  # })
 
 }
 
 # Run the application
 shinyApp(ui = ui, server = server)
+
 
 
