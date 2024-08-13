@@ -2,7 +2,6 @@ library(shiny)
 library(DT)
 library(data.table)
 library(readxl)
-library(ggplot2)
 
 options(shiny.maxRequestSize = 1000 * 1024^2)  # 500MB
 
@@ -68,7 +67,7 @@ ui <- fluidPage(
                                                 value = TRUE)),
                            column(12,
                                   downloadButton("download_scores",
-                                                     "Download Cleaned Scores Data"))
+                                                 "Download Cleaned Scores Data"))
                          ),
                          tags$hr(style = "margin: 20px 0;"),  # Add larger space
 
@@ -598,8 +597,6 @@ server <- function(input, output, session) {
     # Print debugging information
     print(paste("Data Choice:", data_choice))
     print(paste("Dataset Type:", dataset_type))
-    print(class(data))
-    print(names(data))
 
     if ((data_choice == "Use Cleaned RSA-911 Data") || (data_choice == "Upload New Dataset" && dataset_type == "rsa")) {
       tabsetPanel(
@@ -675,33 +672,11 @@ server <- function(input, output, session) {
   output$demo_scores_plot6 <- renderPlot({ plot(rnorm(100)) })
 
   ## METADATA plots
-  # output$meta_gen_demo_plot1 <- renderPlot({ plot(rnorm(100)) })
-  output$meta_gen_demo_plot1 <- renderPlot({
-    if (is.null(data)) {
-      return()
-    }
-    print("Participant_ID" %in% names(data))
-    if ("Participant_ID" %in% names(data)) {
-      # Ensure the enrollment length column exists
-      if ("Enroll_Length" %in% names(data)) {
-        ggplot(data, aes(x = Enroll_Length)) +
-          geom_histogram(binwidth = 1, fill = "blue", color = "black") +
-          labs(title = "Histogram of Enrollment Length",
-               x = "Enrollment Length", y = "Frequency")
-      } else {
-        ggplot() +
-          labs(title = "No Enrollment Length Data", x = "", y = "") +
-          geom_text(aes(x = 1, y = 1,
-                        label = "Enrollment Length column not found"),
-                    size = 5, color = "red")
-      }
-    } else {
-      ggplot() +
-        labs(title = "Invalid Data Type", x = "", y = "") +
-        geom_text(aes(x = 1, y = 1, label = "Data is not RSA-911"),
-                  size = 5, color = "red")
-    }
-    })
+  output$meta_gen_demo_plot1 <- renderPlot({ plot(rnorm(100)) })
+  # output$meta_gen_demo_plot1 <- renderPlot({
+  #   data <- input$new_data
+  #   hist(data$Enroll_Length)
+  #   })
 
   output$meta_gen_demo_plot2 <- renderPlot({ plot(rnorm(100)) })
   output$meta_gen_demo_plot3 <- renderPlot({ plot(rnorm(100)) })
@@ -719,6 +694,3 @@ server <- function(input, output, session) {
 
 # Run the application
 shinyApp(ui = ui, server = server)
-
-
-
