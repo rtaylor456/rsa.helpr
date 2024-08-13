@@ -125,7 +125,8 @@ ui <- fluidPage(
               tabPanel('Select Data (or load new)',
                        sidebarPanel(
                          selectInput("data_choice", "Select Data Source",
-                                     choices = c("Use Generated Metadata",
+                                     choices = c(" ",
+                                                 "Use Generated Metadata",
                                                  "Use Cleaned RSA-911 Data",
                                                  "Use Cleaned Scores Data",
                                                  "Use Cleaned Merged Data",
@@ -394,19 +395,7 @@ server <- function(input, output, session) {
 
   # Reactive expression to handle selected data
   selected_data <- reactive({
-    if (input$data_choice == "Use Generated Metadata"){
-      return(rv$metadata)
-
-    } else if (input$data_choice == "Use Cleaned RSA-911 Data"){
-      return(rv$rsa_data_cleaned)
-
-    } else if (input$data_choice == "Use Cleaned Scores Data") {
-      return(rv$scores_data_cleaned)
-
-    } else if (input$data_choice == "Use Cleaned Merged Data") {
-      return(rv$merged_data)
-
-    } else if (input$data_choice == "Upload New Dataset") {
+   if (input$data_choice == "Upload New Dataset") {
       req(input$new_data, input$dataset_type)
 
       # Read the first file
