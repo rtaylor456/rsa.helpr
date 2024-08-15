@@ -82,7 +82,7 @@ ui <- fluidPage(
                            column(6,
                                   textInput("scores_ID",
                                             "Scores Data ID Column",
-                                            value = "Participant.ID")),
+                                            value = "Participant_ID")),
                            column(12,
                                   downloadButton("download_merged",
                                                  "Download Cleaned Merged Data"))
@@ -162,7 +162,14 @@ ui <- fluidPage(
                        )
               ),
 
-              tabPanel('Modeling')
+              tabPanel('Modeling',
+                       sidebarPanel(
+                         uiOutput("models_sidebar")
+                       ),
+                       mainPanel(
+                         uiOutput("models_main")
+                       )
+                       )
   )
 )
 
@@ -182,16 +189,16 @@ server <- function(input, output, session) {
   )
 
   # Helper function to read and combine multiple files
-  read_and_combine_files <- function(file_paths, file_type) {
-    if (file_type == "csv") {
-      df_list <- lapply(file_paths, read.csv,
-                        stringsAsFactors = FALSE, row.names = NULL)
-    } else if (file_type == "xlsx") {
-      df_list <- lapply(file_paths, read_excel)
-    }
-    df_combined <- do.call(rbind, df_list)
-    return(df_combined)
-  }
+  # read_and_combine_files <- function(file_paths, file_type) {
+  #   if (file_type == "csv") {
+  #     df_list <- lapply(file_paths, read.csv,
+  #                       stringsAsFactors = FALSE, row.names = NULL)
+  #   } else if (file_type == "xlsx") {
+  #     df_list <- lapply(file_paths, read_excel)
+  #   }
+  #   df_combined <- do.call(rbind, df_list)
+  #   return(df_combined)
+  # }
 
 
   # Function to read and clean RSA-911 CSV files
@@ -201,17 +208,26 @@ server <- function(input, output, session) {
     file_paths <- input$rsa_data$datapath
     file_types <- tools::file_ext(input$rsa_data$name)
 
+    # df_list <- mapply(function(path, type) {
+    #   if (type == "csv") {
+    #     read.csv(path, stringsAsFactors = FALSE, row.names = NULL)
+    #   } else {
+    #     read_excel(path)
+    #   }
+    # }, file_paths, file_types, SIMPLIFY = FALSE)
+
     df_list <- mapply(function(path, type) {
       if (type == "csv") {
-        read.csv(path, stringsAsFactors = FALSE, row.names = NULL)
+        fread(path, stringsAsFactors = FALSE)
       } else {
-        read_excel(path)
+        as.data.table(read_excel(path))
       }
     }, file_paths, file_types, SIMPLIFY = FALSE)
 
-    # df_list <- lapply(input$rsa_data$datapath, read.csv)
 
     df_combined <- do.call(rbind, df_list)
+    # df_combined <- rbindlist(df_list, use.names = TRUE, fill = TRUE)
+
     df_cleaned <- clean_utah(df_combined,
                              aggregate = input$aggregate_utah,
                              unidentified_to_0 = input$unidentified_to_0,
@@ -229,18 +245,27 @@ server <- function(input, output, session) {
     file_paths <- input$scores_data$datapath
     file_types <- tools::file_ext(input$scores_data$name)
 
+    # df_scores_list <- mapply(function(path, type) {
+    #   if (type == "csv") {
+    #     read.csv(path, stringsAsFactors = FALSE, row.names = NULL)
+    #   } else {
+    #     read_excel(path, row.names = NULL)
+    #   }
+    # }, file_paths, file_types, SIMPLIFY = FALSE)
+
     df_scores_list <- mapply(function(path, type) {
       if (type == "csv") {
-        read.csv(path, stringsAsFactors = FALSE, row.names = NULL)
+        fread(path, stringsAsFactors = FALSE)
       } else {
         read_excel(path, row.names = NULL)
       }
     }, file_paths, file_types, SIMPLIFY = FALSE)
 
 
-    # df_scores_list <- lapply(input$scores_data$datapath, read.csv)
-
     df_scores_combined <- do.call(rbind, df_scores_list)
+    # df_scores_combined <- rbindlist(df_scores_list, use.names = TRUE,
+                                    # fill = TRUE)
+
     cleaned_scores <- clean_scores(df_scores_combined,
                                    aggregate = input$aggregate_scores)
     rv$scores_data_cleaned <- cleaned_scores
@@ -595,12 +620,6 @@ server <- function(input, output, session) {
     data_choice <- input$data_choice
     dataset_type <- input$dataset_type
 
-    # Print debugging information
-    print(paste("Data Choice:", data_choice))
-    print(paste("Dataset Type:", dataset_type))
-    print(class(data))
-    print(names(data))
-
     if ((data_choice == "Use Cleaned RSA-911 Data") || (data_choice == "Upload New Dataset" && dataset_type == "rsa")) {
       tabsetPanel(
         tabPanel("Demographics",
@@ -677,10 +696,12 @@ server <- function(input, output, session) {
   ## METADATA plots
   # output$meta_gen_demo_plot1 <- renderPlot({ plot(rnorm(100)) })
   output$meta_gen_demo_plot1 <- renderPlot({
+    data <- selected_data()
+
     if (is.null(data)) {
       return()
     }
-    print("Participant_ID" %in% names(data))
+
     if ("Participant_ID" %in% names(data)) {
       # Ensure the enrollment length column exists
       if ("Enroll_Length" %in% names(data)) {
@@ -714,6 +735,155 @@ server <- function(input, output, session) {
   output$meta_demo_scores_plot4 <- renderPlot({ plot(rnorm(100)) })
   output$meta_demo_scores_plot5 <- renderPlot({ plot(rnorm(100)) })
   output$meta_demo_scores_plot6 <- renderPlot({ plot(rnorm(100)) })
+
+  model <- reactive({
+    req(selected_data())
+    data <- selected_data()
+
+    response <- input$response
+    if (response == "Predict Employment Outcome"){
+
+      # employ_col <- grep()
+      if (length(employ_col) < 1){
+        return("No employment variable available.")
+      } else{
+        y <- employ_col
+      }
+
+
+    } else if (response == "Predict Ending Wage") {
+      wage_col <- grep("(?i)^(?=.*wage)(?=.*exit)(?!.*(desc))", names(data),
+                       value = TRUE, perl = TRUE)
+
+      if (length(wage_col) < 1){
+        return("No employment variable available.")
+      } else{
+        y <- wage_col
+      }
+    }
+
+    predictors <- c()
+
+    # if (input$gender) predictors <- c(predictors, "gender")
+    # if (input$race) predictors <- c(predictors, "race")
+    # if (input$severity) predictors <- c(predictors, "severity")
+    # if (input$prim_disability) predictors <- c(predictors, "prim_disability")
+    # if (input$second_disability) predictors <- c(predictors,
+    #                                              "second_disability")
+    # if (input$interactions) predictors <- c(predictors, "interactions")
+
+    if (input$gender) {
+      sex_cols <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
+                       value = TRUE, perl = TRUE)
+      if (length(sex_cols) < 1){
+        return("No gender/sex variable available.")
+      } else{
+        predictors <- c(predictors, sex_cols)
+      }
+    }
+
+    if (input$race) {
+      race_cols <- grep("(?i)(_indian|_asian|_black|_hawaiian|_islander|_white|hispanic)(?!.*(?i)_desc)", names(data),
+                       value = TRUE, perl = TRUE)
+      if (length(sex_cols) < 1){
+        return("No race variable(s) available.")
+      } else{
+        predictors <- c(predictors, race_cols)
+      }
+    }
+
+    # Check if response and predictors are selected
+    req(response, length(predictors) > 0)
+
+    formula <- as.formula(paste(y, "~",
+                                paste(predictors, collapse = "+")))
+
+    lm(formula, data = data)
+
+  })
+
+  # Render the model summary in the main panel
+  output$model_summary <- renderPrint({
+    req(model())
+    summary(model())
+  })
+
+  output$models_main <- renderUI({
+    fluidRow(
+      column(12, verbatimTextOutput("model_summary"))
+    )
+  })
+
+  output$models_sidebar <- renderUI({
+    data <- selected_data()
+    data_choice <- input$data_choice
+    dataset_type <- input$dataset_type
+
+    if ((data_choice == "Use Cleaned RSA-911 Data") || (data_choice == "Upload New Dataset" && dataset_type == "rsa")) {
+      # sidebarPanel(
+      fluidRow(
+        column(12,
+               h4("RSA-911 Data Modeling Options")),
+
+        selectInput("response", "Select Response Variable",
+                    choices = c(" ",
+                                "Predict Employment Outcome",
+                                "Predict Ending Wage")
+                    ),
+        column(12,
+               tags$label("Select Predictor Variables:")),
+
+        column(12,
+               checkboxInput("gender",
+                             "Gender",
+                             value = FALSE)),
+        column(12,
+               checkboxInput("race",
+                             "Race",
+                             value = FALSE)),
+        column(12,
+               checkboxInput("severity",
+                             "Severity",
+                             value = FALSE)),
+        column(12,
+               checkboxInput("prim_disability",
+                             "Primary Disability",
+                             value = FALSE)),
+        column(12,
+               checkboxInput("second_disability",
+                             "Secondary Disability",
+                             value = FALSE)),
+        column(12,
+               checkboxInput("interactions",
+                             "Interaction Effects",
+                             value = FALSE))
+
+    )
+      # )
+
+    } else if ((data_choice == "Use Cleaned Scores Data") || (data_choice == "Upload New Dataset" && dataset_type == "scores")) {
+      sidebarPanel(
+        fluidRow(
+          column(12,
+                 h4("Scores Data Modeling Options"))
+        )
+      )
+    } else if ((data_choice == "Use Cleaned Merged Data") || (data_choice == "Upload New Dataset" && dataset_type == "merged")) {
+      sidebarPanel(
+        fluidRow(
+          column(12,
+                 h4("Merged Data Modeling Options"))
+        )
+      )
+    }  else if ((data_choice == "Use Generated Metadata") || (data_choice == "Upload New Dataset" && dataset_type == "metadata")) {
+      sidebarPanel(
+        fluidRow(
+          column(12,
+                 h4("Metadata Modeling Options"))
+        )
+      )
+    }
+  })
 
 }
 
