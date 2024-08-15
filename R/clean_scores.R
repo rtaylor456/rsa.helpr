@@ -6,9 +6,6 @@ clean_scores <- function(data, aggregate = TRUE) {
   # Convert to data.table format
   setDT(data)
 
-  # participant <- grep("(?i)^((?=.*participant)|(?=.*id))(?!.*(id(?=[^a-zA-Z])))",
-  #                     names(data), value = TRUE, perl = TRUE)
-
   # do some necessary renaming of variables
   participant <- grep("(?i)^(?=.*participant)|(?=.*\\bid\\b)(?!.*\\bid\\B)",
                       names(data), value = TRUE, perl = TRUE)
@@ -18,6 +15,11 @@ clean_scores <- function(data, aggregate = TRUE) {
 
   names(data)[names(data) %in% participant] <- "Participant_ID"
   names(data)[names(data) %in% pre_post] <- "Pre_Post"
+
+  # remove any unnecessary info from Provider
+  provider <- grep("(?i)provider", names(data), value = TRUE, perl = TRUE)
+  data[, (provider) := lapply(.SD, function(x) sub("\\s*\\([^\\)]+\\)", "", x)),
+       .SDcols = provider]
 
   # Remove "(MST)" and convert 'Completed' to POSIXct
   data[, Completed := mdy_hms(gsub(" \\(MST\\)", "", Completed))]
@@ -89,7 +91,33 @@ clean_scores <- function(data, aggregate = TRUE) {
     sep = "_"
   )
 
-  return(scores_final)
+  data <- scores_final
+
+  difference_cols <- grep("^Difference_", names(data), value = TRUE)
+  time_cols <- grep("^Time_Passed_Days", names(data), value = TRUE)
+
+  # Calculate Differences_Available
+  data[, Differences_Available := rowSums(!is.na(.SD)),
+       .SDcols = difference_cols, by = Participant_ID]
+
+  # Calculate Median_Difference_Score
+  if (length(difference_cols) > 0) {
+    data[, Median_Difference_Score := median(unlist(.SD), na.rm = TRUE),
+         .SDcols = difference_cols, by = Participant_ID]
+  } else {
+    data[, Median_Difference_Score := NA_real_]
+  }
+
+  # Calculate Median_Time_Passed_Days
+  if (length(time_cols) > 0) {
+    data[, Median_Time_Passed_Days := median(unlist(.SD), na.rm = TRUE),
+         .SDcols = time_cols, by = Participant_ID]
+  } else {
+    data[, Median_Time_Passed_Days := NA_real_]
+  }
+
+  # return(scores_final)
+  return(data)
 }
 
 

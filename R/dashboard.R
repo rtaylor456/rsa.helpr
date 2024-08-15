@@ -171,6 +171,9 @@ ui <- fluidPage(
               ),
 
               tabPanel('Modeling',
+                       # mainPanel(
+                       #   uiOutput("models_ui")
+                       # )
                        sidebarPanel(
                          uiOutput("models_sidebar")
                        ),
@@ -375,7 +378,7 @@ server <- function(input, output, session) {
     df <- read_and_clean_scores_data()
     n_rows <- nrow(df)
     n_cols <- ncol(df)
-    unique_ids <- length(unique(df$Participant.ID))
+    unique_ids <- length(unique(df$Participant_ID))
     cat("Number of Rows:", format(n_rows, big.mark = ","), "\n")
     cat("Number of Columns:", format(n_cols, big.mark = ","), "\n")
     cat("Unique Participant IDs:", format(unique_ids, big.mark = ","), "\n")
@@ -664,9 +667,12 @@ server <- function(input, output, session) {
     } else if ((data_choice == "Use Cleaned Scores Data") || (data_choice == "Upload New Dataset" && dataset_type == "scores")) {
       tabsetPanel(
         tabPanel("Across Services",
-                 plotOutput("services_plot1"), plotOutput("services_plot2")),
+                 plotOutput("services_plot1"), plotOutput("services_plot2"),
+                 plotOutput("services_plot3")),
         tabPanel("Across Providers",
-                 plotOutput("providers_plot1"), plotOutput("providers_plot2"))
+                 plotOutput("providers_plot1")
+                 # plotOutput("providers_plot2")
+                 )
       )
     } else if ((data_choice == "Use Cleaned Merged Data") || (data_choice == "Upload New Dataset" && dataset_type == "merged")) {
       tabsetPanel(
@@ -703,13 +709,111 @@ server <- function(input, output, session) {
   output$enrollment_plot3 <- renderPlot({ plot(rnorm(100)) })
 
   ## SCORES plots
-  output$services_plot1 <- renderPlot({ plot(rnorm(100)) })
-  # output$services_plot1 <- renderPlot({
-  # })
-  output$services_plot2 <- renderPlot({ plot(rnorm(100)) })
+  output$services_plot1 <- renderPlot({
+    req(selected_data())
+    data <- selected_data()
 
-  output$providers_plot1 <- renderPlot({ plot(rnorm(100)) })
-  output$providers_plot2 <- renderPlot({ plot(rnorm(100)) })
+    difference_cols <- grep("(?i)difference", names(data),
+                            value = TRUE, perl = TRUE)
+    differences <- data[, .SD, .SDcols = difference_cols]
+
+    # Find the overall median for all differences scores
+    differences_scores_vector <- as.vector(unlist(differences))
+    differences_median <- median(differences_scores_vector, na.rm = TRUE)
+
+    par(las = 2)
+    boxplot(differences,
+            names = sub("Difference_", "", names(differences)),
+            main = "Distributions of Difference Scores Across Services",
+            ylab = "Difference Scores",
+            xlab = "Service Test Category",
+            cex.axis = 0.7)
+    abline(h = differences_median, lty = 1, lwd = 3, col = "blue")
+    par(las = 1)
+
+  })
+  output$services_plot2 <- renderPlot({
+    req(selected_data())
+    data <- selected_data()
+
+    pre_cols <- grep("(?i)pre", names(data),
+                            value = TRUE, perl = TRUE)
+    pre_scores <- data[, .SD, .SDcols = pre_cols]
+
+    # Find the overall median for all differences scores
+    pre_scores_vector <- as.vector(unlist(pre_scores))
+    pre_scores_median <- median(pre_scores_vector, na.rm = TRUE)
+
+    par(las = 2)
+    boxplot(pre_scores,
+            names = sub("Pre_Score_", "", names(pre_scores)),
+            main = "Distributions of Pre Scores Across Services",
+            ylab = "Pre Scores",
+            xlab = "Service Test Category",
+            cex.axis = 0.7)
+    abline(h = pre_scores_median, lty = 2, lwd = 3, col = "blue")
+    par(las = 1)
+  })
+
+  output$services_plot3 <- renderPlot({
+    req(selected_data())
+    data <- selected_data()
+
+    post_cols <- grep("(?i)post", names(data),
+                     value = TRUE, perl = TRUE)
+    post_scores <- data[, .SD, .SDcols = post_cols]
+
+    # Find the overall median for all differences scores
+    post_scores_vector <- as.vector(unlist(post_scores))
+    post_scores_median <- median(post_scores_vector, na.rm = TRUE)
+
+    par(las = 2)
+    boxplot(post_scores,
+            names = sub("Post_Score_", "", names(post_scores)),
+            main = "Distributions of Post Scores Across Services",
+            ylab = "Post Scores",
+            xlab = "Service Test Category",
+            cex.axis = 0.7)
+    abline(h = pre_scores_median, lty = 2, lwd = 3, col = "blue")
+    abline(h = post_scores_median, lty = 3, lwd = 3, col = "blue")
+    par(las = 1)
+  })
+
+  # output$providers_plot1 <- renderPlot({ plot(rnorm(100)) })
+
+  output$providers_plot1 <- renderPlot({
+    req(selected_data())
+    data <- selected_data()
+
+    # provider_col <- grep("(?i)provider", names(data),
+    #                   value = TRUE, perl = TRUE)
+    #
+    # providers <- data[, .SD, .SDcols = provider_col]
+
+    # want to create a table that prints the distribution of providers too
+
+    # we know this exact variable name because it's created during our
+    #   cleaning
+    median_diff_col <- "Median_Difference_Score"
+
+    median_diff_scores <- data[, .SD, .SDcols = median_diff_col]
+
+    # Find the overall median for all median differences scores
+    median_diff_scores_vector <- as.vector(unlist(median_diff_scores))
+    overall_median <- median(median_diff_scores_vector, na.rm = TRUE)
+
+    par(las = 2)
+    boxplot(Median_Difference_Score ~ Provider,
+            data = data,
+            main = "Median Difference Scores Across Providers",
+            ylab = "Median Difference Score",
+            cex.axis = 0.7)
+    abline(h = overall_median, lty = 1, lwd = 3, col = "blue")
+    par(las = 1)
+  })
+
+
+  # output$providers_plot2 <- renderPlot({ plot(rnorm(100)) })
 
   ## MERGED plots
   output$gen_demo_plot1 <- renderPlot({ plot(rnorm(100)) })
@@ -728,6 +832,7 @@ server <- function(input, output, session) {
   ## METADATA plots
   # output$meta_gen_demo_plot1 <- renderPlot({ plot(rnorm(100)) })
   output$meta_gen_demo_plot1 <- renderPlot({
+    req(selected_data())
     data <- selected_data()
 
     if (is.null(data)) {
@@ -768,138 +873,84 @@ server <- function(input, output, session) {
   output$meta_demo_scores_plot5 <- renderPlot({ plot(rnorm(100)) })
   output$meta_demo_scores_plot6 <- renderPlot({ plot(rnorm(100)) })
 
-  model <- reactive({
-    req(selected_data())
-    data <- selected_data()
-
-    response <- input$response
-    if (response == "Predict Employment Outcome"){
-
-      # employ_col <- grep()
-      if (length(employ_col) < 1){
-        return("No employment variable available.")
-      } else{
-        y <- employ_col
-      }
-
-
-    } else if (response == "Predict Ending Wage") {
-      wage_col <- grep("(?i)^(?=.*wage)(?=.*exit)(?!.*(desc))", names(data),
-                       value = TRUE, perl = TRUE)
-
-      if (length(wage_col) < 1){
-        return("No employment variable available.")
-      } else{
-        y <- wage_col
-      }
-    }
-
-    predictors <- c()
-
-    # if (input$gender) predictors <- c(predictors, "gender")
-    # if (input$race) predictors <- c(predictors, "race")
-    # if (input$severity) predictors <- c(predictors, "severity")
-    # if (input$prim_disability) predictors <- c(predictors, "prim_disability")
-    # if (input$second_disability) predictors <- c(predictors,
-    #                                              "second_disability")
-    # if (input$interactions) predictors <- c(predictors, "interactions")
-
-    if (input$gender) {
-      sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
-                       value = TRUE, perl = TRUE)
-      if (length(sex_col) < 1){
-        return("No gender/sex variable available.")
-      } else{
-        predictors <- c(predictors, sex_col)
-      }
-    }
-
-    if (input$race) {
-      race_cols <- grep("(?i)(_indian|_asian|_black|_hawaiian|_islander|_white|hispanic)(?!.*(?i)_desc)", names(data),
-                       value = TRUE, perl = TRUE)
-      if (length(race_cols) < 1){
-        return("No race variable(s) available.")
-      } else{
-        predictors <- c(predictors, race_cols)
-      }
-    }
-
-    if (input$severity) {
-      severity_col <- grep("((?i)_SWD|(?i)_severity)(?!.*(?i)_desc|_age)",
-                        names(data), value = TRUE, perl = TRUE)
-      if (length(severity_col) < 1){
-        return("No disability severity variable available.")
-      } else{
-        predictors <- c(predictors, severity_col)
-      }
-    }
-
-    if (input$prim_impairment) {
-      prim_dis_col <- grep("(?i)^(?=.*prim)(?=.*impairment)(?!.*(desc))",
-                          names(data), value = TRUE, perl = TRUE)
-      if (length(prim_dis_col) < 1){
-        return("No primary impairment variable available.")
-      } else{
-        predictors <- c(predictors, prim_dis_col)
-      }
-    }
-
-    if (input$second_impairment) {
-      second_dis_col <- grep("(?i)^(?=.*sec)(?=.*impairment)(?!.*(desc))",
-                           names(data), value = TRUE, perl = TRUE)
-      if (length(second_dis_col) < 1){
-        return("No secondary impairment variable available.")
-      } else{
-        predictors <- c(predictors, second_dis_col)
-      }
-    }
-
-    # Check if response and predictors are selected
-    req(response, length(predictors) > 0)
-
-    formula <- as.formula(paste(y, "~",
-                                paste(predictors, collapse = "+")))
-
-    # # Create the formula with interaction terms if specified
-    # if (input$interactions) {
-    #   interaction_terms <- paste(predictors, collapse = "*")
-    #   formula <- as.formula(paste(y, "~", interaction_terms))
-    # } else {
-    #   formula <- as.formula(paste(y, "~", paste(predictors, collapse = "+")))
-    # }
-
-    lm(formula, data = data)
-
-  })
-
-  # Render the model summary in the main panel
-  output$model_summary <- renderPrint({
-    req(model())
-    summary(model())
-  })
-
-  output$models_main <- renderUI({
-    fluidRow(
-      column(12, verbatimTextOutput("model_summary"))
-    )
-  })
 
   output$models_sidebar <- renderUI({
+  # output$models_ui <- renderUI({
     data <- selected_data()
     data_choice <- input$data_choice
     dataset_type <- input$dataset_type
 
     if ((data_choice == "Use Cleaned RSA-911 Data") || (data_choice == "Upload New Dataset" && dataset_type == "rsa")) {
       # sidebarPanel(
+        fluidRow(
+          column(12,
+                 h4("RSA-911 Data Modeling Options")),
+
+          selectInput("response", "Select Response Variable",
+                      choices = c(" ",
+                                  "Predict Employment Outcome",
+                                  "Predict Ending Wage")
+                      ),
+          column(12,
+                 tags$label("Select Predictor Variables:")),
+
+          column(12,
+                 checkboxInput("gender",
+                               "Gender",
+                               value = FALSE)),
+          column(12,
+                 checkboxInput("race",
+                               "Race",
+                               value = FALSE)),
+          column(12,
+                 checkboxInput("severity",
+                               "Severity",
+                               value = FALSE)),
+          column(12,
+                 checkboxInput("prim_impairment",
+                               "Primary Impairment",
+                               value = FALSE)),
+          column(12,
+                 checkboxInput("second_impairment",
+                               "Secondary Impairment",
+                               value = FALSE))
+          # column(12,
+          #        checkboxInput("interactions",
+          #                      "Interaction Effects",
+          #                      value = FALSE))
+
+      )
+    # )
+
+    } else if ((data_choice == "Use Cleaned Scores Data") || (data_choice == "Upload New Dataset" && dataset_type == "scores")) {
+
       fluidRow(
         column(12,
-               h4("RSA-911 Data Modeling Options")),
+               h4("Scores Data Modeling Options")),
+        selectInput("anova", "Select ANOVA Test",
+                    choices = c(" ",
+                                "ANOVA across Services",
+                                "ANOVA across Providers")
+        )
+      )
+    } else if ((data_choice == "Use Cleaned Merged Data") || (data_choice == "Upload New Dataset" && dataset_type == "merged")) {
+      sidebarPanel(
+        fluidRow(
+          column(12,
+                 h4("Merged Data Modeling Options"))
+        )
+      )
+    }  else if ((data_choice == "Use Generated Metadata") || (data_choice == "Upload New Dataset" && dataset_type == "metadata")) {
+      fluidRow(
+        column(12,
+               h4("Metadata Modeling Options")),
 
         selectInput("response", "Select Response Variable",
                     choices = c(" ",
-                                "Predict Employment Outcome",
-                                "Predict Ending Wage")
-                    ),
+                                "Predict Median Difference Score",
+                                "Predict Ending Wage",
+                                "Predict Employment Outcome")
+        ),
         column(12,
                tags$label("Select Predictor Variables:")),
 
@@ -928,29 +979,205 @@ server <- function(input, output, session) {
         #                      "Interaction Effects",
         #                      value = FALSE))
 
-    )
-      # )
+      )
+    }
+  })
 
-    } else if ((data_choice == "Use Cleaned Scores Data") || (data_choice == "Upload New Dataset" && dataset_type == "scores")) {
-      sidebarPanel(
-        fluidRow(
-          column(12,
-                 h4("Scores Data Modeling Options"))
-        )
+
+
+  model_rsa <- reactive({
+    req(selected_data())
+    data <- selected_data()
+
+    response <- input$response
+    if (response == "Predict Employment Outcome"){
+
+      # employ_col <- grep()
+      if (length(employ_col) < 1){
+        return("No employment variable available.")
+      } else{
+        y <- employ_col
+      }
+
+
+    } else if (response == "Predict Ending Wage") {
+      wage_col <- grep("(?i)^(?=.*wage)(?=.*exit)(?!.*(desc))", names(data),
+                       value = TRUE, perl = TRUE)
+
+      if (length(wage_col) < 1){
+        return("No employment variable available.")
+      } else{
+        y <- wage_col
+      }
+    }
+
+    predictors <- c()
+
+    if (input$gender) {
+      sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
+                      value = TRUE, perl = TRUE)
+      if (length(sex_col) < 1){
+        return("No gender/sex variable available.")
+      } else{
+        predictors <- c(predictors, sex_col)
+      }
+    }
+
+    if (input$race) {
+      race_cols <- grep("(?i)(_indian|_asian|_black|_hawaiian|_islander|_white|hispanic)(?!.*(?i)_desc)", names(data),
+                        value = TRUE, perl = TRUE)
+      if (length(race_cols) < 1){
+        return("No race variable(s) available.")
+      } else{
+        predictors <- c(predictors, race_cols)
+      }
+    }
+
+    if (input$severity) {
+      severity_col <- grep("((?i)_SWD|(?i)_severity)(?!.*(?i)_desc|_age)",
+                           names(data), value = TRUE, perl = TRUE)
+      if (length(severity_col) < 1){
+        return("No disability severity variable available.")
+      } else{
+        predictors <- c(predictors, severity_col)
+      }
+    }
+
+    if (input$prim_impairment) {
+      prim_dis_col <- grep("(?i)^(?=.*prim)(?=.*impairment)(?!.*(desc))",
+                           names(data), value = TRUE, perl = TRUE)
+      if (length(prim_dis_col) < 1){
+        return("No primary impairment variable available.")
+      } else{
+        predictors <- c(predictors, prim_dis_col)
+      }
+    }
+
+    if (input$second_impairment) {
+      second_dis_col <- grep("(?i)^(?=.*sec)(?=.*impairment)(?!.*(desc))",
+                             names(data), value = TRUE, perl = TRUE)
+      if (length(second_dis_col) < 1){
+        return("No secondary impairment variable available.")
+      } else{
+        predictors <- c(predictors, second_dis_col)
+      }
+    }
+
+    # Check if response and predictors are selected
+    req(response, length(predictors) > 0)
+
+    formula <- as.formula(paste(y, "~",
+                                paste(predictors, collapse = "+")))
+
+    # # Create the formula with interaction terms if specified
+    # if (input$interactions) {
+    #   interaction_terms <- paste(predictors, collapse = "*")
+    #   formula <- as.formula(paste(y, "~", interaction_terms))
+    # } else {
+    #   formula <- as.formula(paste(y, "~", paste(predictors, collapse = "+")))
+    # }
+
+    lm(formula, data = data)
+
+  })
+
+  model_scores <- reactive({
+    req(selected_data())
+    req(input$anova)
+    data <- selected_data()
+    anova_test <- input$anova
+
+    if (anova_test == "ANOVA across Services") {
+      difference_cols <- grep("(?i)difference", names(data),
+                              value = TRUE, perl = TRUE)
+
+      # Exclude columns that contain "med" or "avail"
+      exclude_patterns <- "(?i)med|avail"
+      filtered_columns <- difference_columns[!grepl(exclude_patterns,
+                                                    difference_columns, perl = TRUE)]
+
+      differences <- data[, .SD, .SDcols = filtered_columns]
+
+      # Convert data to long format for anova test to work
+      long_data <- data.frame(
+        Difference_Scores = c(data$Difference_CPSO, data$Difference_CSS,
+                              data$Difference_EMP, data$Difference_FL,
+                 data$Difference_ILOM, data$Difference_ISA,
+                 data$Difference_JOBEX, data$Difference_JS,
+                 data$Difference_QWEX, data$Difference_WBLE),
+        Services = factor(rep(filtered_columns, each = nrow(data)))
       )
-    } else if ((data_choice == "Use Cleaned Merged Data") || (data_choice == "Upload New Dataset" && dataset_type == "merged")) {
-      sidebarPanel(
-        fluidRow(
-          column(12,
-                 h4("Merged Data Modeling Options"))
-        )
+#
+#       # Calculate means for each column
+#       means <- sapply(differences, function(x) mean(x, na.rm = TRUE))
+#
+#       # Create a data frame for ANOVA
+#       means_df <- data.frame(
+#         service = names(means),
+#         mean_value = means
+#       )
+
+      # Perform ANOVA
+      # result <- aov(mean_value ~ service, data = means_df)
+      result <- aov(Difference_Scores ~ Services, data = long_data)
+
+
+    } else if (anova_test == "ANOVA across Providers") {
+
+      result <- aov(Median_Difference_Score ~ Provider, data = data)
+
+    } else {
+      return(NULL)  # Return NULL if no valid test is selected
+    }
+    result
+
+    # req(selected_data())
+    # data <- selected_data()
+    #
+    # if (input$anova == "ANOVA across Services") {
+    #   anova_result <- aov(Scores ~ Service, data = data)
+    # } else if (input$anova == "ANOVA across Providers") {
+    #   anova_result <- aov(Median_Difference_Score ~ Provider, data = data)
+    # }
+    #
+    # return(anova_result)
+
+  })
+
+  # # Render the model summary in the main panel
+  # output$model_summary <- renderPrint({
+  #   req(model())
+  #   summary(model())
+  # })
+
+  # Render model summaries or ANOVA results
+  output$model_rsa_summary <- renderPrint({
+    req(model_rsa())
+    summary(model_rsa())
+  })
+
+  output$model_scores_summary <- renderPrint({
+    req(model_scores())
+    summary(model_scores())
+  })
+
+  # output$models_main <- renderUI({
+  #   fluidRow(
+  #     column(12, verbatimTextOutput("model_summary"))
+  #   )
+  # })
+
+  # Render the model summary based on dataset type
+  output$models_main <- renderUI({
+    data_choice <- input$data_choice
+
+    if (data_choice == "Use Cleaned RSA-911 Data" || (data_choice == "Upload New Dataset" && input$dataset_type == "rsa")) {
+      fluidRow(
+        column(12, verbatimTextOutput("model_rsa_summary"))
       )
-    }  else if ((data_choice == "Use Generated Metadata") || (data_choice == "Upload New Dataset" && dataset_type == "metadata")) {
-      sidebarPanel(
-        fluidRow(
-          column(12,
-                 h4("Metadata Modeling Options"))
-        )
+    } else if (data_choice == "Use Cleaned Scores Data" || (data_choice == "Upload New Dataset" && input$dataset_type == "scores")) {
+      fluidRow(
+        column(12, verbatimTextOutput("model_scores_summary"))
       )
     }
   })

@@ -88,7 +88,6 @@ abline(h = differences_median, lty = 2, col = "blue")
 
 
 
-
 ## looking at pre scores
 pre_scores <- metadata |>
   select(contains("pre_"))
