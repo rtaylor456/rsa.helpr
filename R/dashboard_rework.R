@@ -68,7 +68,7 @@ ui <- fluidPage(
                                                 value = TRUE)),
                            column(12,
                                   downloadButton("download_scores",
-                                                     "Download Cleaned Scores Data"))
+                                                 "Download Cleaned Scores Data"))
                          ),
                          tags$hr(style = "margin: 20px 0;"),  # Add larger space
 
@@ -100,7 +100,7 @@ ui <- fluidPage(
                                                   "(Use Merged Data)",
                                                   value = TRUE)
                                   )
-                                  ),
+                           ),
                            column(12,
                                   actionButton("generate_metadata",
                                                "Generate Metadata")),
@@ -177,7 +177,7 @@ ui <- fluidPage(
                        mainPanel(
                          uiOutput("models_main")
                        )
-                       )
+              )
   )
 )
 
@@ -272,7 +272,7 @@ server <- function(input, output, session) {
 
     df_scores_combined <- do.call(rbind, df_scores_list)
     # df_scores_combined <- rbindlist(df_scores_list, use.names = TRUE,
-                                    # fill = TRUE)
+    # fill = TRUE)
 
     cleaned_scores <- clean_scores(df_scores_combined,
                                    aggregate = input$aggregate_scores)
@@ -280,48 +280,111 @@ server <- function(input, output, session) {
     return(cleaned_scores)
   })
 
+  # # Function to merge cleaned RSA-911 and scores data
+  # merged_data <- reactive({
+  #   req(read_and_clean_rsa_data(), read_and_clean_scores_data())
+  #   merged <- merge_scores(read_and_clean_rsa_data(),
+  #                          read_and_clean_scores_data(),
+  #                          quarterly_ID = input$quarterly_ID,
+  #                          scores_ID = input$scores_ID)
+  #   rv$merged_data <- merged
+  #   return(merged)
+  # })
+  #
+  #
+  # output$merged_data_exists <- reactive({
+  #   !is.null(merged_data()) && nrow(merged_data()) > 0
+  # })
+  #
+  # outputOptions(output, "merged_data_exists", suspendWhenHidden = FALSE)
+  #
+  #
+  # # Function to create metadata from merged data
+  # generate_metadata <- eventReactive(input$generate_metadata, {
+  #   # if no merged_data() has been created, create metadata from simply rsa-911
+  #   if (is.null(merged_data()) | nrow(merged_data()) < 1){
+  #     print("test")
+  #     create_metadata(read_and_clean_rsa_data(),
+  #                     includes_scores = FALSE)
+  #   }
+  #   # else if merged_data() has been created AND user has left use_merged box
+  #   #   checked, use merged data (and turn on includes_scores argument in
+  #   #   function)
+  #   else if (input$use_merged){
+  #     metadata <- create_metadata(merged_data(),
+  #                                 includes_scores = TRUE)
+  #     # else, just use rsa-911 data if use doesn't want to use scores data
+  #   } else {
+  #     metadata <- create_metadata(read_and_clean_rsa_data(),
+  #                                 includes_scores = FALSE)
+  #   }
+  #   # metadata <- create_metadata(merged_data(), includes_scores = input$use_scores)
+  #   rv$metadata <- metadata
+  #   return(metadata)
+  # })
+
+
   # Function to merge cleaned RSA-911 and scores data
   merged_data <- reactive({
+    print("Merging RSA-911 and scores data...")
     req(read_and_clean_rsa_data(), read_and_clean_scores_data())
-    merged <- merge_scores(read_and_clean_rsa_data(),
-                           read_and_clean_scores_data(),
-                           quarterly_ID = input$quarterly_ID,
-                           scores_ID = input$scores_ID)
+
+    merged <- merge_scores(
+      read_and_clean_rsa_data(),
+      read_and_clean_scores_data(),
+      quarterly_ID = input$quarterly_ID,
+      scores_ID = input$scores_ID
+    )
+
     rv$merged_data <- merged
+    print("Merged data created")
     return(merged)
   })
 
-
   output$merged_data_exists <- reactive({
-    !is.null(merged_data()) && nrow(merged_data()) > 0
+    print("Checking if merged data exists...")
+    exists <- !is.null(merged_data()) && nrow(merged_data()) > 0
+    print(paste("Merged data exists:", exists))
+    return(exists)
   })
 
   outputOptions(output, "merged_data_exists", suspendWhenHidden = FALSE)
 
-
   # Function to create metadata from merged data
   generate_metadata <- eventReactive(input$generate_metadata, {
-    # if no merged_data() has been created, create metadata from simply rsa-911
-    if (is.null(merged_data()) | nrow(merged_data()) < 1){
-      print("test")
-      create_metadata(read_and_clean_rsa_data(),
-                      includes_scores = FALSE)
-    }
-    # else if merged_data() has been created AND user has left use_merged box
-    #   checked, use merged data (and turn on includes_scores argument in
-    #   function)
-    else if (input$use_merged){
-      metadata <- create_metadata(merged_data(),
-                                  includes_scores = TRUE)
-    # else, just use rsa-911 data if use doesn't want to use scores data
+    print("Generate metadata event triggered")
+
+    # Check if the RSA-911 data exists
+    rsa_data <- read_and_clean_rsa_data()
+    print(paste("RSA-911 data available:", !is.null(rsa_data) && nrow(rsa_data) > 0))
+
+    # If there is no merged data and RSA-911 data exists, create metadata from RSA-911 data
+    if ((is.null(merged_data()) || nrow(merged_data()) < 1) && !is.null(rsa_data) && nrow(rsa_data) > 0) {
+      print("Generating metadata from RSA-911 data only")
+      metadata <- create_metadata(rsa_data, includes_scores = FALSE)
+
+      # If merged data exists and user wants to use merged data
+    } else if (input$use_merged && !is.null(merged_data()) && nrow(merged_data()) > 0) {
+      print("Generating metadata from merged data with scores")
+      metadata <- create_metadata(merged_data(), includes_scores = TRUE)
+
+      # If user does not want to use merged data but RSA-911 data exists
+    } else if (!input$use_merged && !is.null(rsa_data) && nrow(rsa_data) > 0) {
+      print("Generating metadata from RSA-911 data without scores")
+      metadata <- create_metadata(rsa_data, includes_scores = FALSE)
+
+      # If none of the conditions are met
     } else {
-      metadata <- create_metadata(read_and_clean_rsa_data(),
-                                  includes_scores = FALSE)
+      print("Error: No data available to generate metadata")
+      metadata <- NULL
     }
-    # metadata <- create_metadata(merged_data(), includes_scores = input$use_scores)
+
     rv$metadata <- metadata
+    print("Metadata created")
     return(metadata)
   })
+
+
 
   # Render the RSA-911 data table
   output$table_rsa <- renderDT({
@@ -754,7 +817,7 @@ server <- function(input, output, session) {
         geom_text(aes(x = 1, y = 1, label = "Data is not RSA-911"),
                   size = 5, color = "red")
     }
-    })
+  })
 
   output$meta_gen_demo_plot2 <- renderPlot({ plot(rnorm(100)) })
   output$meta_gen_demo_plot3 <- renderPlot({ plot(rnorm(100)) })
@@ -806,7 +869,7 @@ server <- function(input, output, session) {
 
     if (input$gender) {
       sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
-                       value = TRUE, perl = TRUE)
+                      value = TRUE, perl = TRUE)
       if (length(sex_col) < 1){
         return("No gender/sex variable available.")
       } else{
@@ -816,7 +879,7 @@ server <- function(input, output, session) {
 
     if (input$race) {
       race_cols <- grep("(?i)(_indian|_asian|_black|_hawaiian|_islander|_white|hispanic)(?!.*(?i)_desc)", names(data),
-                       value = TRUE, perl = TRUE)
+                        value = TRUE, perl = TRUE)
       if (length(race_cols) < 1){
         return("No race variable(s) available.")
       } else{
@@ -826,7 +889,7 @@ server <- function(input, output, session) {
 
     if (input$severity) {
       severity_col <- grep("((?i)_SWD|(?i)_severity)(?!.*(?i)_desc|_age)",
-                        names(data), value = TRUE, perl = TRUE)
+                           names(data), value = TRUE, perl = TRUE)
       if (length(severity_col) < 1){
         return("No disability severity variable available.")
       } else{
@@ -836,7 +899,7 @@ server <- function(input, output, session) {
 
     if (input$prim_impairment) {
       prim_dis_col <- grep("(?i)^(?=.*prim)(?=.*impairment)(?!.*(desc))",
-                          names(data), value = TRUE, perl = TRUE)
+                           names(data), value = TRUE, perl = TRUE)
       if (length(prim_dis_col) < 1){
         return("No primary impairment variable available.")
       } else{
@@ -846,7 +909,7 @@ server <- function(input, output, session) {
 
     if (input$second_impairment) {
       second_dis_col <- grep("(?i)^(?=.*sec)(?=.*impairment)(?!.*(desc))",
-                           names(data), value = TRUE, perl = TRUE)
+                             names(data), value = TRUE, perl = TRUE)
       if (length(second_dis_col) < 1){
         return("No secondary impairment variable available.")
       } else{
@@ -899,7 +962,7 @@ server <- function(input, output, session) {
                     choices = c(" ",
                                 "Predict Employment Outcome",
                                 "Predict Ending Wage")
-                    ),
+        ),
         column(12,
                tags$label("Select Predictor Variables:")),
 
@@ -928,7 +991,7 @@ server <- function(input, output, session) {
         #                      "Interaction Effects",
         #                      value = FALSE))
 
-    )
+      )
       # )
 
     } else if ((data_choice == "Use Cleaned Scores Data") || (data_choice == "Upload New Dataset" && dataset_type == "scores")) {
@@ -959,6 +1022,4 @@ server <- function(input, output, session) {
 
 # Run the application
 shinyApp(ui = ui, server = server)
-
-
 

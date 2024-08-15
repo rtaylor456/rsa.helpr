@@ -1,7 +1,7 @@
 library(data.table)
 library(lubridate)
 
-create_metadata <- function(data) {
+create_metadata <- function(data, includes_scores = TRUE) {
   # Convert data to data.table if it's not already
   data <- as.data.table(data)
 
@@ -78,30 +78,59 @@ create_metadata <- function(data) {
   data[, (factor_cols) := lapply(.SD, get_mode), .SDcols = factor_cols,
        by = Participant_ID]
 
-  ## CREATE NEW VARIABLES--new MEDIANS and DIFFERENCES
-  # Calculate differences and medians
-  difference_cols <- grep("^Difference_", names(data), value = TRUE)
-  time_cols <- grep("^Time_Passed_Days", names(data), value = TRUE)
+  if (includes_scores == TRUE) {
 
-  # Calculate Differences_Available
-  data[, Differences_Available := rowSums(!is.na(.SD)),
-       .SDcols = difference_cols, by = Participant_ID]
+    ## CREATE NEW VARIABLES--new MEDIANS and DIFFERENCES
+    # Calculate differences and medians
+    difference_cols <- grep("^Difference_", names(data), value = TRUE)
+    time_cols <- grep("^Time_Passed_Days", names(data), value = TRUE)
 
-  # Calculate Median_Difference_Score
-  if (length(difference_cols) > 0) {
-    data[, Median_Difference_Score := median(unlist(.SD), na.rm = TRUE),
+    # Calculate Differences_Available
+    data[, Differences_Available := rowSums(!is.na(.SD)),
          .SDcols = difference_cols, by = Participant_ID]
-  } else {
-    data[, Median_Difference_Score := NA_real_]
+
+    # Calculate Median_Difference_Score
+    if (length(difference_cols) > 0) {
+      data[, Median_Difference_Score := median(unlist(.SD), na.rm = TRUE),
+           .SDcols = difference_cols, by = Participant_ID]
+    } else {
+      data[, Median_Difference_Score := NA_real_]
+    }
+
+    # Calculate Median_Time_Passed_Days
+    if (length(time_cols) > 0) {
+      data[, Median_Time_Passed_Days := median(unlist(.SD), na.rm = TRUE),
+           .SDcols = time_cols, by = Participant_ID]
+    } else {
+      data[, Median_Time_Passed_Days := NA_real_]
+    }
+
   }
 
-  # Calculate Median_Time_Passed_Days
-  if (length(time_cols) > 0) {
-    data[, Median_Time_Passed_Days := median(unlist(.SD), na.rm = TRUE),
-         .SDcols = time_cols, by = Participant_ID]
-  } else {
-    data[, Median_Time_Passed_Days := NA_real_]
-  }
+  # ## CREATE NEW VARIABLES--new MEDIANS and DIFFERENCES
+  # # Calculate differences and medians
+  # difference_cols <- grep("^Difference_", names(data), value = TRUE)
+  # time_cols <- grep("^Time_Passed_Days", names(data), value = TRUE)
+  #
+  # # Calculate Differences_Available
+  # data[, Differences_Available := rowSums(!is.na(.SD)),
+  #      .SDcols = difference_cols, by = Participant_ID]
+  #
+  # # Calculate Median_Difference_Score
+  # if (length(difference_cols) > 0) {
+  #   data[, Median_Difference_Score := median(unlist(.SD), na.rm = TRUE),
+  #        .SDcols = difference_cols, by = Participant_ID]
+  # } else {
+  #   data[, Median_Difference_Score := NA_real_]
+  # }
+  #
+  # # Calculate Median_Time_Passed_Days
+  # if (length(time_cols) > 0) {
+  #   data[, Median_Time_Passed_Days := median(unlist(.SD), na.rm = TRUE),
+  #        .SDcols = time_cols, by = Participant_ID]
+  # } else {
+  #   data[, Median_Time_Passed_Days := NA_real_]
+  # }
 
   ## CONDENSE! CREATE METADATA
   # Summarise to condense rows, keeping one row per participant

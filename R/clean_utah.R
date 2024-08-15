@@ -280,6 +280,8 @@ clean_utah <- function(data,
     data <- separate_disability(data)
   }
 
+  data <- separate_disability(data)
+
   ##############################################################################
   ########################
   ## Type conversion    ##
