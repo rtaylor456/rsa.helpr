@@ -772,6 +772,16 @@ server <- function(input, output, session) {
     post_scores_vector <- as.vector(unlist(post_scores))
     post_scores_median <- median(post_scores_vector, na.rm = TRUE)
 
+    ########## need this for second line that shows pre_score_median too
+    pre_cols <- grep("(?i)pre", names(data),
+                     value = TRUE, perl = TRUE)
+    pre_scores <- data[, .SD, .SDcols = pre_cols]
+
+    # Find the overall median for all differences scores
+    pre_scores_vector <- as.vector(unlist(pre_scores))
+    pre_scores_median <- median(pre_scores_vector, na.rm = TRUE)
+    ##########
+
     par(las = 2)
     boxplot(post_scores,
             names = sub("Post_Score_", "", names(post_scores)),
