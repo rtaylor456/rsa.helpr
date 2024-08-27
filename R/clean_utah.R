@@ -221,6 +221,8 @@ clean_utah <- function(data,
          .SDcols = employ_cols]
   }
 
+  # data[, Final_Employment ]
+
   # GRADE LEVEL - based on age
   data[, Grade_Level := fifelse(Age_At_Application < 5, "<5",
                           fifelse((Age_At_Application >= 5 &

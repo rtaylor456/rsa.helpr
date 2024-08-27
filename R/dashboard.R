@@ -1006,8 +1006,9 @@ server <- function(input, output, session) {
 
     response <- input$response
     if (response == "Predict Employment Outcome"){
-      employ_col <- grep("(?i)^(?=.*employ)(?!.*(desc))", names(data),
-                       value = TRUE, perl = TRUE)
+      # employ_col <- grep("(?i)^(?=.*employment)(?!.*(?i)_desc)(?!.*(?i)_wage)(?!.*(?i)un)",
+      #                    names(data), value = TRUE, perl = TRUE)
+      employ_col <- "E389_Q4_Employment_911"
 
       # employ_col <- grep()
       if (length(employ_col) < 1){
@@ -1110,8 +1111,8 @@ server <- function(input, output, session) {
 
       # Exclude columns that contain "med" or "avail"
       exclude_patterns <- "(?i)med|avail"
-      filtered_columns <- difference_columns[!grepl(exclude_patterns,
-                                                    difference_columns, perl = TRUE)]
+      filtered_columns <- difference_cols[!grepl(exclude_patterns,
+                                                 difference_cols, perl = TRUE)]
 
       differences <- data[, .SD, .SDcols = filtered_columns]
 
@@ -1148,24 +1149,115 @@ server <- function(input, output, session) {
     }
     result
 
-    # req(selected_data())
-    # data <- selected_data()
-    #
-    # if (input$anova == "ANOVA across Services") {
-    #   anova_result <- aov(Scores ~ Service, data = data)
-    # } else if (input$anova == "ANOVA across Providers") {
-    #   anova_result <- aov(Median_Difference_Score ~ Provider, data = data)
+  })
+
+  model_metadata <- reactive({
+    req(selected_data())
+    data <- selected_data()
+
+    response <- input$response
+    if (response == "Predict Employment Outcome"){
+      # employ_col <- grep("(?i)^(?=.*employment)(?!.*(?i)_desc)(?!.*(?i)_wage)(?!.*(?i)un)",
+      #                    names(data), value = TRUE, perl = TRUE)
+      employ_col <- "E389_Q4_Employment_911"
+
+      # employ_col <- grep()
+      if (length(employ_col) < 1){
+        return("No employment variable available.")
+      } else{
+        y <- employ_col
+      }
+
+
+    } else if (response == "Predict Ending Wage") {
+      wage_col <- grep("(?i)^(?=.*wage)(?=.*exit)(?!.*(desc))", names(data),
+                       value = TRUE, perl = TRUE)
+
+      if (length(wage_col) < 1){
+        return("No wage variable available.")
+      } else{
+        y <- wage_col
+      }
+    } else if (response == "Predict Median Difference Score"){
+      median_diff_col <- "Median_Difference_Score"
+
+      if (length(median_diff_col) < 1){
+        return("No median difference score variable available.")
+      } else{
+        y <- median_diff_col
+      }
+    }
+
+    predictors <- c()
+
+    if (input$gender) {
+      sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
+                      value = TRUE, perl = TRUE)
+      if (length(sex_col) < 1){
+        return("No gender/sex variable available.")
+      } else{
+        predictors <- c(predictors, sex_col)
+      }
+    }
+
+    if (input$race) {
+      race_cols <- grep("(?i)(_indian|_asian|_black|_hawaiian|_islander|_white|hispanic)(?!.*(?i)_desc)", names(data),
+                        value = TRUE, perl = TRUE)
+      if (length(race_cols) < 1){
+        return("No race variable(s) available.")
+      } else{
+        predictors <- c(predictors, race_cols)
+      }
+    }
+
+    if (input$severity) {
+      severity_col <- grep("((?i)_SWD|(?i)_severity)(?!.*(?i)_desc|_age)",
+                           names(data), value = TRUE, perl = TRUE)
+      if (length(severity_col) < 1){
+        return("No disability severity variable available.")
+      } else{
+        predictors <- c(predictors, severity_col)
+      }
+    }
+
+    if (input$prim_impairment) {
+      prim_dis_col <- grep("(?i)^(?=.*prim)(?=.*impairment)(?!.*(desc))",
+                           names(data), value = TRUE, perl = TRUE)
+      if (length(prim_dis_col) < 1){
+        return("No primary impairment variable available.")
+      } else{
+        predictors <- c(predictors, prim_dis_col)
+      }
+    }
+
+    if (input$second_impairment) {
+      second_dis_col <- grep("(?i)^(?=.*sec)(?=.*impairment)(?!.*(desc))",
+                             names(data), value = TRUE, perl = TRUE)
+      if (length(second_dis_col) < 1){
+        return("No secondary impairment variable available.")
+      } else{
+        predictors <- c(predictors, second_dis_col)
+      }
+    }
+
+    # Check if response and predictors are selected
+    req(response, length(predictors) > 0)
+
+    formula <- as.formula(paste(y, "~",
+                                paste(predictors, collapse = "+")))
+
+    # # Create the formula with interaction terms if specified
+    # if (input$interactions) {
+    #   interaction_terms <- paste(predictors, collapse = "*")
+    #   formula <- as.formula(paste(y, "~", interaction_terms))
+    # } else {
+    #   formula <- as.formula(paste(y, "~", paste(predictors, collapse = "+")))
     # }
-    #
-    # return(anova_result)
+
+    lm(formula, data = data)
 
   })
 
-  # # Render the model summary in the main panel
-  # output$model_summary <- renderPrint({
-  #   req(model())
-  #   summary(model())
-  # })
 
   # Render model summaries or ANOVA results
   output$model_rsa_summary <- renderPrint({
@@ -1178,11 +1270,11 @@ server <- function(input, output, session) {
     summary(model_scores())
   })
 
-  # output$models_main <- renderUI({
-  #   fluidRow(
-  #     column(12, verbatimTextOutput("model_summary"))
-  #   )
-  # })
+  output$model_metadata_summary <- renderPrint({
+    req(model_metadata())
+    summary(model_metadata())
+  })
+
 
   # Render the model summary based on dataset type
   output$models_main <- renderUI({
@@ -1195,6 +1287,10 @@ server <- function(input, output, session) {
     } else if (data_choice == "Use Cleaned Scores Data" || (data_choice == "Upload New Dataset" && input$dataset_type == "scores")) {
       fluidRow(
         column(12, verbatimTextOutput("model_scores_summary"))
+      )
+    } else if ((data_choice == "Use Generated Metadata") || (data_choice == "Upload New Dataset" && dataset_type == "metadata")) {
+      fluidRow(
+        column(12, verbatimTextOutput("model_metadata_summary"))
       )
     }
   })
