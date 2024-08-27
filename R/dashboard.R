@@ -36,6 +36,10 @@ ui <- fluidPage(
                                   checkboxInput("convert_sex", "Convert Sex",
                                                 value = TRUE)),
                            column(12,
+                                  checkboxInput("convert_employ",
+                                                "Convert Employment",
+                                                value = TRUE)),
+                           column(12,
                                   checkboxInput("clean_specials",
                                                 "Clean Specials",
                                                 value = FALSE)),
@@ -243,6 +247,7 @@ server <- function(input, output, session) {
                              aggregate = input$aggregate_utah,
                              unidentified_to_0 = input$unidentified_to_0,
                              convert_sex = input$convert_sex,
+                             convert_employ = input$convert_employ,
                              clean_specials = input$clean_specials,
                              remove_desc = input$remove_desc,
                              remove_strictly_na = input$remove_strictly_na)
@@ -991,6 +996,8 @@ server <- function(input, output, session) {
 
     response <- input$response
     if (response == "Predict Employment Outcome"){
+      employ_col <- grep("(?i)^(?=.*employ)(?!.*(desc))", names(data),
+                       value = TRUE, perl = TRUE)
 
       # employ_col <- grep()
       if (length(employ_col) < 1){

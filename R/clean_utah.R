@@ -4,6 +4,7 @@ clean_utah <- function(data,
                        aggregate = FALSE,
                        unidentified_to_0 = TRUE,
                        convert_sex = TRUE,
+                       convert_employ = TRUE,
                        clean_specials = FALSE,
                        remove_desc = TRUE,
                        remove_strictly_na = TRUE){
@@ -202,7 +203,7 @@ clean_utah <- function(data,
   # EMPLOYMENT columns
   # 1-4, 9, 0 --factors--potentially ordinal...
   employ_cols <- grep("(?i)_employ", names(data), value = TRUE, perl = TRUE)
-  employ_cols <- employ_cols[!grepl("wage|match", employ_cols,
+  employ_cols <- employ_cols[!grepl("wage|match|desc", employ_cols,
                                     ignore.case = TRUE)]
 
   data[, (employ_cols) := lapply(.SD, function(x){
@@ -215,6 +216,10 @@ clean_utah <- function(data,
   }),
   .SDcols = employ_cols]
 
+  if (convert_employ == TRUE){
+    data[, (employ_cols) := lapply(.SD, function(x) ifelse(x == 4, 1, 0)),
+         .SDcols = employ_cols]
+  }
 
   # GRADE LEVEL - based on age
   data[, Grade_Level := fifelse(Age_At_Application < 5, "<5",

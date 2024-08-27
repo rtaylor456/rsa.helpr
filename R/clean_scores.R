@@ -1,5 +1,5 @@
 library(data.table)
-library(lubridate)
+# library(lubridate)
 
 clean_scores <- function(data, aggregate = TRUE) {
 
@@ -22,7 +22,11 @@ clean_scores <- function(data, aggregate = TRUE) {
        .SDcols = provider]
 
   # Remove "(MST)" and convert 'Completed' to POSIXct
-  data[, Completed := mdy_hms(gsub(" \\(MST\\)", "", Completed))]
+  # data[, Completed := mdy_hms(gsub(" \\(MST\\)", "", Completed))]
+
+  data[, Completed := as.POSIXct(gsub(" \\(MST\\)", "", Completed),
+                                 format = "%m/%d/%Y %H:%M:%S", tz = "UTC")]
+
 
   # Group by Participant_ID, Service, Pre_Post and calculate the count
   data[, count := .N, by = .(Participant_ID, Service, Pre_Post)]

@@ -1,5 +1,5 @@
 library(data.table)
-library(lubridate)
+# library(lubridate)
 
 create_metadata <- function(data, includes_scores = TRUE) {
   # Convert data to data.table if it's not already
@@ -59,7 +59,9 @@ create_metadata <- function(data, includes_scores = TRUE) {
 
   ## DATE VARIABLES
   # Handle date variables
-  date_cols <- names(data)[sapply(data, lubridate::is.Date)]
+  # date_cols <- names(data)[sapply(data, lubridate::is.Date)]
+  date_cols <- names(data)[sapply(data, function(x) inherits(x, "Date"))]
+
   data[, (date_cols) := lapply(.SD,
                                function(x) as.Date(ifelse(all(is.na(unique(x))),
                                                           NA,
