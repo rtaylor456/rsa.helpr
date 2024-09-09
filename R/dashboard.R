@@ -27,7 +27,7 @@ ui <- fluidPage(
                            column(12,
                                   checkboxInput("aggregate_utah",
                                                 "Aggregate Data",
-                                                value = FALSE)),
+                                                value = TRUE)),
                            column(12,
                                   checkboxInput("unidentified_to_0",
                                                 "Convert Unidentified to 0",
@@ -53,7 +53,7 @@ ui <- fluidPage(
                                                 value = TRUE)),
                            column(12,
                                   downloadButton("download_rsa",
-                                                 "Download Cleaned RSA-911 Data"))
+                                              "Download Cleaned RSA-911 Data"))
                          ),
                          tags$hr(style = "margin: 20px 0;"),  # Add larger space
 
@@ -72,7 +72,7 @@ ui <- fluidPage(
                                                 value = TRUE)),
                            column(12,
                                   downloadButton("download_scores",
-                                                     "Download Cleaned Scores Data"))
+                                                "Download Cleaned Scores Data"))
                          ),
                          tags$hr(style = "margin: 20px 0;"),  # Add larger space
 
@@ -89,7 +89,7 @@ ui <- fluidPage(
                                             value = "Participant_ID")),
                            column(12,
                                   downloadButton("download_merged",
-                                                 "Download Cleaned Merged Data"))
+                                                "Download Cleaned Merged Data"))
                          ),
                          tags$hr(style = "margin: 20px 0;"),  # Add larger space
 
@@ -99,7 +99,8 @@ ui <- fluidPage(
                                   h4("Metadata Generation")),
                            column(12,
                                   conditionalPanel(
-                                    condition = "output.merged_data_exists == true",
+                                    condition =
+                                      "output.merged_data_exists == true",
                                     checkboxInput("use_merged",
                                                   "(Use Merged Data)",
                                                   value = TRUE)
@@ -146,7 +147,8 @@ ui <- fluidPage(
                                                  # "Use Generated Metadata",
                                                  "Upload New Dataset")),
                          conditionalPanel(
-                           condition = "input.data_choice == 'Upload New Dataset'",
+                           condition =
+                             "input.data_choice == 'Upload New Dataset'",
                            fileInput("new_data", "Upload New Dataset",
                                      accept = c(".csv", ".xlsx")),
                            # uiOutput("validation_message"),
@@ -160,7 +162,8 @@ ui <- fluidPage(
                          )
                        ),
                        mainPanel(
-                         uiOutput("data_ui"),  # Use uiOutput to dynamically render the content
+                         uiOutput("data_ui"),
+                         # Use uiOutput to dynamically render the content
                          DTOutput("table_selected_data"),
                          verbatimTextOutput("summary_selected_data"),
                          uiOutput("validation_message")
@@ -450,13 +453,17 @@ server <- function(input, output, session) {
 
   # Reactive expression to handle selected data
   selected_data <- reactive({
-    if (input$data_choice == "Use Cleaned RSA-911 Data" && !is.null(rv$rsa_data_cleaned)) {
+    if (input$data_choice == "Use Cleaned RSA-911 Data" &&
+        !is.null(rv$rsa_data_cleaned)) {
       return(rv$rsa_data_cleaned)
-    } else if (input$data_choice == "Use Cleaned Scores Data" && !is.null(rv$scores_data_cleaned)) {
+    } else if (input$data_choice == "Use Cleaned Scores Data" &&
+               !is.null(rv$scores_data_cleaned)) {
       return(rv$scores_data_cleaned)
-    } else if (input$data_choice == "Use Cleaned Merged Data" && !is.null(rv$merged_data)) {
+    } else if (input$data_choice == "Use Cleaned Merged Data" &&
+               !is.null(rv$merged_data)) {
       return(rv$merged_data)
-    } else if (input$data_choice == "Use Generated Metadata" && !is.null(rv$metadata)) {
+    } else if (input$data_choice == "Use Generated Metadata" &&
+               !is.null(rv$metadata)) {
       return(rv$metadata)
 
     } else if (input$data_choice == "Upload New Dataset") {
@@ -485,13 +492,17 @@ server <- function(input, output, session) {
       rv$dataset_type <- NULL
 
       # Check if data is available based on the selected choice
-      if (input$data_choice == "Use Cleaned RSA-911 Data" && is.null(rv$rsa_data_cleaned)) {
+      if (input$data_choice == "Use Cleaned RSA-911 Data" &&
+          is.null(rv$rsa_data_cleaned)) {
         return(NULL)
-      } else if (input$data_choice == "Use Cleaned Scores Data" && is.null(rv$scores_data_cleaned)) {
+      } else if (input$data_choice == "Use Cleaned Scores Data" &&
+                 is.null(rv$scores_data_cleaned)) {
         return(NULL)
-      } else if (input$data_choice == "Use Cleaned Merged Data" && is.null(rv$merged_data)) {
+      } else if (input$data_choice == "Use Cleaned Merged Data" &&
+                 is.null(rv$merged_data)) {
         return(NULL)
-      } else if (input$data_choice == "Use Generated Metadata" && is.null(rv$metadata)) {
+      } else if (input$data_choice == "Use Generated Metadata" &&
+                 is.null(rv$metadata)) {
         return(NULL)
       }
       return(switch(input$data_choice,
@@ -574,8 +585,10 @@ server <- function(input, output, session) {
         include_patterns <- "(?i)application|(?i)gender|(?i)sex|(?i)plan|(?i)disability"
         exclude_patterns <- "(?i)score"
 
-        included_variables <- grep(include_patterns, names(data), value = TRUE, perl = TRUE)
-        excluded_variables <- grep(exclude_patterns, names(data), value = TRUE, perl = TRUE)
+        included_variables <- grep(include_patterns, names(data), value = TRUE,
+                                   perl = TRUE)
+        excluded_variables <- grep(exclude_patterns, names(data), value = TRUE,
+                                   perl = TRUE)
 
         if (length(included_variables) < 1 || length(excluded_variables) > 0) {
           return("THIS DOES NOT APPEAR TO BE AN RSA-911 DATASET. Please ensure it is classified correctly and contains RSA-911 variables and no score variables.")
@@ -587,8 +600,10 @@ server <- function(input, output, session) {
         include_patterns <- "(?i)score"
         exclude_patterns <- "(?i)application|(?i)gender|(?i)sex|(?i)plan|(?i)disability"
 
-        included_variables <- grep(include_patterns, names(data), value = TRUE, perl = TRUE)
-        excluded_variables <- grep(exclude_patterns, included_variables, value = TRUE, perl = TRUE)
+        included_variables <- grep(include_patterns, names(data), value = TRUE,
+                                   perl = TRUE)
+        excluded_variables <- grep(exclude_patterns, included_variables,
+                                   value = TRUE, perl = TRUE)
 
         if (length(included_variables) < 1 || length(excluded_variables) > 0) {
           return("THIS DOES NOT APPEAR TO BE A SCORES DATASET. Please ensure it is classified correctly and contains score variables and no RSA-911 variables.")
@@ -600,8 +615,10 @@ server <- function(input, output, session) {
         demo_patterns <- "(?i)application|(?i)gender|(?i)sex|(?i)plan|(?i)disability"
         score_patterns <- "(?i)score"
 
-        demo_variables <- grep(demo_patterns, names(data), value = TRUE, perl = TRUE)
-        score_variables <- grep(score_patterns, names(data), value = TRUE, perl = TRUE)
+        demo_variables <- grep(demo_patterns, names(data), value = TRUE,
+                               perl = TRUE)
+        score_variables <- grep(score_patterns, names(data), value = TRUE,
+                                perl = TRUE)
 
         if (length(demo_variables) < 1 || length(score_variables) < 1) {
           return("THIS DOES NOT APPEAR TO BE A MERGED DATASET. Please ensure it is classified correctly and contains BOTH RSA-911 variables and score variables.")
@@ -620,10 +637,13 @@ server <- function(input, output, session) {
         demo_patterns <- "(?i)application|(?i)gender|(?i)sex|(?i)plan|(?i)disability"
         score_patterns <- "(?i)score"
 
-        demo_variables <- grep(demo_patterns, names(data), value = TRUE, perl = TRUE)
-        score_variables <- grep(score_patterns, names(data), value = TRUE, perl = TRUE)
+        demo_variables <- grep(demo_patterns, names(data), value = TRUE,
+                               perl = TRUE)
+        score_variables <- grep(score_patterns, names(data), value = TRUE,
+                                perl = TRUE)
 
-        participant_variable <- grep("(?i)participant|(?i)_ID", names(data), value = TRUE, perl = TRUE)
+        participant_variable <- grep("(?i)participant|(?i)_ID", names(data),
+                                     value = TRUE, perl = TRUE)
 
         if (length(participant_variable) == 0) {
           return("Participant ID variable not found in the metadata dataset.")
@@ -648,16 +668,21 @@ server <- function(input, output, session) {
     data_choice <- input$data_choice
     dataset_type <- input$dataset_type
 
-    if ((data_choice == "Use Cleaned RSA-911 Data") || (data_choice == "Upload New Dataset" && dataset_type == "rsa")) {
+    if ((data_choice == "Use Cleaned RSA-911 Data") ||
+        (data_choice == "Upload New Dataset" && dataset_type == "rsa")) {
       tabsetPanel(
         tabPanel("Demographics",
-                 plotOutput("demographics_plot1"), plotOutput("demographics_plot2"),
-                 plotOutput("demographics_plot3"), plotOutput("demographics_plot4")),
+                 plotOutput("demographics_plot1"),
+                 plotOutput("demographics_plot2"),
+                 plotOutput("demographics_plot3"),
+                 plotOutput("demographics_plot4")),
         tabPanel("Enrollment Length",
                  plotOutput("enrollment_plot1"), plotOutput("enrollment_plot2"),
                  plotOutput("enrollment_plot3"))
       )
-    } else if ((data_choice == "Use Cleaned Scores Data") || (data_choice == "Upload New Dataset" && dataset_type == "scores")) {
+    } else if ((data_choice == "Use Cleaned Scores Data") ||
+               (data_choice == "Upload New Dataset" &&
+                dataset_type == "scores")) {
       tabsetPanel(
         tabPanel("Across Services",
                  plotOutput("services_plot1"), plotOutput("services_plot2"),
@@ -667,25 +692,50 @@ server <- function(input, output, session) {
                  # plotOutput("providers_plot2")
                  )
       )
-    } else if ((data_choice == "Use Cleaned Merged Data") || (data_choice == "Upload New Dataset" && dataset_type == "merged")) {
+    } else if ((data_choice == "Use Cleaned Merged Data") ||
+               (data_choice == "Upload New Dataset" &&
+                dataset_type == "merged")) {
       tabsetPanel(
         tabPanel("General Demographics",
                  plotOutput("gen_demo_plot1"), plotOutput("gen_demo_plot2"),
-                 plotOutput("gen_demo_plot3"), plotOutput("gen_demo_plot4"), plotOutput("gen_demo_plot5")),
+                 plotOutput("gen_demo_plot3"), plotOutput("gen_demo_plot4"),
+                 plotOutput("gen_demo_plot5")),
         tabPanel("Demographics & Scores",
-                 plotOutput("demo_scores_plot1"), plotOutput("demo_scores_plot2"),
-                 plotOutput("demo_scores_plot3"), plotOutput("demo_scores_plot4"),
-                 plotOutput("demo_scores_plot5"), plotOutput("demo_scores_plot6"))
+                 plotOutput("demo_scores_plot1"),
+                 plotOutput("demo_scores_plot2"),
+                 plotOutput("demo_scores_plot3"),
+                 plotOutput("demo_scores_plot4"),
+                 plotOutput("demo_scores_plot5"),
+                 plotOutput("demo_scores_plot6"))
       )
-    }  else if ((data_choice == "Use Generated Metadata") || (data_choice == "Upload New Dataset" && dataset_type == "metadata")) {
+    }  else if ((data_choice == "Use Generated Metadata") ||
+                (data_choice == "Upload New Dataset" &&
+                 dataset_type == "metadata")) {
       tabsetPanel(
         tabPanel("General Demographics",
-                 plotOutput("meta_gen_demo_plot1"), plotOutput("meta_gen_demo_plot2"),
-                 plotOutput("meta_gen_demo_plot3"), plotOutput("meta_gen_demo_plot4"), plotOutput("meta_gen_demo_plot5")),
-        tabPanel("Demographics & Scores",
-                 plotOutput("meta_demo_scores_plot1"), plotOutput("meta_demo_scores_plot2"),
-                 plotOutput("meta_demo_scores_plot3"), plotOutput("meta_demo_scores_plot4"),
-                 plotOutput("meta_demo_scores_plot5"), plotOutput("meta_demo_scores_plot6"))
+                 plotOutput("meta_gen_demo_plot1"),
+                 plotOutput("meta_gen_demo_plot2"),
+                 plotOutput("meta_gen_demo_plot3"),
+                 plotOutput("meta_gen_demo_plot4"),
+                 plotOutput("meta_gen_demo_plot5")),
+        tabPanel("Investigate Difference Scores",
+                 plotOutput("meta_diff_plot1"),
+                 plotOutput("meta_diff_plot2"),
+                 plotOutput("meta_diff_plot3"),
+                 plotOutput("meta_diff_plot4"),
+                 plotOutput("meta_diff_plot5"),
+                 plotOutput("meta_diff_plot6")),
+        tabPanel("Investigate Wage",
+                 plotOutput("meta_wage_plot1"),
+                 plotOutput("meta_wage_plot2"),
+                 plotOutput("meta_wage_plot3"),
+                 plotOutput("meta_wage_plot4"),
+                 plotOutput("meta_wage_plot5"),
+                 plotOutput("meta_wage_plot6")),
+        tabPanel("Investigate Employment",
+                 plotOutput("meta_employ_plot1"),
+                 plotOutput("meta_employ_plot2"),
+                 plotOutput("meta_employ_plot3"))
       )
     }
   })
@@ -720,11 +770,13 @@ server <- function(input, output, session) {
             main = "Distributions of Difference Scores Across Services",
             ylab = "Difference Scores",
             xlab = "Service Test Category",
-            cex.axis = 0.7)
-    abline(h = differences_median, lty = 1, lwd = 3, col = "blue")
+            cex.axis = 0.7,
+            col = "lightsteelblue")
+    abline(h = differences_median, lty = 1, lwd = 3, col = "steelblue")
     par(las = 1)
 
   })
+
   output$services_plot2 <- renderPlot({
     req(selected_data())
     data <- selected_data()
@@ -743,8 +795,9 @@ server <- function(input, output, session) {
             main = "Distributions of Pre Scores Across Services",
             ylab = "Pre Scores",
             xlab = "Service Test Category",
-            cex.axis = 0.7)
-    abline(h = pre_scores_median, lty = 2, lwd = 3, col = "blue")
+            cex.axis = 0.7,
+            col = "lightsteelblue")
+    abline(h = pre_scores_median, lty = 2, lwd = 3, col = "steelblue")
     par(las = 1)
   })
 
@@ -776,9 +829,10 @@ server <- function(input, output, session) {
             main = "Distributions of Post Scores Across Services",
             ylab = "Post Scores",
             xlab = "Service Test Category",
-            cex.axis = 0.7)
-    abline(h = pre_scores_median, lty = 2, lwd = 3, col = "blue")
-    abline(h = post_scores_median, lty = 3, lwd = 3, col = "blue")
+            cex.axis = 0.7,
+            col = "lightsteelblue")
+    abline(h = pre_scores_median, lty = 2, lwd = 3, col = "steelblue")
+    abline(h = post_scores_median, lty = 3, lwd = 3, col = "steelblue")
     par(las = 1)
   })
 
@@ -810,13 +864,12 @@ server <- function(input, output, session) {
             data = data,
             main = "Median Difference Scores Across Providers",
             ylab = "Median Difference Score",
-            cex.axis = 0.7)
-    abline(h = overall_median, lty = 1, lwd = 3, col = "blue")
+            cex.axis = 0.7,
+            col = "lightsteelblue")
+    abline(h = overall_median, lty = 1, lwd = 3, col = "steelblue")
     par(las = 1)
   })
 
-
-  # output$providers_plot2 <- renderPlot({ plot(rnorm(100)) })
 
   ## MERGED plots
   output$gen_demo_plot1 <- renderPlot({ plot(rnorm(100)) })
@@ -833,8 +886,53 @@ server <- function(input, output, session) {
   output$demo_scores_plot6 <- renderPlot({ plot(rnorm(100)) })
 
   ## METADATA plots
-  # output$meta_gen_demo_plot1 <- renderPlot({ plot(rnorm(100)) })
   output$meta_gen_demo_plot1 <- renderPlot({
+    req(selected_data())
+    data <- selected_data()
+
+    if (is.null(data)) {
+      return("No data available.")
+    }
+
+    hist(data$Enroll_Length,
+         col = "steelblue",
+         main = "Distribution of Enrollment Lengths",
+         xlab = "Enrollment Length (Quarters)")
+
+    })
+
+
+  # output$meta_gen_demo_plot1 <- renderPlot({
+  #   req(selected_data())
+  #   data <- selected_data()
+  #
+    # if (is.null(data)) {
+    #   return()
+    # }
+  #
+  #   if ("Participant_ID" %in% names(data)) {
+  #     # Ensure the enrollment length column exists
+  #     if ("Enroll_Length" %in% names(data)) {
+  #       ggplot(data, aes(x = Enroll_Length)) +
+  #         geom_histogram(binwidth = 1, fill = "steelblue", color = "black") +
+  #         labs(title = "Histogram of Enrollment Length",
+  #              x = "Enrollment Length", y = "Frequency")
+  #     } else {
+  #       ggplot() +
+  #         labs(title = "No Enrollment Length Data", x = "", y = "") +
+  #         geom_text(aes(x = 1, y = 1,
+  #                       label = "Enrollment Length column not found"),
+  #                   size = 5, color = "red")
+  #     }
+  #   } else {
+  #     ggplot() +
+  #       labs(title = "Invalid Data Type", x = "", y = "") +
+  #       geom_text(aes(x = 1, y = 1, label = "Data is not RSA-911"),
+  #                 size = 5, color = "red")
+  #   }
+  #   })
+
+  output$meta_gen_demo_plot2 <- renderPlot({
     req(selected_data())
     data <- selected_data()
 
@@ -842,40 +940,355 @@ server <- function(input, output, session) {
       return()
     }
 
-    if ("Participant_ID" %in% names(data)) {
-      # Ensure the enrollment length column exists
-      if ("Enroll_Length" %in% names(data)) {
-        ggplot(data, aes(x = Enroll_Length)) +
-          geom_histogram(binwidth = 1, fill = "blue", color = "black") +
-          labs(title = "Histogram of Enrollment Length",
-               x = "Enrollment Length", y = "Frequency")
-      } else {
-        ggplot() +
-          labs(title = "No Enrollment Length Data", x = "", y = "") +
-          geom_text(aes(x = 1, y = 1,
-                        label = "Enrollment Length column not found"),
-                    size = 5, color = "red")
-      }
-    } else {
-      ggplot() +
-        labs(title = "Invalid Data Type", x = "", y = "") +
-        geom_text(aes(x = 1, y = 1, label = "Data is not RSA-911"),
-                  size = 5, color = "red")
-    }
     })
 
-  output$meta_gen_demo_plot2 <- renderPlot({ plot(rnorm(100)) })
+
   output$meta_gen_demo_plot3 <- renderPlot({ plot(rnorm(100)) })
   output$meta_gen_demo_plot4 <- renderPlot({ plot(rnorm(100)) })
   output$meta_gen_demo_plot5 <- renderPlot({ plot(rnorm(100)) })
 
-  output$meta_demo_scores_plot1 <- renderPlot({ plot(rnorm(100)) })
-  output$meta_demo_scores_plot2 <- renderPlot({ plot(rnorm(100)) })
-  output$meta_demo_scores_plot3 <- renderPlot({ plot(rnorm(100)) })
-  output$meta_demo_scores_plot4 <- renderPlot({ plot(rnorm(100)) })
-  output$meta_demo_scores_plot5 <- renderPlot({ plot(rnorm(100)) })
-  output$meta_demo_scores_plot6 <- renderPlot({ plot(rnorm(100)) })
 
+  output$meta_diff_plot1 <- renderPlot({
+    req(selected_data())
+    data <- selected_data()
+
+    # these variables have been created in the data cleaning process,
+    #   so we can use the exact names
+    plot(data$Median_Time_Passed_Days,
+         data$Median_Difference_Score,
+         main = "Difference Scores Across Time in Program",
+         ylab = "Median Difference Scores",
+         xlab = "Median Days Spent in Programs (per individual)",
+         col = "steelblue",
+         pch = 3)
+    })
+
+  output$meta_diff_plot2 <- renderPlot({
+    req(selected_data())
+    data <- selected_data()
+
+    plot(as.numeric(data$Enroll_Length), data$Median_Difference_Score,
+         col = "steelblue",
+         main = "Difference Scores Across Quarters Enrolled",
+         ylab = "Median Difference Score",
+         xlab = "Total Quarters Enrolled",
+         pch = 8)
+
+    })
+
+  output$meta_diff_plot3 <- renderPlot({
+    req(selected_data())
+    data <- selected_data()
+
+    # the name for the gender/sex column could be varied, so we need to
+    #   account for this possibility
+    sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
+                    value = TRUE, perl = TRUE)
+
+    boxplot(Median_Difference_Score ~ data[[sex_col]], data = data,
+            main = "Difference Scores by Gender",
+            names = c("Males", "Females", "Did not identify"),
+            xlab = "Gender",
+            ylab = "Median Difference Scores",
+            col = "steelblue")
+
+    })
+
+  output$meta_diff_plot5 <- renderPlot({
+    req(selected_data())
+    data <- selected_data()
+
+    # the name for the gender/sex column could be varied, so we need to
+    #   account for this possibility
+    # severity_col <- grep("((?i)_SWD|(?i)_severity)(?!.*(?i)_desc|_age)",
+    #                      names(data), value = TRUE, perl = TRUE)
+    severity_col <- grep("((?i)_priority|(?i)_severity)(?!.*(?i)_desc|_age)",
+                         names(data), value = TRUE, perl = TRUE)
+
+    boxplot(Median_Difference_Score ~ data[[severity_col]], data = data,
+            main = "Difference Scores by Disability Severity",
+            names = c("Non significant", "Significant",
+                      "Most significant"),
+            xlab = "Disability Severity",
+            ylab = "Median Difference Scores",
+            col = "steelblue")
+
+  })
+
+  output$meta_diff_plot6 <- renderPlot({
+    req(selected_data())
+    data <- selected_data()
+
+    prim_dis_col <- grep("(?i)^(?=.*prim)(?=.*impairment)(?!.*(desc))",
+                         names(data), value = TRUE, perl = TRUE)
+
+    boxplot(Median_Difference_Score ~ as.character(data[[prim_dis_col]]),
+            data = data,
+            main = "Difference Scores by Primary Disability Type",
+            xlab = "Primary Disability",
+            ylab = "Median Difference Scores",
+            col = "steelblue")
+
+  })
+
+  output$meta_diff_plot4 <- renderPlot({
+    req(selected_data())
+    data <- selected_data()
+
+    race_cols <- grep("(?i)(_indian|_asian|_black|_hawaiian|_islander|_white|hispanic)(?!.*(?i)_desc)",
+                      names(data),
+                      value = TRUE, perl = TRUE)
+
+    data_subset <- data[, .SD, .SDcols = c("Median_Difference_Score",
+                                           race_cols)]
+
+
+    # Create a logical vector to filter rows
+    # data_subset <- data_subset[ ,
+    #                             keep_rows := apply(.SD, 1,
+    #                                                function(row) any(row == 1)),
+    #                             .SDcols = race_cols]
+    # filtered_data <- data_subset[keep_rows == TRUE]
+    #
+    # # Remove the temporary 'keep_rows' column
+    # filtered_data[, keep_rows := NULL]
+
+    # Create a long-format data.table
+    long_data <- melt(data_subset,
+                      id.vars = "Median_Difference_Score",
+                      measure.vars = race_cols,
+                      variable.name = "Race",
+                      value.name = "Has_Race")
+    # Filter rows where Has_Race is 1
+    filtered_data <- long_data[Has_Race == 1]
+
+    # Adjust the outer margins, so that the bottom doesn't get cut off
+    par(oma = c(0, 0, 0, 0) + 0.6)
+    boxplot(Median_Difference_Score ~ Race, data = filtered_data,
+            # names = gsub("^E[0-9]+_|_911$", "", race_cols),
+            col = "steelblue",
+            xaxt = "n",
+            yaxt = "n",
+            xlab = "",
+            ylab = "Median Difference Score",
+            main = "Difference Scores Across Race"
+            )
+    # axis(side = 1, labels = FALSE) # this adds in x-axis tick marks
+    axis(side = 2, las = 2, mgp = c(3, 0.75, 0))
+
+    text(x = 1:length(race_cols),
+         y = par("usr")[3] - 0.45,
+         labels = gsub("^E[0-9]+_|_911$", "", race_cols),
+         xpd = NA,
+         ## Rotate the labels by 45 degrees.
+         srt = 45,
+         cex = .8,
+         adj = 1)
+
+
+    # Plot the boxplots
+    # ggplot(filtered_data, aes(x = Race, y = Median_Difference_Score)) +
+    #   geom_boxplot() +
+    #   theme_minimal() +
+    #   labs(title = "Boxplots of Median Difference Score Across Races",
+    #        x = "Race",
+    #        y = "Median Difference Score") +
+    #   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+  })
+
+
+  output$meta_wage_plot1 <- renderPlot({
+    req(selected_data())
+    data <- selected_data()
+
+    wage_col <- grep("(?i)^(?=.*wage)(?=.*exit)(?!.*(desc))", names(data),
+                     value = TRUE, perl = TRUE)
+    wages <- data[, .SD, .SDcols = wage_col]
+    wages_vector <- as.vector(unlist(wages))
+
+    # these variables have been created in the data cleaning process,
+    #   so we can use the exact names
+    plot(data$Median_Time_Passed_Days,
+         wages_vector,
+         main = "Exit Wages Across Days in Program",
+         ylab = "Exit Wages ($ per hour)",
+         xlab = "Median Days Spent in Programs (per individual)",
+         col = "steelblue",
+         pch = 3)
+  })
+
+  output$meta_wage_plot2 <- renderPlot({
+    req(selected_data())
+    data <- selected_data()
+
+    wage_col <- grep("(?i)^(?=.*wage)(?=.*exit)(?!.*(desc))", names(data),
+                     value = TRUE, perl = TRUE)
+    wages <- data[, .SD, .SDcols = wage_col]
+    wages_vector <- as.vector(unlist(wages))
+
+    plot(as.numeric(data$Enroll_Length), wages_vector,
+         col = "steelblue",
+         main = "Exit Wages Across Quarters Enrolled",
+         ylab = "Exit Wages ($ per Hour)",
+         xlab = "Total Quarters Enrolled",
+         pch = 8)
+
+    })
+
+
+  output$meta_wage_plot3 <- renderPlot({
+    req(selected_data())
+    data <- selected_data()
+
+    wage_col <- grep("(?i)^(?=.*wage)(?=.*exit)(?!.*(desc))", names(data),
+                     value = TRUE, perl = TRUE)
+    wages <- data[, .SD, .SDcols = wage_col]
+    wages_vector <- as.vector(unlist(wages))
+
+    # the name for the gender/sex column could be varied, so we need to
+    #   account for this possibility
+    sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
+                    value = TRUE, perl = TRUE)
+
+    boxplot(wages_vector ~ data[[sex_col]],
+            main = "Exit Wages by Gender",
+            names = c("Males", "Females", "Did not identify"),
+            xlab = "Gender",
+            ylab = "Exit Wages ($ per Hour)",
+            col = "steelblue")
+    })
+
+
+  output$meta_wage_plot5 <- renderPlot({
+    req(selected_data())
+    data <- selected_data()
+
+    wage_col <- grep("(?i)^(?=.*wage)(?=.*exit)(?!.*(desc))", names(data),
+                     value = TRUE, perl = TRUE)
+    wages <- data[, .SD, .SDcols = wage_col]
+    wages_vector <- as.vector(unlist(wages))
+
+    # the name for the gender/sex column could be varied, so we need to
+    #   account for this possibility
+    # severity_col <- grep("((?i)_SWD|(?i)_severity)(?!.*(?i)_desc|_age)",
+    #                      names(data), value = TRUE, perl = TRUE)
+    severity_col <- grep("((?i)_priority|(?i)_severity)(?!.*(?i)_desc|_age)",
+                         names(data), value = TRUE, perl = TRUE)
+
+    boxplot(wages_vector ~ data[[severity_col]],
+            main = "Exit Wages by Disability Severity",
+            names = c("Non significant", "Significant",
+                      "Most significant"),
+            xlab = "Disability Severity",
+            ylab = "Exit Wages ($ per Hour)",
+            col = "steelblue")
+
+  })
+
+
+  output$meta_wage_plot6 <- renderPlot({
+    req(selected_data())
+    data <- selected_data()
+
+    wage_col <- grep("(?i)^(?=.*wage)(?=.*exit)(?!.*(desc))", names(data),
+                     value = TRUE, perl = TRUE)
+    wages <- data[, .SD, .SDcols = wage_col]
+    wages_vector <- as.vector(unlist(wages))
+
+    prim_dis_col <- grep("(?i)^(?=.*prim)(?=.*impairment)(?!.*(desc))",
+                         names(data), value = TRUE, perl = TRUE)
+
+    boxplot(wages_vector ~ as.character(data[[prim_dis_col]]),
+            main = "Exit Wages by Primary Disability Type",
+            xlab = "Primary Disability",
+            ylab = "Exit Wages ($ per Hour)",
+            col = "steelblue")
+
+  })
+
+
+  output$meta_wage_plot4 <- renderPlot({
+    req(selected_data())
+    data <- selected_data()
+
+    wage_col <- grep("(?i)^(?=.*wage)(?=.*exit)(?!.*(desc))", names(data),
+                     value = TRUE, perl = TRUE)
+    wages <- data[, .SD, .SDcols = wage_col]
+    wages_vector <- as.vector(unlist(wages))
+
+    race_cols <- grep("(?i)(_indian|_asian|_black|_hawaiian|_islander|_white|hispanic)(?!.*(?i)_desc)",
+                      names(data),
+                      value = TRUE, perl = TRUE)
+
+    data_subset <- data[, .SD, .SDcols = c(wage_col,
+                                           race_cols)]
+
+    # Create a long-format data.table
+    long_data <- melt(data_subset,
+                      id.vars = wage_col,
+                      measure.vars = race_cols,
+                      variable.name = "Race",
+                      value.name = "Has_Race")
+    # Filter rows where Has_Race is 1
+    filtered_data <- long_data[Has_Race == 1]
+
+
+    # Ensure wage_col has only one column name for the boxplot
+    if (length(wage_col) != 1) {
+      stop("wage_col should contain exactly one column name.")
+    }
+
+    # Extract the wage column name
+    wage_col_name <- wage_col[1]
+
+    # Create a formula for the boxplot
+    boxplot_formula <- as.formula(paste(wage_col_name, "~ Race"))
+
+    # Plot using the dynamic formula
+    par(oma = c(0, 0, 0, 0) + 0.6)
+    boxplot(boxplot_formula, data = filtered_data,
+            col = "steelblue",
+            xaxt = "n",
+            yaxt = "n",
+            xlab = "",
+            ylab = "Exit Wages ($ per Hour)",
+            main = "Exit Wages Across Race"
+    )
+    axis(side = 2, las = 2, mgp = c(3, 0.75, 0))
+
+    text(x = 1:length(race_cols),
+         y = par("usr")[3] - 0.45,
+         labels = gsub("^E[0-9]+_|_911$", "", race_cols),
+         xpd = NA,
+         ## Rotate the labels by 45 degrees.
+         srt = 45,
+         cex = .8,
+         adj = 1)
+
+  })
+
+
+  output$meta_employ_plot1 <- renderPlot({
+    req(selected_data())
+    data <- selected_data()
+
+    exit_work_col <- grep("(?i)_exit*(?i)_work(?!.*(?i)_amt)(?!.*(?i)_desc)",
+                          names(data), value = TRUE, perl = TRUE)
+
+    library(ggplot2)
+
+
+  })
+
+
+
+
+
+  ##################
+  # MODELS SIDEBAR #
+  ##################
 
   output$models_sidebar <- renderUI({
   # output$models_ui <- renderUI({
@@ -883,7 +1296,8 @@ server <- function(input, output, session) {
     data_choice <- input$data_choice
     dataset_type <- input$dataset_type
 
-    if ((data_choice == "Use Cleaned RSA-911 Data") || (data_choice == "Upload New Dataset" && dataset_type == "rsa")) {
+    if ((data_choice == "Use Cleaned RSA-911 Data") ||
+        (data_choice == "Upload New Dataset" && dataset_type == "rsa")) {
       # sidebarPanel(
         fluidRow(
           column(12,
@@ -925,7 +1339,9 @@ server <- function(input, output, session) {
       )
     # )
 
-    } else if ((data_choice == "Use Cleaned Scores Data") || (data_choice == "Upload New Dataset" && dataset_type == "scores")) {
+    } else if ((data_choice == "Use Cleaned Scores Data") ||
+               (data_choice == "Upload New Dataset" &&
+                dataset_type == "scores")) {
 
       fluidRow(
         column(12,
@@ -936,14 +1352,18 @@ server <- function(input, output, session) {
                                 "ANOVA across Providers")
         )
       )
-    } else if ((data_choice == "Use Cleaned Merged Data") || (data_choice == "Upload New Dataset" && dataset_type == "merged")) {
+    } else if ((data_choice == "Use Cleaned Merged Data") ||
+               (data_choice == "Upload New Dataset" &&
+                dataset_type == "merged")) {
       sidebarPanel(
         fluidRow(
           column(12,
                  h4("Merged Data Modeling Options"))
         )
       )
-    }  else if ((data_choice == "Use Generated Metadata") || (data_choice == "Upload New Dataset" && dataset_type == "metadata")) {
+    }  else if ((data_choice == "Use Generated Metadata") ||
+                (data_choice == "Upload New Dataset" &&
+                 dataset_type == "metadata")) {
       fluidRow(
         column(12,
                h4("Metadata Modeling Options")),
@@ -970,6 +1390,10 @@ server <- function(input, output, session) {
                              "Severity",
                              value = FALSE)),
         column(12,
+               checkboxInput("enroll_length",
+                             "Enrollment Length",
+                             value = FALSE)),
+        column(12,
                checkboxInput("prim_impairment",
                              "Primary Impairment",
                              value = FALSE)),
@@ -987,6 +1411,9 @@ server <- function(input, output, session) {
   })
 
 
+  #############
+  # RSA MODEL #
+  #############
 
   model_rsa <- reactive({
     req(selected_data())
@@ -996,13 +1423,15 @@ server <- function(input, output, session) {
     if (response == "Predict Employment Outcome"){
       # employ_col <- grep("(?i)^(?=.*employment)(?!.*(?i)_desc)(?!.*(?i)_wage)(?!.*(?i)un)",
       #                    names(data), value = TRUE, perl = TRUE)
-      employ_col <- "E389_Q4_Employment_911"
+      # employ_col <- "E389_Q4_Employment_911"
+      exit_work_col <- grep("(?i)_exit*(?i)_work(?!.*(?i)_amt)(?!.*(?i)_desc)",
+                            names(data), value = TRUE, perl = TRUE)
 
       # employ_col <- grep()
-      if (length(employ_col) < 1){
+      if (length(exit_work_col) < 1){
         return("No employment variable available.")
       } else{
-        y <- employ_col
+        y <- exit_work_col
       }
 
 
@@ -1030,7 +1459,8 @@ server <- function(input, output, session) {
     }
 
     if (input$race) {
-      race_cols <- grep("(?i)(_indian|_asian|_black|_hawaiian|_islander|_white|hispanic)(?!.*(?i)_desc)", names(data),
+      race_cols <- grep("(?i)(_indian|_asian|_black|_hawaiian|_islander|_white|hispanic)(?!.*(?i)_desc)",
+                        names(data),
                         value = TRUE, perl = TRUE)
       if (length(race_cols) < 1){
         return("No race variable(s) available.")
@@ -1040,7 +1470,9 @@ server <- function(input, output, session) {
     }
 
     if (input$severity) {
-      severity_col <- grep("((?i)_SWD|(?i)_severity)(?!.*(?i)_desc|_age)",
+      # severity_col <- grep("((?i)_SWD|(?i)_severity)(?!.*(?i)_desc|_age)",
+      #                      names(data), value = TRUE, perl = TRUE)
+      severity_col <- grep("((?i)_priority|(?i)_severity)(?!.*(?i)_desc|_age)",
                            names(data), value = TRUE, perl = TRUE)
       if (length(severity_col) < 1){
         return("No disability severity variable available.")
@@ -1048,6 +1480,16 @@ server <- function(input, output, session) {
         predictors <- c(predictors, severity_col)
       }
     }
+
+    # if (input$enroll_length) {
+    #   enroll_length_col <- grep("Enroll_Length",
+    #                        names(data), value = TRUE, perl = TRUE)
+    #   if (length(enroll_length_col) < 1){
+    #     return("No enrollment length variable available.")
+    #   } else{
+    #     predictors <- c(predictors, enroll_length_col)
+    #   }
+    # }
 
     if (input$prim_impairment) {
       prim_dis_col <- grep("(?i)^(?=.*prim)(?=.*impairment)(?!.*(desc))",
@@ -1083,9 +1525,25 @@ server <- function(input, output, session) {
     #   formula <- as.formula(paste(y, "~", paste(predictors, collapse = "+")))
     # }
 
-    lm(formula, data = data)
+    if (response == "Predict Ending Wage") {
+      lm(formula = formula, data = data)
+    } else if (response == "Predict Employment Outcome") {
+      glm(formula, family = binomial, data = data)
+    }
 
   })
+
+  # Render model summaries or ANOVA results
+  output$model_rsa_summary <- renderPrint({
+    req(model_rsa())
+    summary(model_rsa())
+  })
+
+
+
+  ################
+  # SCORES MODEL #
+  ################
 
   model_scores <- reactive({
     req(selected_data())
@@ -1113,31 +1571,110 @@ server <- function(input, output, session) {
                  data$Difference_QWEX, data$Difference_WBLE),
         Services = factor(rep(filtered_columns, each = nrow(data)))
       )
-#
-#       # Calculate means for each column
-#       means <- sapply(differences, function(x) mean(x, na.rm = TRUE))
-#
-#       # Create a data frame for ANOVA
-#       means_df <- data.frame(
-#         service = names(means),
-#         mean_value = means
-#       )
+
 
       # Perform ANOVA
       # result <- aov(mean_value ~ service, data = means_df)
-      result <- aov(Difference_Scores ~ Services, data = long_data)
+      result <- aov(Difference_Scores ~ Services, data = na.omit(long_data))
+      # pairwise comparisons
+      tukey_result <- TukeyHSD(result)
 
 
     } else if (anova_test == "ANOVA across Providers") {
 
-      result <- aov(Median_Difference_Score ~ Provider, data = data)
+      result <- aov(Median_Difference_Score ~ Provider,
+                    data = na.omit(data[, c("Median_Difference_Score",
+                                                "Provider")]))
+
+      # pairwise comparisons
+      tukey_result <- TukeyHSD(result)
+
 
     } else {
       return(NULL)  # Return NULL if no valid test is selected
     }
-    result
+
+    list(anova = result, tukey = tukey_result)
 
   })
+
+
+  output$model_scores_summary <- renderPrint({
+    req(model_scores())
+    summary(model_scores()$anova)
+  })
+
+  # Render Tukey HSD pairwise comparison results (significant pairs only)
+  output$tukey_scores_summary <- renderPrint({
+    req(model_scores())
+    tukey_result <- model_scores()$tukey
+
+    # Get the Tukey HSD results as a data frame
+    tukey_df <- as.data.frame(tukey_result$Services)
+    # Or use $Provider for "ANOVA across Providers"
+
+    # Filter only significant pairs (p-value < 0.05)
+    significant_pairs <- tukey_df[tukey_df$`p adj` < 0.05, ]
+
+    # If there are no significant pairs, print a message
+    if (nrow(significant_pairs) == 0) {
+      cat("No significant pairwise comparisons found. May be due to sampling sizes.")
+    } else {
+      print(significant_pairs)
+    }
+  })
+
+
+  # Reactive function to create residual plots
+  output$scores_residuals1 <- renderPlot({
+    req(model_scores())
+
+    # residuals
+    model <- model_scores()$anova
+    residuals <- resid(model)
+
+    # histogram to look for normality
+    hist(residuals, col = "steelblue")
+
+  })
+
+  output$scores_residuals2 <- renderPlot({
+    req(model_scores())
+
+    # residuals
+    model <- model_scores()$anova
+    residuals <- resid(model)
+
+    # QQ plot to look for normality
+    qqnorm(residuals)
+    qqline(residuals, col = "steelblue")
+
+  })
+
+  output$scores_residuals3 <- renderPlot({
+    req(model_scores())
+
+    # Extract fitted values and residuals
+    model <- model_scores()$anova
+    residuals <- resid(model)
+    fitted <- fitted(model)
+
+    # Generate residuals vs. fitted values plot
+    plot(fitted, residuals,
+         main = "Residuals vs Fitted",
+         xlab = "Fitted Values",
+         ylab = "Residuals",
+         pch = 19)
+
+    # Add a horizontal line at y = 0 for reference
+    abline(h = 0, col = "steelblue", lty = 2)
+  })
+
+
+
+  ##################
+  # METADATA MODEL #
+  ##################
 
   model_metadata <- reactive({
     req(selected_data())
@@ -1147,13 +1684,15 @@ server <- function(input, output, session) {
     if (response == "Predict Employment Outcome"){
       # employ_col <- grep("(?i)^(?=.*employment)(?!.*(?i)_desc)(?!.*(?i)_wage)(?!.*(?i)un)",
       #                    names(data), value = TRUE, perl = TRUE)
-      employ_col <- "E389_Q4_Employment_911"
+      # employ_col <- "E389_Q4_Employment_911"
 
-      # employ_col <- grep()
-      if (length(employ_col) < 1){
+      exit_work_col <- grep("(?i)_exit*(?i)_work(?!.*(?i)_amt)(?!.*(?i)_desc)",
+                            names(data), value = TRUE, perl = TRUE)
+
+      if (length(exit_work_col) < 1){
         return("No employment variable available.")
       } else{
-        y <- employ_col
+        y <- exit_work_col
       }
 
 
@@ -1199,12 +1738,24 @@ server <- function(input, output, session) {
     }
 
     if (input$severity) {
-      severity_col <- grep("((?i)_SWD|(?i)_severity)(?!.*(?i)_desc|_age)",
+      # severity_col <- grep("((?i)_SWD|(?i)_severity)(?!.*(?i)_desc|_age)",
+      #                      names(data), value = TRUE, perl = TRUE)
+      severity_col <- grep("((?i)_priority|(?i)_severity)(?!.*(?i)_desc|_age)",
                            names(data), value = TRUE, perl = TRUE)
       if (length(severity_col) < 1){
         return("No disability severity variable available.")
       } else{
         predictors <- c(predictors, severity_col)
+      }
+    }
+
+    if (input$enroll_length) {
+      enroll_length_col <- grep("Enroll_Length",
+                                names(data), value = TRUE, perl = TRUE)
+      if (length(enroll_length_col) < 1){
+        return("No enrollment length variable available.")
+      } else{
+        predictors <- c(predictors, enroll_length_col)
       }
     }
 
@@ -1242,20 +1793,58 @@ server <- function(input, output, session) {
     #   formula <- as.formula(paste(y, "~", paste(predictors, collapse = "+")))
     # }
 
-    lm(formula, data = data)
+    if (response == "Predict Ending Wage" ||
+        response == "Predict Median Difference Score") {
+      lm(formula = formula, data = data)
+    } else if (response == "Predict Employment Outcome") {
+      glm(formula, family = binomial, data = data)
+    }
 
   })
 
+  # Reactive function to create residual plots
+  output$metadata_residuals1 <- renderPlot({
+    req(model_metadata())
 
-  # Render model summaries or ANOVA results
-  output$model_rsa_summary <- renderPrint({
-    req(model_rsa())
-    summary(model_rsa())
+    # residuals
+    model <- model_metadata()
+    residuals <- resid(model)
+
+    # histogram to look for normality
+    hist(residuals, col = "steelblue")
+
   })
 
-  output$model_scores_summary <- renderPrint({
-    req(model_scores())
-    summary(model_scores())
+  output$metadata_residuals2 <- renderPlot({
+    req(model_metadata())
+
+    # residuals
+    model <- model_metadata()
+    residuals <- resid(model)
+
+    # histogram to look for normality
+    qqnorm(residuals)
+    qqline(residuals, col = "steelblue")
+
+  })
+
+  output$metadata_residuals3 <- renderPlot({
+    req(model_metadata())
+
+    # Extract fitted values and residuals
+    model <- model_metadata()
+    residuals <- resid(model)
+    fitted <- fitted(model)
+
+    # Generate residuals vs. fitted values plot
+    plot(fitted, residuals,
+         main = "Residuals vs Fitted",
+         xlab = "Fitted Values",
+         ylab = "Residuals",
+         pch = 19)
+
+    # Add a horizontal line at y = 0 for reference
+    abline(h = 0, col = "steelblue", lty = 2)
   })
 
   output$model_metadata_summary <- renderPrint({
@@ -1264,21 +1853,39 @@ server <- function(input, output, session) {
   })
 
 
+
+  ###################
+  # MODELS MAIN TAB #
+  ###################
+
   # Render the model summary based on dataset type
   output$models_main <- renderUI({
     data_choice <- input$data_choice
 
-    if (data_choice == "Use Cleaned RSA-911 Data" || (data_choice == "Upload New Dataset" && input$dataset_type == "rsa")) {
+    if (data_choice == "Use Cleaned RSA-911 Data" ||
+        (data_choice == "Upload New Dataset" && input$dataset_type == "rsa")) {
       fluidRow(
         column(12, verbatimTextOutput("model_rsa_summary"))
       )
-    } else if (data_choice == "Use Cleaned Scores Data" || (data_choice == "Upload New Dataset" && input$dataset_type == "scores")) {
+    } else if (data_choice == "Use Cleaned Scores Data" ||
+               (data_choice == "Upload New Dataset" &&
+                input$dataset_type == "scores")) {
       fluidRow(
-        column(12, verbatimTextOutput("model_scores_summary"))
+        # column(12, verbatimTextOutput("model_scores_summary")),
+        column(12, verbatimTextOutput("model_scores_summary")),
+        column(12, verbatimTextOutput("tukey_scores_summary")),
+        column(12, plotOutput("scores_residuals1")),
+        column(12, plotOutput("scores_residuals2")),
+        column(12, plotOutput("scores_residuals3"))
       )
-    } else if ((data_choice == "Use Generated Metadata") || (data_choice == "Upload New Dataset" && dataset_type == "metadata")) {
+    } else if ((data_choice == "Use Generated Metadata") ||
+               (data_choice == "Upload New Dataset" &&
+                dataset_type == "metadata")) {
       fluidRow(
-        column(12, verbatimTextOutput("model_metadata_summary"))
+        column(12, verbatimTextOutput("model_metadata_summary")),
+        column(12, plotOutput("metadata_residuals1")),
+        column(12, plotOutput("metadata_residuals2")),
+        column(12, plotOutput("metadata_residuals3"))
       )
     }
   })

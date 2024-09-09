@@ -27,7 +27,6 @@ create_metadata <- function(data, includes_scores = TRUE) {
   # Compute Enroll Length
   data[, Enroll_Length := Max_Overall_Quarter - Min_Overall_Quarter + 1]
 
-
   # Create variables that count the number of years and quarters
   data[, `:=`(Total_Years = uniqueN(E1_Year_911),
               Total_Quarters = uniqueN(E2_Quarter_911)),
@@ -50,7 +49,8 @@ create_metadata <- function(data, includes_scores = TRUE) {
   #      .SDcols = numeric_cols, by = Participant_ID]
 
   # to handle different types of numeric variables
-  data[, (integer_cols) := lapply(.SD, function(x) as.integer(median(x, na.rm = TRUE))),
+  data[, (integer_cols) := lapply(.SD, function(x) as.integer(median(x,
+                                                           na.rm = TRUE))),
        .SDcols = integer_cols, by = Participant_ID]
 
   data[, (double_cols) := lapply(.SD, function(x) median(x, na.rm = TRUE)),
@@ -65,7 +65,7 @@ create_metadata <- function(data, includes_scores = TRUE) {
   data[, (date_cols) := lapply(.SD,
                                function(x) as.Date(ifelse(all(is.na(unique(x))),
                                                           NA,
-                                                          max(x, na.rm = TRUE)))),
+                                                        max(x, na.rm = TRUE)))),
        .SDcols = date_cols,
        by = Participant_ID]
 
@@ -133,6 +133,7 @@ create_metadata <- function(data, includes_scores = TRUE) {
   # } else {
   #   data[, Median_Time_Passed_Days := NA_real_]
   # }
+
 
   ## CONDENSE! CREATE METADATA
   # Summarise to condense rows, keeping one row per participant

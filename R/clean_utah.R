@@ -1,7 +1,7 @@
 library(data.table)
 
 clean_utah <- function(data,
-                       aggregate = FALSE,
+                       aggregate = TRUE,
                        unidentified_to_0 = TRUE,
                        convert_sex = TRUE,
                        convert_employ = TRUE,
@@ -48,12 +48,12 @@ clean_utah <- function(data,
   ######################
 
   # E1_Year_911
-  year_cols <- grep("(?i)_year|(?i)_yr_(?!.*(?i)_desc)", names(data),
+  year_col <- grep("(?i)_year|(?i)_yr_(?!.*(?i)_desc)", names(data),
                     value = TRUE, perl = TRUE)
 
 
   # E2_Quarter_911
-  quarter_cols <- grep("(?i)_quarter|(?i)_qt_(?!.*(?i)_desc)", names(data),
+  quarter_col <- grep("(?i)_quarter|(?i)_qt_(?!.*(?i)_desc)", names(data),
                        value = TRUE, perl = TRUE)
 
   # AGE column
@@ -76,13 +76,32 @@ clean_utah <- function(data,
   hours_cols <- grep("(?i)_hours_|(?i)_hrs_(?!.*(?i)_desc)", names(data),
                      value = TRUE, perl = TRUE)
 
-  numeric_cols <- c(year_cols, quarter_cols, "Age_At_Application",
+  numeric_cols <- c(year_col, quarter_col, "Age_At_Application",
                     amt_cols, hours_cols)
 
 
 
   data[, (numeric_cols) := lapply(.SD, as.numeric),
        .SDcols = numeric_cols]
+
+
+  ## CREATE NEW VARIABLES
+  # Create enrollment length variable
+  # data[, Overall_Quarter := ((E1_Year_911 - 2020) * 4 + E2_Quarter_911)]
+  #
+  # data[, `:=`(Min_Overall_Quarter = min(Overall_Quarter),
+  #             Max_Overall_Quarter = max(Overall_Quarter)),
+  #      by = Participant_ID]
+  #
+  # # Compute Enroll Length
+  # data[, Enroll_Length := Max_Overall_Quarter - Min_Overall_Quarter + 1]
+  #
+  #
+  # # Create variables that count the number of years and quarters
+  # data[, `:=`(Total_Years = uniqueN(E1_Year_911),
+  #             Total_Quarters = uniqueN(E2_Quarter_911)),
+  #      by = Participant_ID]
+
 
   ######################
   ## DATE             ##
@@ -205,6 +224,9 @@ clean_utah <- function(data,
   employ_cols <- grep("(?i)_employ", names(data), value = TRUE, perl = TRUE)
   employ_cols <- employ_cols[!grepl("wage|match|desc", employ_cols,
                                     ignore.case = TRUE)]
+  # this is our exit work status--this is the important variable
+  exit_work_col <- grep("(?i)_exit*(?i)_work(?!.*(?i)_amt)(?!.*(?i)_desc)",
+                        names(data), value = TRUE, perl = TRUE)
 
   data[, (employ_cols) := lapply(.SD, function(x){
     handle_values(x, c(0, 1, 2, 3, 4, 9), blank_value = 0)
@@ -216,9 +238,19 @@ clean_utah <- function(data,
   }),
   .SDcols = employ_cols]
 
+
+  data[, (exit_work_col) := lapply(.SD, function(x){
+    handle_values(x, c(0:5, 7, 9), blank_value = 0)
+  }),
+  .SDcols = exit_work_col]
+
+
   if (convert_employ == TRUE){
     data[, (employ_cols) := lapply(.SD, function(x) ifelse(x == 4, 1, 0)),
          .SDcols = employ_cols]
+
+    data[, (exit_work_col) := lapply(.SD, function(x) ifelse(x == 1, 1, 0)),
+         .SDcols = exit_work_col]
   }
 
   # data[, Final_Employment ]
@@ -303,11 +335,14 @@ clean_utah <- function(data,
   # DATA AGGREGATION
   if (aggregate) {
     data <- data[!is.na(E7_Application_Date_911)]
-    # Order the data by Participant_ID, E1_Year_911, E2_Quarter_911, and E7_Application_Date_911
-    setorder(data, Participant_ID, E1_Year_911, E2_Quarter_911, -E7_Application_Date_911)
+    # Order the data by Participant_ID, E1_Year_911, E2_Quarter_911,
+    #    and E7_Application_Date_911
+    setorder(data, Participant_ID, E1_Year_911, E2_Quarter_911,
+             -E7_Application_Date_911)
 
     # Create a helper column to identify the first occurrence within each group
-    data[, Occurrences_Per_Quarter := .N, by = .(Participant_ID, E1_Year_911, E2_Quarter_911)]
+    data[, Occurrences_Per_Quarter := .N, by = .(Participant_ID, E1_Year_911,
+                                                 E2_Quarter_911)]
     data <- data[, .SD[1], by = .(Participant_ID, E1_Year_911, E2_Quarter_911)]
 
     # Sort by year and quarter
