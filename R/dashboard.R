@@ -13,12 +13,23 @@ ui <- fluidPage(
   tabsetPanel(type = 'tabs',
               tabPanel('Data Upload & Cleaning',
                        sidebarPanel(
-                         # RSA-911 Data Upload and Clean Options
                          fluidRow(
                            column(12,
-                                  h4("RSA-911 Data Upload and Clean Options")),
+                                  h4("Please upload in .csv format.")),
                            column(12,
-                                  h4("(Please upload in CSV or xlsx format)")),
+                                  h6("(.xlsx files are accepted, but will take longer.)"))
+                         ),
+
+                         tags$hr(style = "margin: 20px 0;"),
+
+                         # RSA-911 Data Upload and Clean Options
+                         fluidRow(
+                           # column(12,
+                           #        h4("(Please upload in CSV format)")),
+                           column(12,
+                                  h4("RSA-911 Data Upload and Clean Options")),
+                           # column(12,
+                           #        h4("(Please upload in CSV or xlsx format)")),
                            column(12,
                                   fileInput("rsa_data",
                                             "Choose RSA-911 File(s)",
@@ -35,10 +46,10 @@ ui <- fluidPage(
                            column(12,
                                   checkboxInput("convert_sex", "Convert Sex",
                                                 value = TRUE)),
-                           column(12,
-                                  checkboxInput("convert_employ",
-                                                "Convert Employment",
-                                                value = TRUE)),
+                           # column(12,
+                           #        checkboxInput("convert_employ",
+                           #                      "Convert Employment",
+                           #                      value = TRUE)),
                            column(12,
                                   checkboxInput("clean_specials",
                                                 "Clean Specials",
@@ -231,7 +242,7 @@ server <- function(input, output, session) {
                                aggregate = input$aggregate_utah,
                                unidentified_to_0 = input$unidentified_to_0,
                                convert_sex = input$convert_sex,
-                               convert_employ = input$convert_employ,
+                               # convert_employ = input$convert_employ,
                                clean_specials = input$clean_specials,
                                remove_desc = input$remove_desc,
                                remove_strictly_na = input$remove_strictly_na)
@@ -735,7 +746,10 @@ server <- function(input, output, session) {
         tabPanel("Investigate Employment",
                  plotOutput("meta_employ_plot1"),
                  plotOutput("meta_employ_plot2"),
-                 plotOutput("meta_employ_plot3"))
+                 plotOutput("meta_employ_plot3"),
+                 plotOutput("meta_employ_plot4"),
+                 plotOutput("meta_employ_plot5"),
+                 plotOutput("meta_employ_plot6"))
       )
     }
   })
@@ -758,7 +772,15 @@ server <- function(input, output, session) {
 
     difference_cols <- grep("(?i)difference", names(data),
                             value = TRUE, perl = TRUE)
-    differences <- data[, .SD, .SDcols = difference_cols]
+    # differences <- data[, .SD, .SDcols = difference_cols]
+
+    # Exclude columns that contain "med" or "avail"
+    exclude_patterns <- "(?i)med|avail"
+    filtered_columns <- difference_cols[!grepl(exclude_patterns,
+                                               difference_cols,
+                                               perl = TRUE)]
+
+    differences <- data[, .SD, .SDcols = filtered_columns]
 
     # Find the overall median for all differences scores
     differences_scores_vector <- as.vector(unlist(differences))
@@ -1019,11 +1041,12 @@ server <- function(input, output, session) {
     req(selected_data())
     data <- selected_data()
 
-    prim_dis_col <- grep("(?i)^(?=.*prim)(?=.*impairment)(?!.*(desc))",
-                         names(data), value = TRUE, perl = TRUE)
+    # prim_dis_col <- grep("(?i)^(?=.*prim)(?=.*impairment)(?!.*(desc))",
+    #                      names(data), value = TRUE, perl = TRUE)
 
-    boxplot(Median_Difference_Score ~ as.character(data[[prim_dis_col]]),
-            data = data,
+    boxplot(Median_Difference_Score ~
+            Primary_Impairment_Group,
+            data = metadata,
             main = "Difference Scores by Primary Disability Type",
             xlab = "Primary Disability",
             ylab = "Median Difference Scores",
@@ -1197,12 +1220,13 @@ server <- function(input, output, session) {
     wages <- data[, .SD, .SDcols = wage_col]
     wages_vector <- as.vector(unlist(wages))
 
-    prim_dis_col <- grep("(?i)^(?=.*prim)(?=.*impairment)(?!.*(desc))",
-                         names(data), value = TRUE, perl = TRUE)
+    # prim_dis_col <- grep("(?i)^(?=.*prim)(?=.*impairment)(?!.*(desc))",
+    #                      names(data), value = TRUE, perl = TRUE)
 
-    boxplot(wages_vector ~ as.character(data[[prim_dis_col]]),
-            main = "Exit Wages by Primary Disability Type",
-            xlab = "Primary Disability",
+    boxplot(wages_vector ~ Primary_Impairment_Group,
+            data = data,
+            main = "Exit Wages by Primary Impairment Type",
+            xlab = "Primary Impairment",
             ylab = "Exit Wages ($ per Hour)",
             col = "steelblue")
 
@@ -1277,11 +1301,206 @@ server <- function(input, output, session) {
     exit_work_col <- grep("(?i)_exit*(?i)_work(?!.*(?i)_amt)(?!.*(?i)_desc)",
                           names(data), value = TRUE, perl = TRUE)
 
-    library(ggplot2)
-
+    # these variables have been created in the data cleaning process,
+    #   so we can use the exact names
+    plot(data$Median_Time_Passed_Days,
+         as.character(data$Final_Employment),
+         main = "Exit Employment Across Time in Program",
+         ylab = "Exit Employment",
+         xlab = "Median Days Spent in Programs (per individual)",
+         col = "steelblue",
+         pch = 8)
 
   })
 
+  output$meta_employ_plot2 <- renderPlot({
+    req(selected_data())
+    data <- selected_data()
+
+    exit_work_col <- grep("(?i)_exit*(?i)_work(?!.*(?i)_amt)(?!.*(?i)_desc)",
+                          names(data), value = TRUE, perl = TRUE)
+
+    # these variables have been created in the data cleaning process,
+    #   so we can use the exact names
+    plot(data$Enroll_Length,
+         as.character(data$Final_Employment),
+         main = "Exit Employment Across Enrollment Length",
+         ylab = "Exit Employment",
+         xlab = "Enrollment Length (total quarters)",
+         col = "steelblue",
+         pch = 8)
+
+  })
+
+  output$meta_employ_plot3 <- renderPlot({
+    req(selected_data())
+    data <- selected_data()
+
+    # the name for the gender/sex column could be varied, so we need to
+    #   account for this possibility
+    sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
+                    value = TRUE, perl = TRUE)
+
+
+    # Create a contingency table of Final_Employment by Gender
+    employment_gender_table <- table(data$Final_Employment,
+                                     data[[sex_col]])
+
+    rownames(employment_gender_table) <- c("Non-competitive Employment",
+                                           "Competitive Employment")
+
+    colnames(employment_gender_table) <- c("Female",
+                                           "Male",
+                                           "Did not identify")
+
+
+    # Create a bar plot with bars broken up by gender
+    barplot(employment_gender_table, beside = TRUE,
+            col = c("lightsteelblue", "steelblue"),
+            legend.text = c("Non-competitive", "Competitive"),
+            args.legend = list(x = "topright", bty = "n",
+                               title = "Employment Type"),
+            xlab = "Gender", ylab = "Count",
+            main = "Exit Employment by Gender")
+
+  })
+
+  output$meta_employ_plot4 <- renderPlot({
+    req(selected_data())
+    data <- selected_data()
+
+    race_cols <- grep("(?i)(_indian|_asian|_black|_hawaiian|_islander|_white|hispanic)(?!.*(?i)_desc)",
+                      names(data),
+                      value = TRUE, perl = TRUE)
+
+    data_subset <- data[, .SD, .SDcols = c("Final_Employment",
+                                           race_cols)]
+
+    # Create a long-format data.table
+    long_data <- melt(data_subset,
+                      id.vars = "Final_Employment",
+                      measure.vars = race_cols,
+                      variable.name = "Race",
+                      value.name = "Has_Race")
+    # Filter rows where Has_Race is 1
+    filtered_data <- long_data[Has_Race == 1]
+
+
+    # Create a contingency table of Final_Employment by Gender
+    employment_race_table <- table(filtered_data$Final_Employment,
+                                   filtered_data$Race)
+
+    # Create the bar plot based on the contingency table
+    par(oma = c(0, 0, 0, 0) + 0.6)
+    # barplot(employment_race_table, beside = TRUE,
+    #         col = c("lightsteelblue", "steelblue"),
+    #         legend.text = c("Non-competitive", "Competitive"),
+    #         args.legend = list(x = "topleft", bty = "n",
+    #                            title = "Employment Type"),
+    #         ylab = "Count",
+    #         xaxt = "n",
+    #         yaxt = "n",
+    #         xlab = "",
+    #         main = "Final Employment by Race", las = 2)
+
+    bar_midpoints <- barplot(employment_race_table, beside = TRUE,
+                             col = c("lightsteelblue", "steelblue"),
+                             legend.text = c("Non-competitive", "Competitive"),
+                             args.legend = list(x = "topleft", bty = "n",
+                                                title = "Employment Type"),
+                             ylab = "Count",
+                             xaxt = "n",   # Disable default x-axis labels
+                             yaxt = "n",   # Disable default y-axis labels
+                             xlab = "",
+                             main = "Final Employment by Race", las = 2)
+
+
+    axis(side = 2, las = 2, mgp = c(3, 0.75, 0))
+
+    # Add custom x-axis labels at the midpoints of the bars
+    text(x = colMeans(bar_midpoints),  # Calculate the midpoints for grouped bars
+         y = par("usr")[3] - 0.45,
+         labels = gsub("^E[0-9]+_|_911$", "", race_cols),  # Clean the race names
+         xpd = NA,  # Allow plotting outside plot region
+         ## Rotate the labels by 45 degrees.
+         srt = 45,
+         cex = .8,
+         adj = 1)
+
+  })
+
+
+
+  output$meta_employ_plot5 <- renderPlot({
+    req(selected_data())
+    data <- selected_data()
+
+    severity_col <- grep("((?i)_priority|(?i)_severity)(?!.*(?i)_desc|_age)",
+                         names(data), value = TRUE, perl = TRUE)
+
+    # Create a contingency table of Final_Employment by Gender
+    employment_severity_table <- table(data$Final_Employment,
+                                     data[[severity_col]])
+
+    rownames(employment_severity_table) <- c("Non-competitive Employment",
+                                           "Competitive Employment")
+
+    colnames(employment_severity_table) <- c("Non-significant",
+                                           "Significant",
+                                           "Most significant")
+
+
+    # Create a bar plot with bars broken up by gender
+    barplot(employment_severity_table, beside = TRUE,
+            col = c("lightsteelblue", "steelblue"),
+            legend.text = c("Non-competitive", "Competitive"),
+            args.legend = list(x = "topleft", bty = "n",
+                               title = "Employment Type"),
+            xlab = "Disability Severity", ylab = "Count",
+            main = "Exit Employment by Disability Severity")
+
+  })
+
+
+  output$meta_employ_plot6 <- renderPlot({
+    req(selected_data())
+    data <- selected_data()
+
+    # prim_dis_col <- grep("(?i)^(?=.*prim)(?=.*impairment)(?!.*(desc))",
+    #                      names(data), value = TRUE, perl = TRUE)
+
+    # Create a contingency table of Final_Employment by Gender
+    # employment_prim_dis_table <- table(data$Final_Employment,
+    #                                    data[[prim_dis_col]])
+
+    employment_prim_dis_table <- table(data$Final_Employment,
+                                       data$Primary_Impairment_Group)
+
+    rownames(employment_prim_dis_table) <- c("Non-competitive Employment",
+                                             "Competitive Employment")
+
+
+    # Create a bar plot with bars broken up by gender
+    barplot(employment_prim_dis_table, beside = TRUE,
+            col = c("lightsteelblue", "steelblue"),
+            legend.text = c("Non-competitive", "Competitive"),
+            args.legend = list(x = "topleft", bty = "n",
+                               title = "Employment Type"),
+            xlab = "Primary Impairment", ylab = "Count",
+            main = "Exit Employment by Primary Impairment",
+            )
+
+    # # Add custom x-axis labels at the midpoints of the bars
+    # text(x = colMeans(bar_midpoints),  # Calculate the midpoints for grouped bars
+    #      y = par("usr")[3] - 0.45,
+    #      labels = levels(metadata$Primary_Impairment_Group),  # Clean the race names
+    #      xpd = NA,  # Allow plotting outside plot region
+    #      ## Rotate the labels by 45 degrees.
+    #      srt = 45,
+    #      cex = .8,
+    #      adj = 1)
+
+  })
 
 
 
@@ -1545,6 +1764,9 @@ server <- function(input, output, session) {
   # SCORES MODEL #
   ################
 
+  # Reactive value to track if the ANOVA test has been run
+  anova_run <- reactiveVal(FALSE)
+
   model_scores <- reactive({
     req(selected_data())
     req(input$anova)
@@ -1594,10 +1816,16 @@ server <- function(input, output, session) {
       return(NULL)  # Return NULL if no valid test is selected
     }
 
+    # Set anova_run to TRUE
+    anova_run(TRUE)
+
     list(anova = result, tukey = tukey_result)
 
   })
 
+  # observeEvent(input$anova, {
+  #   anova_run(TRUE)
+  # })
 
   output$model_scores_summary <- renderPrint({
     req(model_scores())
@@ -1870,14 +2098,53 @@ server <- function(input, output, session) {
     } else if (data_choice == "Use Cleaned Scores Data" ||
                (data_choice == "Upload New Dataset" &&
                 input$dataset_type == "scores")) {
+      # fluidRow(
+      #   # column(12, verbatimTextOutput("model_scores_summary")),
+      #   # column(12, verbatimTextOutput("tukey_scores_summary")),
+      #   # column(12, verbatimTextOutput("model_scores_summary")),
+      #
+      #   # Conditionally show the caption and Tukey results
+      #   if (anova_run()) {
+      #     tagList(
+      #       # anova output
+      #       tags$p("ANOVA results",
+      #              style = "font-size: 14px; font-weight: bold;"),
+      #       column(12, verbatimTextOutput("model_scores_summary")),
+      #       # pairwise results
+      #       tags$p("Significant pairwise comparisons:",
+      #              style = "font-size: 14px; font-weight: bold;"),
+      #       column(12, verbatimTextOutput("tukey_scores_summary"))
+      #
+      #     )
+      #   },
+      #   column(12, plotOutput("scores_residuals1")),
+      #   column(12, plotOutput("scores_residuals2")),
+      #   column(12, plotOutput("scores_residuals3"))
+      # )
+      #
       fluidRow(
-        # column(12, verbatimTextOutput("model_scores_summary")),
-        column(12, verbatimTextOutput("model_scores_summary")),
-        column(12, verbatimTextOutput("tukey_scores_summary")),
-        column(12, plotOutput("scores_residuals1")),
-        column(12, plotOutput("scores_residuals2")),
-        column(12, plotOutput("scores_residuals3"))
+        # Conditionally show the caption and ANOVA results
+        if (anova_run()) {
+          tagList(
+            fluidRow(
+              column(12, tags$p("ANOVA results",
+                                style = "font-size: 14px; font-weight: bold;")),
+              column(12, verbatimTextOutput("model_scores_summary"))
+            ),
+            fluidRow(
+              column(12, tags$p("Significant pairwise comparisons:",
+                                style = "font-size: 14px; font-weight: bold;")),
+              column(12, verbatimTextOutput("tukey_scores_summary"))
+            )
+          )
+        },
+        fluidRow(
+          column(12, plotOutput("scores_residuals1")),
+          column(12, plotOutput("scores_residuals2")),
+          column(12, plotOutput("scores_residuals3"))
+        )
       )
+
     } else if ((data_choice == "Use Generated Metadata") ||
                (data_choice == "Upload New Dataset" &&
                 dataset_type == "metadata")) {

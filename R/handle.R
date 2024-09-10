@@ -142,17 +142,23 @@ separate_disability <- function(df) {
   # Convert to data.table if not already
   setDT(df)
 
+  prim_disability <- grep("(?i)^(?=.*prim)(?=.*disab)(?!.*(desc))",
+                       names(df), value = TRUE, perl = TRUE)
+
+  second_disability <- grep("(?i)^(?=.*second)(?=.*disab)(?!.*(desc))",
+                          names(df), value = TRUE, perl = TRUE)
+
   # Separate E43_Primary_Disability_911 into E43_Primary_Impairment_911 and
   #   E43_Primary_Cause_911
-  df[, c("E43_Primary_Impairment_911",
-         "E43_Primary_Cause_911") := tstrsplit(E43_Primary_Disability_911,
+  df[, c("Primary_Impairment",
+         "Primary_Cause") := tstrsplit(df[[prim_disability]],
                                                ";",
                                                fixed = TRUE)]
 
   # Separate E44_Secondary_Disability_911 into E44_Secondary_Impairment_911 and
   #   E44_Secondary_Cause_911
-  df[, c("E44_Secondary_Impairment_911",
-         "E44_Secondary_Cause_911") := tstrsplit(E44_Secondary_Disability_911,
+  df[, c("Secondary_Impairment",
+         "Secondary_Cause") := tstrsplit(df[[second_disability]],
                                                  ";",
                                                  fixed = TRUE)]
 

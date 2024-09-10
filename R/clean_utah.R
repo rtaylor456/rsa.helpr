@@ -4,7 +4,7 @@ clean_utah <- function(data,
                        aggregate = TRUE,
                        unidentified_to_0 = TRUE,
                        convert_sex = TRUE,
-                       convert_employ = TRUE,
+                       # convert_employ = TRUE,
                        clean_specials = FALSE,
                        remove_desc = TRUE,
                        remove_strictly_na = TRUE){
@@ -245,15 +245,19 @@ clean_utah <- function(data,
   .SDcols = exit_work_col]
 
 
-  if (convert_employ == TRUE){
-    data[, (employ_cols) := lapply(.SD, function(x) ifelse(x == 4, 1, 0)),
-         .SDcols = employ_cols]
+  # if (convert_employ == TRUE){
+  #   data[, (employ_cols) := lapply(.SD, function(x) ifelse(x == 4, 1, 0)),
+  #        .SDcols = employ_cols]
+  #
+  #   data[, (exit_work_col) := lapply(.SD, function(x) ifelse(x == 1, 1, 0)),
+  #        .SDcols = exit_work_col]
+  # }
 
-    data[, (exit_work_col) := lapply(.SD, function(x) ifelse(x == 1, 1, 0)),
-         .SDcols = exit_work_col]
-  }
+  # create a new variable for employment status with a name that's easier to
+  #    reference
+  data[, Final_Employment := lapply(.SD, function(x) ifelse(x == 1, 1, 0)),
+       .SDcols = exit_work_col]
 
-  # data[, Final_Employment ]
 
   # GRADE LEVEL - based on age
   data[, Grade_Level := fifelse(Age_At_Application < 5, "<5",
@@ -319,7 +323,34 @@ clean_utah <- function(data,
     data <- separate_disability(data)
   }
 
+  # DISABILITY columns
   data <- separate_disability(data)
+
+  data[, Primary_Impairment_Group := fifelse(Primary_Impairment == 0,
+                                             "None",
+                                fifelse(Primary_Impairment %in% c(1, 2, 8),
+                                        "Visual",
+                                fifelse(Primary_Impairment %in%
+                                          c(3, 4, 5, 6, 7, 9),
+                                        "Auditory/Commun.",
+                                fifelse(Primary_Impairment %in%
+                                          c(10, 11, 12, 13, 14, 15, 16),
+                                        "Physical",
+                                fifelse(Primary_Impairment == 17,
+                                        "Intellectual/Learn.",
+                                fifelse(Primary_Impairment %in% c(18, 19),
+                                        "Psychological", NA_character_))))))]
+
+  data[, Primary_Impairment_Group := factor(Primary_Impairment_Group,
+                                            levels = c("None", "Visual",
+                                                     "Auditory/Commun.",
+                                                     "Physical",
+                                                     "Intellectual/Learn.",
+                                                     "Psychological"))]
+
+
+
+
 
   ##############################################################################
   ########################
