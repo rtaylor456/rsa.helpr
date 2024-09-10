@@ -323,31 +323,65 @@ clean_utah <- function(data,
     data <- separate_disability(data)
   }
 
+
   # DISABILITY columns
   data <- separate_disability(data)
 
-  data[, Primary_Impairment_Group := fifelse(Primary_Impairment == 0,
-                                             "None",
-                                fifelse(Primary_Impairment %in% c(1, 2, 8),
-                                        "Visual",
-                                fifelse(Primary_Impairment %in%
-                                          c(3, 4, 5, 6, 7, 9),
-                                        "Auditory/Commun.",
-                                fifelse(Primary_Impairment %in%
-                                          c(10, 11, 12, 13, 14, 15, 16),
-                                        "Physical",
-                                fifelse(Primary_Impairment == 17,
-                                        "Intellectual/Learn.",
-                                fifelse(Primary_Impairment %in% c(18, 19),
-                                        "Psychological", NA_character_))))))]
+  impairment_vars <- c("Primary_Impairment", "Secondary_Impairment")
+  group_vars <- paste0(impairment_vars, "_Group")
 
-  data[, Primary_Impairment_Group := factor(Primary_Impairment_Group,
-                                            levels = c("None", "Visual",
-                                                     "Auditory/Commun.",
-                                                     "Physical",
-                                                     "Intellectual/Learn.",
-                                                     "Psychological"))]
+  # Apply the same logic to both columns at once using lapply
+  data[, (group_vars) := lapply(.SD, function(x) fifelse(x == 0, "None",
+                                                 fifelse(x %in% c(1, 2, 8),
+                                                         "Visual",
+                                                 fifelse(x %in% c(3, 4, 5, 6, 7,
+                                                                  9),
+                                                         "Auditory/Commun.",
+                                                 fifelse(x %in% c(10, 11, 12,
+                                                                  13, 14, 15,
+                                                                  16),
+                                                         "Physical",
+                                                 fifelse(x == 17,
+                                                         "Intellectual/Learn.",
+                                                 fifelse(x %in% c(18, 19),
+                                                         "Psychological",
+                                                         NA_character_))))))),
+       .SDcols = impairment_vars]
 
+  # Set factor levels for both columns
+  data[, (group_vars) := lapply(.SD, factor,
+                                levels = c("None",
+                                           "Visual",
+                                           "Auditory/Commun.",
+                                           "Physical",
+                                           "Intellectual/Learn.",
+                                           "Psychological")),
+       .SDcols = group_vars]
+
+
+  # # Primary_Impairment
+  # data[, Primary_Impairment_Group := fifelse(Primary_Impairment == 0,
+  #                                            "None",
+  #                               fifelse(Primary_Impairment %in% c(1, 2, 8),
+  #                                       "Visual",
+  #                               fifelse(Primary_Impairment %in%
+  #                                         c(3, 4, 5, 6, 7, 9),
+  #                                       "Auditory/Commun.",
+  #                               fifelse(Primary_Impairment %in%
+  #                                         c(10, 11, 12, 13, 14, 15, 16),
+  #                                       "Physical",
+  #                               fifelse(Primary_Impairment == 17,
+  #                                       "Intellectual/Learn.",
+  #                               fifelse(Primary_Impairment %in% c(18, 19),
+  #                                       "Psychological", NA_character_))))))]
+  #
+  # data[, Primary_Impairment_Group := factor(Primary_Impairment_Group,
+  #                                           levels = c("None", "Visual",
+  #                                                    "Auditory/Commun.",
+  #                                                    "Physical",
+  #                                                    "Intellectual/Learn.",
+  #                                                    "Psychological"))]
+  #
 
 
 

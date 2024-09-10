@@ -8,10 +8,6 @@ options(shiny.maxRequestSize = 1000 * 1024^2)  # 500MB
 
 # Define UI
 ui <- fluidPage(
-
-  # to change location of progress bars:
-  tags$head(tags$style(".shiny-notification {position: fixed; top: 50% ;left: 50%")),
-
   titlePanel("RSA-911 Data Exploration"),
 
   tabsetPanel(type = 'tabs',
@@ -68,7 +64,7 @@ ui <- fluidPage(
                                                 value = TRUE)),
                            column(12,
                                   downloadButton("download_rsa",
-                                              "Download Cleaned RSA-911 Data"))
+                                                 "Download Cleaned RSA-911 Data"))
                          ),
                          tags$hr(style = "margin: 20px 0;"),  # Add larger space
 
@@ -87,7 +83,7 @@ ui <- fluidPage(
                                                 value = TRUE)),
                            column(12,
                                   downloadButton("download_scores",
-                                                "Download Cleaned Scores Data"))
+                                                 "Download Cleaned Scores Data"))
                          ),
                          tags$hr(style = "margin: 20px 0;"),  # Add larger space
 
@@ -104,7 +100,7 @@ ui <- fluidPage(
                                             value = "Participant_ID")),
                            column(12,
                                   downloadButton("download_merged",
-                                                "Download Cleaned Merged Data"))
+                                                 "Download Cleaned Merged Data"))
                          ),
                          tags$hr(style = "margin: 20px 0;"),  # Add larger space
 
@@ -116,16 +112,11 @@ ui <- fluidPage(
                                   conditionalPanel(
                                     condition =
                                       "output.merged_data_exists == true",
-                                    # checkboxInput("use_merged",
-                                    #               "(Use Merged Data)",
-                                    #               value = TRUE)
-                                    radioButtons("meta_source",
-                                                 label = NULL,
-                                                 choices = list("Using Merged Data" = "merged",
-                                                                "Using Cleaned RSA-911 Data" = "rsa"),
-                                                 selected = "merged")
+                                    checkboxInput("use_merged",
+                                                  "(Use Merged Data)",
+                                                  value = TRUE)
                                   )
-                                  ),
+                           ),
                            column(12,
                                   actionButton("generate_metadata",
                                                "Generate Metadata")),
@@ -135,62 +126,25 @@ ui <- fluidPage(
                          )
                        ),
 
-                       # mainPanel(
-                       #   h3("Quarterly Data"),
-                       #   DTOutput("table_rsa"),
-                       #   verbatimTextOutput("summary_rsa"),
-                       #   br(),
-                       #
-                       #   h3("Scores Data"),
-                       #   DTOutput("table_scores"),
-                       #   verbatimTextOutput("summary_scores"),
-                       #   br(),
-                       #
-                       #   h3("Merged Quarterly and Scores Data"),
-                       #   DTOutput("table_merged"),
-                       #   verbatimTextOutput("summary_merged"),
-                       #   br(),
-                       #
-                       #   h3("Generated Metadata"),
-                       #   DTOutput("table_metadata"),
-                       #   verbatimTextOutput("summary_metadata")
-                       # )
-
                        mainPanel(
-                         # Quarterly Data
-                         conditionalPanel(
-                           condition = "output.rsa_data_exists == true",
-                           h3("Quarterly Data"),
-                           DTOutput("table_rsa"),
-                           verbatimTextOutput("summary_rsa"),
-                           br()
-                         ),
+                         h3("Quarterly Data"),
+                         DTOutput("table_rsa"),
+                         verbatimTextOutput("summary_rsa"),
+                         br(),
 
-                         # Scores Data
-                         conditionalPanel(
-                           condition = "output.scores_data_exists == true",
-                           h3("Scores Data"),
-                           DTOutput("table_scores"),
-                           verbatimTextOutput("summary_scores"),
-                           br()
-                         ),
+                         h3("Scores Data"),
+                         DTOutput("table_scores"),
+                         verbatimTextOutput("summary_scores"),
+                         br(),
 
-                         # Merged Quarterly and Scores Data
-                         conditionalPanel(
-                           condition = "output.merged_data_exists == true",
-                           h3("Merged Quarterly and Scores Data"),
-                           DTOutput("table_merged"),
-                           verbatimTextOutput("summary_merged"),
-                           br()
-                         ),
+                         h3("Merged Quarterly and Scores Data"),
+                         DTOutput("table_merged"),
+                         verbatimTextOutput("summary_merged"),
+                         br(),
 
-                         # Generated Metadata
-                         conditionalPanel(
-                           condition = "output.metadata_exists == true",
-                           h3("Generated Metadata"),
-                           DTOutput("table_metadata"),
-                           verbatimTextOutput("summary_metadata")
-                         )
+                         h3("Generated Metadata"),
+                         DTOutput("table_metadata"),
+                         verbatimTextOutput("summary_metadata")
                        )
               ),
               tabPanel('Select Data (or load new)',
@@ -198,9 +152,10 @@ ui <- fluidPage(
                          selectInput("data_choice", "Select Data Source",
                                      choices = c(" ",
                                                  "Use Generated Metadata",
+                                                 "Use Cleaned RSA-911 Data",
                                                  "Use Cleaned Scores Data",
-                                                 # "Use Cleaned RSA-911 Data",
-                                                 # "Use Cleaned Merged Data",
+                                                 "Use Cleaned Merged Data",
+                                                 # "Use Generated Metadata",
                                                  "Upload New Dataset")),
                          conditionalPanel(
                            condition =
@@ -243,7 +198,7 @@ ui <- fluidPage(
                        mainPanel(
                          uiOutput("models_main")
                        )
-                       )
+              )
   )
 )
 
@@ -298,11 +253,6 @@ server <- function(input, output, session) {
     })
   })
 
-  output$rsa_data_exists <- reactive({
-    !is.null(read_and_clean_rsa_data()) &&
-      nrow(read_and_clean_rsa_data()) > 0
-  })
-
   # Function to read and clean scores data files
   read_and_clean_scores_data <- reactive({
     req(input$scores_data)
@@ -332,10 +282,6 @@ server <- function(input, output, session) {
     })
   })
 
-  output$scores_data_exists <- reactive({
-    !is.null(read_and_clean_scores_data()) &&
-      nrow(read_and_clean_scores_data()) > 0
-  })
 
   merged_data <- reactive({
     req(read_and_clean_rsa_data(), read_and_clean_scores_data())
@@ -360,6 +306,7 @@ server <- function(input, output, session) {
     !is.null(merged_data()) && nrow(merged_data()) > 0
   })
 
+  outputOptions(output, "merged_data_exists", suspendWhenHidden = FALSE)
 
 
   # Function to create metadata from merged data
@@ -369,7 +316,7 @@ server <- function(input, output, session) {
         incProgress(1/2, detail = "Condensing RSA-911 data, merged data not available...")
         metadata <- create_metadata(read_and_clean_rsa_data(),
                                     includes_scores = FALSE)
-      } else if (input$meta_source == "merged"){
+      } else if (input$use_merged){
         incProgress(1/2, detail = "Condensing merged data...")
         metadata <- create_metadata(merged_data(),
                                     includes_scores = TRUE)
@@ -384,15 +331,6 @@ server <- function(input, output, session) {
       return(metadata)
     })
   })
-
-  output$metadata_exists <- reactive({
-    !is.null(generate_metadata()) && nrow(generate_metadata()) > 0
-  })
-
-  outputOptions(output, "rsa_data_exists", suspendWhenHidden = FALSE)
-  outputOptions(output, "scores_data_exists", suspendWhenHidden = FALSE)
-  outputOptions(output, "merged_data_exists", suspendWhenHidden = FALSE)
-  outputOptions(output, "metadata_exists", suspendWhenHidden = FALSE)
 
 
   # Render the RSA-911 data table
@@ -757,18 +695,13 @@ server <- function(input, output, session) {
                (data_choice == "Upload New Dataset" &&
                 dataset_type == "scores")) {
       tabsetPanel(
-        tabPanel("Overview",
-                 plotOutput("overview_plot1"),
-                 plotOutput("overview_plot2"),
-                 plotOutput("overview_plot3")),
         tabPanel("Across Services",
-                 plotOutput("services_plot1"),
-                 plotOutput("services_plot2"),
+                 plotOutput("services_plot1"), plotOutput("services_plot2"),
                  plotOutput("services_plot3")),
         tabPanel("Across Providers",
                  plotOutput("providers_plot1")
                  # plotOutput("providers_plot2")
-                 )
+        )
       )
     } else if ((data_choice == "Use Cleaned Merged Data") ||
                (data_choice == "Upload New Dataset" &&
@@ -795,33 +728,28 @@ server <- function(input, output, session) {
                  plotOutput("meta_gen_demo_plot2"),
                  plotOutput("meta_gen_demo_plot3"),
                  plotOutput("meta_gen_demo_plot4"),
-                 plotOutput("meta_gen_demo_plot5"),
-                 plotOutput("meta_gen_demo_plot6"),
-                 plotOutput("meta_gen_demo_plot7")),
+                 plotOutput("meta_gen_demo_plot5")),
         tabPanel("Investigate Difference Scores",
                  plotOutput("meta_diff_plot1"),
                  plotOutput("meta_diff_plot2"),
                  plotOutput("meta_diff_plot3"),
                  plotOutput("meta_diff_plot4"),
                  plotOutput("meta_diff_plot5"),
-                 plotOutput("meta_diff_plot6"),
-                 plotOutput("meta_diff_plot7")),
+                 plotOutput("meta_diff_plot6")),
         tabPanel("Investigate Wage",
                  plotOutput("meta_wage_plot1"),
                  plotOutput("meta_wage_plot2"),
                  plotOutput("meta_wage_plot3"),
                  plotOutput("meta_wage_plot4"),
                  plotOutput("meta_wage_plot5"),
-                 plotOutput("meta_wage_plot6"),
-                 plotOutput("meta_wage_plot7")),
+                 plotOutput("meta_wage_plot6")),
         tabPanel("Investigate Employment",
                  plotOutput("meta_employ_plot1"),
                  plotOutput("meta_employ_plot2"),
                  plotOutput("meta_employ_plot3"),
                  plotOutput("meta_employ_plot4"),
                  plotOutput("meta_employ_plot5"),
-                 plotOutput("meta_employ_plot6"),
-                 plotOutput("meta_employ_plot7"))
+                 plotOutput("meta_employ_plot6"))
       )
     }
   })
@@ -837,45 +765,7 @@ server <- function(input, output, session) {
   output$enrollment_plot2 <- renderPlot({ plot(rnorm(100)) })
   output$enrollment_plot3 <- renderPlot({ plot(rnorm(100)) })
 
-
-
-
   ## SCORES plots
-  output$overview_plot1 <- renderPlot({
-    req(selected_data())
-    data <- selected_data()
-
-    hist(data$Median_Difference_Score,
-         col = "lightsteelblue",
-         main = "Distribution of Median Difference Scores",
-         xlab = "Median Difference Scores")
-
-  })
-
-  output$overview_plot2 <- renderPlot({
-    req(selected_data())
-    data <- selected_data()
-
-    hist(data$Median_Time_Passed_Days,
-         col = "lightsteelblue",
-         main = "Distribution of Time in Programs",
-         xlab = "Median Time in Program (per individual)")
-
-  })
-
-  output$overview_plot3 <- renderPlot({
-    req(selected_data())
-    data <- selected_data()
-
-    hist(data$Differences_Available,
-         col = "lightsteelblue",
-         main = "Distribution of Counts of Difference Scores",
-         xlab = "Number of Program Difference Scores per Individual")
-
-  })
-
-
-  ## Across Services
   output$services_plot1 <- renderPlot({
     req(selected_data())
     data <- selected_data()
@@ -914,7 +804,7 @@ server <- function(input, output, session) {
     data <- selected_data()
 
     pre_cols <- grep("(?i)pre", names(data),
-                            value = TRUE, perl = TRUE)
+                     value = TRUE, perl = TRUE)
     pre_scores <- data[, .SD, .SDcols = pre_cols]
 
     # Find the overall median for all differences scores
@@ -938,7 +828,7 @@ server <- function(input, output, session) {
     data <- selected_data()
 
     post_cols <- grep("(?i)post", names(data),
-                     value = TRUE, perl = TRUE)
+                      value = TRUE, perl = TRUE)
     post_scores <- data[, .SD, .SDcols = post_cols]
 
     # Find the overall median for all differences scores
@@ -968,8 +858,8 @@ server <- function(input, output, session) {
     par(las = 1)
   })
 
+  # output$providers_plot1 <- renderPlot({ plot(rnorm(100)) })
 
-  ## Across Providers
   output$providers_plot1 <- renderPlot({
     req(selected_data())
     data <- selected_data()
@@ -1017,24 +907,14 @@ server <- function(input, output, session) {
   output$demo_scores_plot5 <- renderPlot({ plot(rnorm(100)) })
   output$demo_scores_plot6 <- renderPlot({ plot(rnorm(100)) })
 
-
   ## METADATA plots
-  # Wage
   output$meta_gen_demo_plot1 <- renderPlot({
     req(selected_data())
     data <- selected_data()
 
-    hist(data$Median_Time_Passed_Days,
-         col = "steelblue",
-         main = "Distribution of Time in Programs",
-         xlab = "Median Time in Program (per individual)")
-
-    })
-
-  # Enrollment length
-  output$meta_gen_demo_plot2 <- renderPlot({
-    req(selected_data())
-    data <- selected_data()
+    if (is.null(data)) {
+      return("No data available.")
+    }
 
     hist(data$Enroll_Length,
          col = "steelblue",
@@ -1044,126 +924,53 @@ server <- function(input, output, session) {
   })
 
 
-  # Gender
-  output$meta_gen_demo_plot3 <- renderPlot({
+  # output$meta_gen_demo_plot1 <- renderPlot({
+  #   req(selected_data())
+  #   data <- selected_data()
+  #
+  # if (is.null(data)) {
+  #   return()
+  # }
+  #
+  #   if ("Participant_ID" %in% names(data)) {
+  #     # Ensure the enrollment length column exists
+  #     if ("Enroll_Length" %in% names(data)) {
+  #       ggplot(data, aes(x = Enroll_Length)) +
+  #         geom_histogram(binwidth = 1, fill = "steelblue", color = "black") +
+  #         labs(title = "Histogram of Enrollment Length",
+  #              x = "Enrollment Length", y = "Frequency")
+  #     } else {
+  #       ggplot() +
+  #         labs(title = "No Enrollment Length Data", x = "", y = "") +
+  #         geom_text(aes(x = 1, y = 1,
+  #                       label = "Enrollment Length column not found"),
+  #                   size = 5, color = "red")
+  #     }
+  #   } else {
+  #     ggplot() +
+  #       labs(title = "Invalid Data Type", x = "", y = "") +
+  #       geom_text(aes(x = 1, y = 1, label = "Data is not RSA-911"),
+  #                 size = 5, color = "red")
+  #   }
+  #   })
+
+  output$meta_gen_demo_plot2 <- renderPlot({
     req(selected_data())
     data <- selected_data()
 
-    sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
-                    value = TRUE, perl = TRUE)
-
-    barplot(table(data[[sex_col]]),
-            main = "Distribution of Genders",
-            xlab = "Gender",
-            names = c("Females", "Males", "Did not identify"),
-            col = c("lightsteelblue", "steelblue", "darkblue"))
-
-    })
-
-
-  # Race
-  output$meta_gen_demo_plot4 <- renderPlot({
-    req(selected_data())
-    data <- selected_data()
-
-    race_cols <- grep("(?i)(_indian|_asian|_black|_hawaiian|_islander|_white|hispanic)(?!.*(?i)_desc)",
-                      names(data),
-                      value = TRUE, perl = TRUE)
-
-    data_subset <- data[, .SD, .SDcols = c("Final_Employment",
-                                           race_cols)]
-
-    # Create a long-format data.table
-    long_data <- melt(data_subset,
-                      id.vars = "Final_Employment",
-                      measure.vars = race_cols,
-                      variable.name = "Race",
-                      value.name = "Has_Race")
-    # Filter rows where Has_Race is 1
-    filtered_data <- long_data[Has_Race == 1]
-
-
-    # Create a contingency table of Final_Employment by Gender
-    race_table <- table(filtered_data$Race)
-
-    # Create the bar plot based on the contingency table
-    par(oma = c(0, 0, 0, 0) + 0.6)
-    barplot_heights <- barplot(race_table, beside = TRUE,
-                               ylab = "Count",
-                               xaxt = "n",   # Disable default x-axis labels
-                               yaxt = "n",   # Disable default y-axis labels
-                               xlab = "",
-                               main = "Distribution of Race", las = 2,
-                               col = "steelblue")
-
-    # Add the y-axis
-    axis(side = 2, las = 2, mgp = c(3, 0.75, 0))
-
-    # Add diagonal labels
-    text(x = barplot_heights, # Center labels based on barplot positions
-         y = par("usr")[3] - 0.45,
-         labels = gsub("^E[0-9]+_|_911$", "", race_cols),
-         xpd = NA,
-         srt = 45,  # Rotate the labels by 45 degrees
-         cex = .8,
-         adj = c(1, 1))  # Adjust text alignment to center under bars
-
-    })
-
-  # Severity
-  output$meta_gen_demo_plot5 <- renderPlot({
-    req(selected_data())
-    data <- selected_data()
-
-    severity_col <- grep("((?i)_priority|(?i)_severity)(?!.*(?i)_desc|_age)",
-                         names(data), value = TRUE, perl = TRUE)
-
-    barplot(table(data[[severity_col]]),
-            main = "Distribution of Disability Severity",
-            xlab = "Severity",
-            names = c("Non-significant", "Significant", "Most significant"),
-            col = c("lightsteelblue", "steelblue", "darkblue"))
-
-    })
-
-  # Primary impairment
-  output$meta_gen_demo_plot6 <- renderPlot({
-    req(selected_data())
-    data <- selected_data()
-
-    barplot(table(data$Primary_Impairment_Group),
-            main = "Distribution of Primary Impairments",
-            xlab = "Primary Impairment",
-            col = "steelblue")
-
-  })
-
-  # Primary impairment
-  output$meta_gen_demo_plot7 <- renderPlot({
-    req(selected_data())
-    data <- selected_data()
-
-    barplot(table(data$Secondary_Impairment_Group),
-            main = "Distribution of Secondary Impairments",
-            xlab = "Secondary Impairment",
-            col = "steelblue")
+    if (is.null(data)) {
+      return()
+    }
 
   })
 
 
+  output$meta_gen_demo_plot3 <- renderPlot({ plot(rnorm(100)) })
+  output$meta_gen_demo_plot4 <- renderPlot({ plot(rnorm(100)) })
+  output$meta_gen_demo_plot5 <- renderPlot({ plot(rnorm(100)) })
 
 
   output$meta_diff_plot1 <- renderPlot({
-    req(selected_data())
-    data <- selected_data()
-
-    hist(data$Median_Difference_Score,
-         col = "steelblue",
-         main = "Distribution of Median Difference Scores",
-         xlab = "Median Difference Scores")
-  })
-
-  output$meta_diff_plot2 <- renderPlot({
     req(selected_data())
     data <- selected_data()
 
@@ -1176,9 +983,9 @@ server <- function(input, output, session) {
          xlab = "Median Days Spent in Programs (per individual)",
          col = "steelblue",
          pch = 3)
-    })
+  })
 
-  output$meta_diff_plot3 <- renderPlot({
+  output$meta_diff_plot2 <- renderPlot({
     req(selected_data())
     data <- selected_data()
 
@@ -1189,9 +996,9 @@ server <- function(input, output, session) {
          xlab = "Total Quarters Enrolled",
          pch = 8)
 
-    })
+  })
 
-  output$meta_diff_plot4 <- renderPlot({
+  output$meta_diff_plot3 <- renderPlot({
     req(selected_data())
     data <- selected_data()
 
@@ -1202,14 +1009,14 @@ server <- function(input, output, session) {
 
     boxplot(Median_Difference_Score ~ data[[sex_col]], data = data,
             main = "Difference Scores by Gender",
-            names = c("Females", "Males", "Did not identify"),
+            names = c("Males", "Females", "Did not identify"),
             xlab = "Gender",
             ylab = "Median Difference Scores",
             col = "steelblue")
 
-    })
+  })
 
-  output$meta_diff_plot6 <- renderPlot({
+  output$meta_diff_plot5 <- renderPlot({
     req(selected_data())
     data <- selected_data()
 
@@ -1230,7 +1037,7 @@ server <- function(input, output, session) {
 
   })
 
-  output$meta_diff_plot7 <- renderPlot({
+  output$meta_diff_plot6 <- renderPlot({
     req(selected_data())
     data <- selected_data()
 
@@ -1238,7 +1045,7 @@ server <- function(input, output, session) {
     #                      names(data), value = TRUE, perl = TRUE)
 
     boxplot(Median_Difference_Score ~
-            Primary_Impairment_Group,
+              Primary_Impairment_Group,
             data = data,
             main = "Difference Scores by Primary Disability Type",
             xlab = "Primary Disability",
@@ -1247,7 +1054,7 @@ server <- function(input, output, session) {
 
   })
 
-  output$meta_diff_plot5 <- renderPlot({
+  output$meta_diff_plot4 <- renderPlot({
     req(selected_data())
     data <- selected_data()
 
@@ -1288,7 +1095,7 @@ server <- function(input, output, session) {
             xlab = "",
             ylab = "Median Difference Score",
             main = "Difference Scores Across Race"
-            )
+    )
     # axis(side = 1, labels = FALSE) # this adds in x-axis tick marks
     axis(side = 2, las = 2, mgp = c(3, 0.75, 0))
 
@@ -1301,31 +1108,21 @@ server <- function(input, output, session) {
          cex = .8,
          adj = 1)
 
+
+    # Plot the boxplots
+    # ggplot(filtered_data, aes(x = Race, y = Median_Difference_Score)) +
+    #   geom_boxplot() +
+    #   theme_minimal() +
+    #   labs(title = "Boxplots of Median Difference Score Across Races",
+    #        x = "Race",
+    #        y = "Median Difference Score") +
+    #   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
   })
 
 
   output$meta_wage_plot1 <- renderPlot({
-    req(selected_data())
-    data <- selected_data()
-
-    if (is.null(data)) {
-      return("No data available.")
-    }
-
-    wage_col <- grep("(?i)^(?=.*wage)(?=.*exit)(?!.*(desc))", names(data),
-                     value = TRUE, perl = TRUE)
-    wages <- data[, .SD, .SDcols = wage_col]
-    wages_vector <- as.vector(unlist(wages))
-
-    hist(wages_vector,
-         col = "steelblue",
-         main = "Distribution of Exit Wages",
-         xlab = "Exit Wage ($ per hour)")
-
-  })
-
-
-  output$meta_wage_plot2 <- renderPlot({
     req(selected_data())
     data <- selected_data()
 
@@ -1345,7 +1142,7 @@ server <- function(input, output, session) {
          pch = 3)
   })
 
-  output$meta_wage_plot3 <- renderPlot({
+  output$meta_wage_plot2 <- renderPlot({
     req(selected_data())
     data <- selected_data()
 
@@ -1361,10 +1158,10 @@ server <- function(input, output, session) {
          xlab = "Total Quarters Enrolled",
          pch = 8)
 
-    })
+  })
 
 
-  output$meta_wage_plot4 <- renderPlot({
+  output$meta_wage_plot3 <- renderPlot({
     req(selected_data())
     data <- selected_data()
 
@@ -1380,14 +1177,14 @@ server <- function(input, output, session) {
 
     boxplot(wages_vector ~ data[[sex_col]],
             main = "Exit Wages by Gender",
-            names = c("Females", "Males", "Did not identify"),
+            names = c("Males", "Females", "Did not identify"),
             xlab = "Gender",
             ylab = "Exit Wages ($ per Hour)",
             col = "steelblue")
-    })
+  })
 
 
-  output$meta_wage_plot6 <- renderPlot({
+  output$meta_wage_plot5 <- renderPlot({
     req(selected_data())
     data <- selected_data()
 
@@ -1414,7 +1211,7 @@ server <- function(input, output, session) {
   })
 
 
-  output$meta_wage_plot7 <- renderPlot({
+  output$meta_wage_plot6 <- renderPlot({
     req(selected_data())
     data <- selected_data()
 
@@ -1436,7 +1233,7 @@ server <- function(input, output, session) {
   })
 
 
-  output$meta_wage_plot5 <- renderPlot({
+  output$meta_wage_plot4 <- renderPlot({
     req(selected_data())
     data <- selected_data()
 
@@ -1497,20 +1294,7 @@ server <- function(input, output, session) {
   })
 
 
-
   output$meta_employ_plot1 <- renderPlot({
-    req(selected_data())
-    data <- selected_data()
-
-    barplot(table(data$Final_Employment),
-            main = "Distribution of Exit Employment",
-            names = c("Non-competitive", "Competitive"),
-            xlab = "Exit Employment Status",
-            col = c("lightsteelblue", "steelblue"))
-
-  })
-
-  output$meta_employ_plot2 <- renderPlot({
     req(selected_data())
     data <- selected_data()
 
@@ -1529,7 +1313,7 @@ server <- function(input, output, session) {
 
   })
 
-  output$meta_employ_plot3 <- renderPlot({
+  output$meta_employ_plot2 <- renderPlot({
     req(selected_data())
     data <- selected_data()
 
@@ -1548,7 +1332,7 @@ server <- function(input, output, session) {
 
   })
 
-  output$meta_employ_plot4 <- renderPlot({
+  output$meta_employ_plot3 <- renderPlot({
     req(selected_data())
     data <- selected_data()
 
@@ -1581,7 +1365,7 @@ server <- function(input, output, session) {
 
   })
 
-  output$meta_employ_plot5 <- renderPlot({
+  output$meta_employ_plot4 <- renderPlot({
     req(selected_data())
     data <- selected_data()
 
@@ -1647,7 +1431,7 @@ server <- function(input, output, session) {
 
 
 
-  output$meta_employ_plot6 <- renderPlot({
+  output$meta_employ_plot5 <- renderPlot({
     req(selected_data())
     data <- selected_data()
 
@@ -1656,14 +1440,14 @@ server <- function(input, output, session) {
 
     # Create a contingency table of Final_Employment by Gender
     employment_severity_table <- table(data$Final_Employment,
-                                     data[[severity_col]])
+                                       data[[severity_col]])
 
     rownames(employment_severity_table) <- c("Non-competitive Employment",
-                                           "Competitive Employment")
+                                             "Competitive Employment")
 
     colnames(employment_severity_table) <- c("Non-significant",
-                                           "Significant",
-                                           "Most significant")
+                                             "Significant",
+                                             "Most significant")
 
 
     # Create a bar plot with bars broken up by gender
@@ -1678,7 +1462,7 @@ server <- function(input, output, session) {
   })
 
 
-  output$meta_employ_plot7 <- renderPlot({
+  output$meta_employ_plot6 <- renderPlot({
     req(selected_data())
     data <- selected_data()
 
@@ -1704,7 +1488,17 @@ server <- function(input, output, session) {
                                title = "Employment Type"),
             xlab = "Primary Impairment", ylab = "Count",
             main = "Exit Employment by Primary Impairment",
-            )
+    )
+
+    # # Add custom x-axis labels at the midpoints of the bars
+    # text(x = colMeans(bar_midpoints),  # Calculate the midpoints for grouped bars
+    #      y = par("usr")[3] - 0.45,
+    #      labels = levels(metadata$Primary_Impairment_Group),  # Clean the race names
+    #      xpd = NA,  # Allow plotting outside plot region
+    #      ## Rotate the labels by 45 degrees.
+    #      srt = 45,
+    #      cex = .8,
+    #      adj = 1)
 
   })
 
@@ -1716,7 +1510,7 @@ server <- function(input, output, session) {
   ##################
 
   output$models_sidebar <- renderUI({
-  # output$models_ui <- renderUI({
+    # output$models_ui <- renderUI({
     data <- selected_data()
     data_choice <- input$data_choice
     dataset_type <- input$dataset_type
@@ -1724,45 +1518,45 @@ server <- function(input, output, session) {
     if ((data_choice == "Use Cleaned RSA-911 Data") ||
         (data_choice == "Upload New Dataset" && dataset_type == "rsa")) {
       # sidebarPanel(
-        fluidRow(
-          column(12,
-                 h4("RSA-911 Data Modeling Options")),
+      fluidRow(
+        column(12,
+               h4("RSA-911 Data Modeling Options")),
 
-          selectInput("response", "Select Response Variable",
-                      choices = c(" ",
-                                  "Predict Employment Outcome",
-                                  "Predict Ending Wage")
-                      ),
-          column(12,
-                 tags$label("Select Predictor Variables:")),
+        selectInput("response", "Select Response Variable",
+                    choices = c(" ",
+                                "Predict Employment Outcome",
+                                "Predict Ending Wage")
+        ),
+        column(12,
+               tags$label("Select Predictor Variables:")),
 
-          column(12,
-                 checkboxInput("gender",
-                               "Gender",
-                               value = FALSE)),
-          column(12,
-                 checkboxInput("race",
-                               "Race",
-                               value = FALSE)),
-          column(12,
-                 checkboxInput("severity",
-                               "Severity",
-                               value = FALSE)),
-          column(12,
-                 checkboxInput("prim_impairment",
-                               "Primary Impairment",
-                               value = FALSE)),
-          column(12,
-                 checkboxInput("second_impairment",
-                               "Secondary Impairment",
-                               value = FALSE))
-          # column(12,
-          #        checkboxInput("interactions",
-          #                      "Interaction Effects",
-          #                      value = FALSE))
+        column(12,
+               checkboxInput("gender",
+                             "Gender",
+                             value = FALSE)),
+        column(12,
+               checkboxInput("race",
+                             "Race",
+                             value = FALSE)),
+        column(12,
+               checkboxInput("severity",
+                             "Severity",
+                             value = FALSE)),
+        column(12,
+               checkboxInput("prim_impairment",
+                             "Primary Impairment",
+                             value = FALSE)),
+        column(12,
+               checkboxInput("second_impairment",
+                             "Secondary Impairment",
+                             value = FALSE))
+        # column(12,
+        #        checkboxInput("interactions",
+        #                      "Interaction Effects",
+        #                      value = FALSE))
 
       )
-    # )
+      # )
 
     } else if ((data_choice == "Use Cleaned Scores Data") ||
                (data_choice == "Upload New Dataset" &&
@@ -1958,53 +1752,6 @@ server <- function(input, output, session) {
 
   })
 
-
-  # Reactive function to create residual plots
-  output$rsa_residuals1 <- renderPlot({
-    req(model_rsa())
-
-    # residuals
-    model <- model_rsa()
-    residuals <- resid(model)
-
-    # histogram to look for normality
-    hist(residuals, col = "steelblue")
-
-  })
-
-  output$rsa_residuals2 <- renderPlot({
-    req(model_rsa())
-
-    # residuals
-    model <- model_rsa()
-    residuals <- resid(model)
-
-    # histogram to look for normality
-    qqnorm(residuals)
-    qqline(residuals, col = "steelblue")
-
-  })
-
-  output$rsa_residuals3 <- renderPlot({
-    req(model_rsa())
-
-    # Extract fitted values and residuals
-    model <- model_rsa()
-    residuals <- resid(model)
-    fitted <- fitted(model)
-
-    # Generate residuals vs. fitted values plot
-    plot(fitted, residuals,
-         main = "Residuals vs Fitted",
-         xlab = "Fitted Values",
-         ylab = "Residuals",
-         pch = 19)
-
-    # Add a horizontal line at y = 0 for reference
-    abline(h = 0, col = "steelblue", lty = 2)
-  })
-
-
   # Render model summaries or ANOVA results
   output$model_rsa_summary <- renderPrint({
     req(model_rsa())
@@ -2041,9 +1788,9 @@ server <- function(input, output, session) {
       long_data <- data.frame(
         Difference_Scores = c(data$Difference_CPSO, data$Difference_CSS,
                               data$Difference_EMP, data$Difference_FL,
-                 data$Difference_ILOM, data$Difference_ISA,
-                 data$Difference_JOBEX, data$Difference_JS,
-                 data$Difference_QWEX, data$Difference_WBLE),
+                              data$Difference_ILOM, data$Difference_ISA,
+                              data$Difference_JOBEX, data$Difference_JS,
+                              data$Difference_QWEX, data$Difference_WBLE),
         Services = factor(rep(filtered_columns, each = nrow(data)))
       )
 
@@ -2059,7 +1806,7 @@ server <- function(input, output, session) {
 
       result <- aov(Median_Difference_Score ~ Provider,
                     data = na.omit(data[, c("Median_Difference_Score",
-                                                "Provider")]))
+                                            "Provider")]))
 
       # pairwise comparisons
       tukey_result <- TukeyHSD(result)
@@ -2346,14 +2093,35 @@ server <- function(input, output, session) {
     if (data_choice == "Use Cleaned RSA-911 Data" ||
         (data_choice == "Upload New Dataset" && input$dataset_type == "rsa")) {
       fluidRow(
-        column(12, verbatimTextOutput("model_rsa_summary")),
-        column(12, plotOutput("rsa_residuals1")),
-        column(12, plotOutput("rsa_residuals2")),
-        column(12, plotOutput("rsa_residuals3"))
+        column(12, verbatimTextOutput("model_rsa_summary"))
       )
     } else if (data_choice == "Use Cleaned Scores Data" ||
                (data_choice == "Upload New Dataset" &&
                 input$dataset_type == "scores")) {
+      # fluidRow(
+      #   # column(12, verbatimTextOutput("model_scores_summary")),
+      #   # column(12, verbatimTextOutput("tukey_scores_summary")),
+      #   # column(12, verbatimTextOutput("model_scores_summary")),
+      #
+      #   # Conditionally show the caption and Tukey results
+      #   if (anova_run()) {
+      #     tagList(
+      #       # anova output
+      #       tags$p("ANOVA results",
+      #              style = "font-size: 14px; font-weight: bold;"),
+      #       column(12, verbatimTextOutput("model_scores_summary")),
+      #       # pairwise results
+      #       tags$p("Significant pairwise comparisons:",
+      #              style = "font-size: 14px; font-weight: bold;"),
+      #       column(12, verbatimTextOutput("tukey_scores_summary"))
+      #
+      #     )
+      #   },
+      #   column(12, plotOutput("scores_residuals1")),
+      #   column(12, plotOutput("scores_residuals2")),
+      #   column(12, plotOutput("scores_residuals3"))
+      # )
+      #
       fluidRow(
         # Conditionally show the caption and ANOVA results
         if (anova_run()) {
@@ -2393,6 +2161,4 @@ server <- function(input, output, session) {
 
 # Run the application
 shinyApp(ui = ui, server = server)
-
-
 

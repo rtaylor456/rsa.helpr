@@ -34,8 +34,3 @@ lapply(subset2[, .SD, .SDcols = race_cols], function(x) length(unique(x)))
 table(subset2[[severity_col]])
 
 
-
-formula <- as.formula(paste(y, "~",
-                            paste(predictors, collapse = "+")))
-
-summary(lm(formula = formula, data = metadata))
