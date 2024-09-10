@@ -1,5 +1,19 @@
 library(data.table)
-# library(lubridate)
+
+#' Clean Scores Data
+#'
+#' This function cleans a scores dataset, based on the standard data
+#'   structure.
+#'
+#' @param data The scores dataset.
+#' @param aggregate TRUE or FALSE. Defaults to TRUE, when TRUE, rows are
+#'   aggregated to include only unique participants are kept.
+#'
+#' @returns A cleaned data frame, restructured to a wide format, to help with
+#'   merging process.
+#'
+#' @export
+#' @import data.table
 
 clean_scores <- function(data, aggregate = TRUE) {
 

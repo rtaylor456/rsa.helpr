@@ -109,12 +109,14 @@ handle_code <- function(x){
   return(x)
 }
 
-#' Cleaning specific blank values.
+#' Cleaning incorrect values.
 #'
-#' This function converts a RSA-911 date variable written in order YYYYMMDD as
-#'    one number to the appropriate date.
+#' This function cleans incorrect values for a RSA-911 date variable.
 #'
-#' @param x A date variable, written as a numeric YYYYMMDD.
+#' @param x An RSA-911 variable with specific allowed values.
+#' @param values A vector of permitted values for the variable.
+#' @param blank_value The preferred replacement value for incorrect values.
+#'   Default is to replace incorrect values to NA.
 #' @returns The converted date variable.
 #' @export
 handle_values <- function(x, values, blank_value = NA){
@@ -158,13 +160,16 @@ handle_values <- function(x, values, blank_value = NA){
 #   return(data)
 # }
 
-#' Convert date variable.
+#' Clean variables in RSA-911 dataset with special characters.
 #'
-#' This function converts a RSA-911 date variable written in order YYYYMMDD as
-#'    one number to the appropriate date.
+#' This function cleans variables with special characters by splitting values
+#'   into separate variables that are separated by special characters.
 #'
-#' @param x A date variable, written as a numeric YYYYMMDD.
-#' @returns The converted date variable.
+#' @param data An RSA-911 dataset to be cleaned.
+#' @param var_names A vector of names for variables that contain special
+#'   characters.
+#' @returns The cleaned RSA-911 dataset, with new variables that contain the
+#'   cleaned, separated values without special characters.
 #' @export
 # var_names is a character vector of variable names (place in quotes)
 handle_splits <- function(data, var_names){
@@ -201,13 +206,15 @@ handle_splits <- function(data, var_names){
 }
 
 
-#' Convert date variable.
+#' Clean primary and secondary disability variables in RSA-911 dataset.
 #'
-#' This function converts a RSA-911 date variable written in order YYYYMMDD as
-#'    one number to the appropriate date.
+#' This function cleans primary and secondary disability variables with special
+#'   characters by splitting impairment and cause values into separate variables
+#'   that are separated by special characters.
 #'
-#' @param x A date variable, written as a numeric YYYYMMDD.
-#' @returns The converted date variable.
+#' @param df An RSA-911 dataset to be cleaned.
+#' @returns The cleaned RSA-911 dataset, with new, separate variables for
+#'   primary and secondary cause and impairment, without special characters.
 #' @export
 separate_disability <- function(df) {
   # Convert to data.table if not already

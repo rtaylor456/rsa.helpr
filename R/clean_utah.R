@@ -1,4 +1,31 @@
 library(data.table)
+#' Clean Utah RSA-911 Data
+#'
+#' This function cleans a Utah RSA-911 dataset, based on the standard data
+#'   structure.
+#'
+#' @param data The Utah RSA-911 dataset.
+#' @param aggregate TRUE or FALSE. Defaults to TRUE, when TRUE, rows are
+#'   aggregated to include only unique combinations of participants, year,
+#'   and quarter.
+#' @param unidentified_to_O TRUE or FALSE. Defaults to TRUE, when TRUE,
+#'   variables where unidentified is represented by 9,
+#'   values are converted to 0.
+#' @param convert_sex TRUE or FALSE. Defaults to TRUE, when TRUE, the
+#'   traditional sex/gender variable value of 2 is converted to a more standard
+#'   binary value of 0.
+#' @param clean_specials TRUE or FALSE. Defaults to FALSE, when TRUE, variables
+#'   containing special characters are cleaned and separated into new variables.
+#' @param remove_desc TRUE or FALSE. Defaults to TRUE, when TRUE, description
+#'   variables are removed to minimize redundancy.
+#' @param remove_strictly_na TRUE or FALSE. Defaults to TRUE, when TRUE,
+#'   variables that contain only NA values are removed.
+#'
+#' @returns A cleaned data frame, with incorrect, blank, messy values replaced,
+#'   additional, helpful variables created, and unnecessary variables removed.
+#'
+#' @export
+#' @import data.table
 
 clean_utah <- function(data,
                        aggregate = TRUE,

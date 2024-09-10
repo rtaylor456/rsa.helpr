@@ -1,5 +1,23 @@
 library(data.table)
-# library(lubridate)
+
+#' Create Metadata
+#'
+#' This function aggregates a merged or RSA-911 dataset to contain only one row
+#'   per unique participant, to make analysis and modeling more intuitive. The
+#'   aggregation process includes condensing rows by taking medians for numeric
+#'   variables, keeping most common values for character and factor variables,
+#'   and keeping most recent values for date-related variables.
+#'
+#' @param data The merged or RSA-911 dataset.
+#' @param includes_scores TRUE or FALSE. Defaults to TRUE, when TRUE, metadata
+#'   creation includes process for scores data variables--inputted data frame is
+#'   treated as a merged dataset. When FALSE, metadata process only includes
+#'   steps relevant for an RSA-911 dataset.
+#'
+#' @returns A data frame with one row per participant.
+#'
+#' @export
+#' @import data.table
 
 create_metadata <- function(data, includes_scores = TRUE) {
   # Convert data to data.table if it's not already
