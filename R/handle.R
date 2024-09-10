@@ -1,4 +1,4 @@
-#' Convert date variable.
+#' Clean date variable.
 #'
 #' This function converts a RSA-911 date variable written in order YYYYMMDD as
 #'    one number to the appropriate date.
@@ -11,17 +11,41 @@ handle_date <- function(x) {
   return(date)
 }
 
+#' Clean Excel-based date variable.
+#'
+#' This function converts a RSA-911 Excel-based date variable written in order
+#'    YYYYMMDD as one number with original date 1899-12-30 to the appropriate
+#'    date.
+#'
+#' @param x A date variable, written as a numeric YYYYMMDD, origin 1899-12-30.
+#' @returns The converted date variable.
+#' @export
 handle_excel_date <- function(x){
   date <- as.Date(as.numeric(x), origin = "1899-12-30")
   return(date)
 }
 
+#' Clean year variable.
+#'
+#' This function cleans a RSA-911 year variable containing a 4-digit year to
+#'   the extracted 4-digit year.
+#'
+#' @param x A year variable, containing a 4-digit year somewhere in string.
+#' @returns The converted year variable, just the digits.
+#' @export
 handle_year <- function(x) {
   year <- as.numeric(gsub("\\D*(\\d{4})\\D*", "\\1", x))
   return(year)
 }
 
-
+#' Convert date variable.
+#'
+#' This function converts a RSA-911 date variable written in order YYYYMMDD as
+#'    one number to the appropriate date.
+#'
+#' @param x A date variable, written as a numeric YYYYMMDD.
+#' @returns The converted date variable.
+#' @export
 handle_nines <- function(x, unidentified_to_0 = TRUE) {
   x <- as.numeric(x)
   # Replace NA values with 9
@@ -35,7 +59,15 @@ handle_nines <- function(x, unidentified_to_0 = TRUE) {
   return(x)
 }
 
-
+#' Clean sex/gender variable.
+#'
+#' This function clean a RSA-911 sex/gender variable, based on user input.
+#'
+#' @param x A sex/gender variable, with values 1, 2, 9 (or NA), or 1, 0, 9.
+#' @param convert_sex True or False, default is False.
+#'   Converts 2s to 0s if True.
+#' @returns The converted date variable.
+#' @export
 handle_sex <- function(x, convert_sex = FALSE) {
   x <- as.numeric(x)
   if (convert_sex) {
@@ -50,19 +82,41 @@ handle_sex <- function(x, convert_sex = FALSE) {
   return(sex)
 }
 
-
+#' Clean a variable with blank values.
+#'
+#' This function cleans a RSA-911 variable with blanks and NULL values.
+#'
+#' @param x An RSA-911 variable.
+#' @returns The cleaned variable, where blanks and NULLs are replaced with 0s.
+#' @export
 handle_blanks <- function(x) {
   # Identify rows with values equal to " " or "NULL" in the specified column
   x[x %in% c(" ", "NULL")] <- 0
   return(x)
 }
 
+#' Convert character coded variables.
+#'
+#' This function converts a RSA-911 date variable written in order YYYYMMDD as
+#'    one number to the appropriate date.
+#'
+#' @param x A variable containing code values, so values that have little
+#'   meaning in in numeric or factor form. Simply represent recorded ids.
+#' @returns The cleaned code variable.
+#' @export
 handle_code <- function(x){
   x[x %in% c(" ", "NULL", NA, "NA", "")] <- NA
   return(x)
 }
 
-
+#' Cleaning specific blank values.
+#'
+#' This function converts a RSA-911 date variable written in order YYYYMMDD as
+#'    one number to the appropriate date.
+#'
+#' @param x A date variable, written as a numeric YYYYMMDD.
+#' @returns The converted date variable.
+#' @export
 handle_values <- function(x, values, blank_value = NA){
   x <- as.numeric(x)
   x[is.na(x) | !(x %in% values)] <- blank_value
@@ -104,6 +158,14 @@ handle_values <- function(x, values, blank_value = NA){
 #   return(data)
 # }
 
+#' Convert date variable.
+#'
+#' This function converts a RSA-911 date variable written in order YYYYMMDD as
+#'    one number to the appropriate date.
+#'
+#' @param x A date variable, written as a numeric YYYYMMDD.
+#' @returns The converted date variable.
+#' @export
 # var_names is a character vector of variable names (place in quotes)
 handle_splits <- function(data, var_names){
   for(var_name in var_names) {
@@ -138,6 +200,15 @@ handle_splits <- function(data, var_names){
   return(data)
 }
 
+
+#' Convert date variable.
+#'
+#' This function converts a RSA-911 date variable written in order YYYYMMDD as
+#'    one number to the appropriate date.
+#'
+#' @param x A date variable, written as a numeric YYYYMMDD.
+#' @returns The converted date variable.
+#' @export
 separate_disability <- function(df) {
   # Convert to data.table if not already
   setDT(df)
