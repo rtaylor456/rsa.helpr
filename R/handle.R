@@ -61,7 +61,7 @@ handle_nines <- function(x, unidentified_to_0 = TRUE) {
 
 #' Clean sex/gender variable.
 #'
-#' This function clean a RSA-911 sex/gender variable, based on user input.
+#' This function cleans a RSA-911 sex/gender variable, based on user input.
 #'
 #' @param x A sex/gender variable, with values 1, 2, 9 (or NA), or 1, 0, 9.
 #' @param convert_sex True or False, default is False.

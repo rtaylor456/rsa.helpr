@@ -1,4 +1,5 @@
 data <- fread("data-raw/data_full.csv", stringsAsFactors = FALSE)
+data <- fread("data-raw/full_data.csv", stringsAsFactors = FALSE)
 
 scores <- fread("data-raw/trt_utah_4_8_2024.csv", stringsAsFactors = FALSE)
 
