@@ -13,11 +13,10 @@ handle_date <- function(x) {
 
 #' Clean Excel-based date variable.
 #'
-#' This function converts a RSA-911 Excel-based date variable written in order
-#'    YYYYMMDD as one number with original date 1899-12-30 to the appropriate
-#'    date.
+#' This function converts a RSA-911 Excel-based date variable written as one
+#'    number with origin date 1899-12-30 to the appropriate date.
 #'
-#' @param x A date variable, written as a numeric YYYYMMDD, origin 1899-12-30.
+#' @param x An Excel date variable, origin 1899-12-30.
 #' @returns The converted date variable.
 #' @export
 handle_excel_date <- function(x){
@@ -101,7 +100,7 @@ handle_blanks <- function(x) {
 #'    one number to the appropriate date.
 #'
 #' @param x A variable containing code values, so values that have little
-#'   meaning in in numeric or factor form. Simply represent recorded ids.
+#'   meaning in numeric or factor form. Simply represent recorded ids.
 #' @returns The cleaned code variable.
 #' @export
 handle_code <- function(x){
@@ -111,7 +110,7 @@ handle_code <- function(x){
 
 #' Cleaning incorrect values.
 #'
-#' This function cleans incorrect values for a RSA-911 date variable.
+#' This function cleans incorrect values for a RSA-911 variable.
 #'
 #' @param x An RSA-911 variable with specific allowed values.
 #' @param values A vector of permitted values for the variable.

@@ -7,13 +7,12 @@
 handle_excel_date(x)
 }
 \arguments{
-\item{x}{A date variable, written as a numeric YYYYMMDD, origin 1899-12-30.}
+\item{x}{An Excel date variable, origin 1899-12-30.}
 }
 \value{
 The converted date variable.
 }
 \description{
-This function converts a RSA-911 Excel-based date variable written in order
-YYYYMMDD as one number with original date 1899-12-30 to the appropriate
-date.
+This function converts a RSA-911 Excel-based date variable written as one
+number with origin date 1899-12-30 to the appropriate date.
 }

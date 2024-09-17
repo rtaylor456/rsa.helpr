@@ -10,10 +10,81 @@ vignette: >
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  fig.width = 6,
+  fig.height = 4
 )
 ```
 
-```{r setup}
+## Motivation
+Since its development in 1973, the U.S. Rehabilitation Services Agency (RSA) has the main goal of improving the employment opportunities for citizens with disabilities. As part of this focus, the RSA works with agencies in each state to provide services for students with disabilities to improve employment readiness, expose them to career and higher education opportunities, and increase their earning potential. Each state collects administrative data on participants' outcomes in a specific structure, called a Case Services Report, which is often abbreviated as “RSA-911” data. These RSA-911 datasets contain information on participant demographics, as well as enrolled services combinations and employment and education outcomes. The RSA-911 datasets capture a wealth of critical information; however, the structure of the data is not in a practical format for classical statistical, machine learning, or visualization techniques. Due to this complicated format, much of the potential for analysis and modeling remains untapped. Currently, most of the existing research is devoted to predicting categorical or binary outcome variables, such as employment status at exit from VR service. More notably, many studies focus investigation on a small, overlapping subset of predictor variables. 
+
+With the existing methods for analysis being limited, and many of the features in the data overlooked in past research, there is a push for more efficient and reproducible data preparation, allowing for new explorations. This motivation has only become more charged by the recent development of an additional success metric. Beginning in 2020, the VR researchers and providers in the state of Utah have started collecting pre and post test scores for evaluating skill improvement in each offered service. The hope is that these new score variables will help VR researchers identify the most effective services and advocate for more strategic funding. The VR researchers leading this effort are ready to start examining the worth of these novel pre-post-difference scores, find appropriate methods for analysis, and explore the relationship of these scores with a wide array of demographic variables. Beyond their own analysis, the researchers desire more accessibility to basic analysis for the collaborating VR providers who collect this data.  
+
+This project attempts to address the needs presented by the industry. The first task is to alleviate the burden of data preparation, through the development of an R package geared toward specialized cleaning and analysis for any RSA-911 dataset, as well as the recently collected scores data. The second task is the first ever analysis of relationships between RSA-911 demographics and the novel pre-post-difference scores. The final task is developing a user-friendly \texttt{rshiny} interface that provides a VR professional with limited data analysis experience to easily gain insight into the data they work hard to collect. 
+
+
+## Installation and Loading
+The package can be installed with the following code:
+```{r setup, eval = FALSE}
+devtools::install_github("rtaylor456/rsa.helpr")
+```
+
+After being installed, we can load the package:
+```{r load}
 library(rsa.helpr)
 ```
+
+
+## Data and Challenges
+
+As each RSA-911 dataset involves data entry by many providers across several VR agencies, the risk of erroneous or missing values is high. Using the codebook as the guide, we searched the variables for values that would need to be adjusted or could be re-coded for more meaning. These incorrect values were then replaced with either a reasonable alternative or missing values. While some missing values represent truly missing data, many of the "NULL" values in RSA-911 datasets actually represent a factor value. These values have been represented with meaningful factor levels for the sake of analysis. Several variables were wholly removed for either containing no meaningful data or unnecessary information. Some additional variables were created during this process to measure variables of interest, for example, enrollment lengths and grade levels. 
+
+
+## Solution: Data Cleaning Package `rsa.helpr`
+
+### Helper Functions
+#### `handle_date`
+#### `handle_excel_date`
+#### `handle_year`
+#### `handle_nines`
+#### `handle_sex`
+#### `handle_blanks`
+#### `handle_code`
+#### `handle_values`
+#### `handle_splits`
+#### `separate_disability`
+
+### One-Stop Cleaning Functions
+#### `clean_utah`
+###### `aggregate`
+###### `convert_sex`
+###### `clean_specials`
+###### `remove_desc`
+###### `remove_strictly_na`
+###### `unidentified_to_0`
+
+
+#### `clean_scores`
+###### `aggregate`
+
+### Merge and Metadata Functions
+#### `merge_scores`
+
+#### `create_metadata`
+
+
+
+## An Interactive `rshiny` Data Dashboard
+
+### Data Upload and Cleaning
+
+### Selecting a Dataset
+
+#### Selecting Metadata
+
+#### Selecting Scores Data
+
+
+
+## Conclusion
