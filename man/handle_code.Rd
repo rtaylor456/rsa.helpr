@@ -8,7 +8,7 @@ handle_code(x)
 }
 \arguments{
 \item{x}{A variable containing code values, so values that have little
-meaning in in numeric or factor form. Simply represent recorded ids.}
+meaning in numeric or factor form. Simply represent recorded ids.}
 }
 \value{
 The cleaned code variable.

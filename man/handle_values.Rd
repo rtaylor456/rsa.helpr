@@ -18,5 +18,5 @@ Default is to replace incorrect values to NA.}
 The converted date variable.
 }
 \description{
-This function cleans incorrect values for a RSA-911 date variable.
+This function cleans incorrect values for a RSA-911 variable.
 }

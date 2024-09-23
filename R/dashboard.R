@@ -2340,14 +2340,14 @@ server <- function(input, output, session) {
       # employ_col <- grep("(?i)^(?=.*employment)(?!.*(?i)_desc)(?!.*(?i)_wage)(?!.*(?i)un)",
       #                    names(data), value = TRUE, perl = TRUE)
       # employ_col <- "E389_Q4_Employment_911"
-
-      exit_work_col <- grep("(?i)_exit*(?i)_work(?!.*(?i)_amt)(?!.*(?i)_desc)",
-                            names(data), value = TRUE, perl = TRUE)
+#
+#       exit_work_col <- grep("(?i)_exit*(?i)_work(?!.*(?i)_amt)(?!.*(?i)_desc)",
+#                             names(data), value = TRUE, perl = TRUE)
 
       if (length(exit_work_col) < 1){
         return("No employment variable available.")
       } else{
-        y <- exit_work_col
+        y <- "Final_Employment"
       }
 
 
@@ -2383,7 +2383,8 @@ server <- function(input, output, session) {
     }
 
     if (input$race) {
-      race_cols <- grep("(?i)(_indian|_asian|_black|_hawaiian|_islander|_white|hispanic)(?!.*(?i)_desc)", names(data),
+      race_cols <- grep("(?i)(_indian|_asian|_black|_hawaiian|_islander|_white|hispanic)(?!.*(?i)_desc)",
+                        names(data),
                         value = TRUE, perl = TRUE)
       if (length(race_cols) < 1){
         return("No race variable(s) available.")
@@ -2459,31 +2460,65 @@ server <- function(input, output, session) {
 
   # Reactive function to create residual plots
   output$metadata_residuals1 <- renderPlot({
+    response <- input$response
     req(model_metadata())
 
     # residuals
     model <- model_metadata()
     residuals <- resid(model)
 
-    # histogram to look for normality
-    hist(residuals, col = "steelblue")
+    if (response == "Predict Ending Wage" ||
+        response == "Predict Median Difference Score"){
+      # histogram to look for normality
+      hist(residuals, col = "steelblue")
+    } else{
+      y <- "Final_Employment"
+      # Ensure the model is logistic (family = binomial)
+      # Calculate predicted probabilities
+      predicted_probs <- predict(model, type = "response")
+
+      # Use pROC to generate an ROC curve
+      library(pROC)
+      roc_obj <- roc(model$y, predicted_probs)
+
+      # Plot the ROC curve
+      plot(roc_obj, col = "steelblue", lwd = 2, main = "ROC Curve")
+      # Add diagonal line (no skill classifier
+      # abline(a = 0, b = 1, col = "gray", lty = 2)
+    }
+
 
   })
 
   output$metadata_residuals2 <- renderPlot({
+    response <- input$response
     req(model_metadata())
 
     # residuals
     model <- model_metadata()
     residuals <- resid(model)
 
-    # histogram to look for normality
-    qqnorm(residuals)
-    qqline(residuals, col = "steelblue")
+    if (response == "Predict Ending Wage" ||
+        response == "Predict Median Difference Score") {
+
+      # histogram to look for normality
+      qqnorm(residuals)
+      qqline(residuals, col = "steelblue")
+    } else {
+      arm::binnedplot(fitted(model), residuals(model, type = "response"),
+                      nclass = NULL,
+                      xlab = "Expected Values",
+                      ylab = "Average residual",
+                      main = "Binned residual plot",
+                      cex.pts = 0.8,
+                      col.pts = 1,
+                      col.int = "gray")
+    }
 
   })
 
   output$metadata_residuals3 <- renderPlot({
+    response <- input$response
     req(model_metadata())
 
     # Extract fitted values and residuals
@@ -2491,15 +2526,39 @@ server <- function(input, output, session) {
     residuals <- resid(model)
     fitted <- fitted(model)
 
-    # Generate residuals vs. fitted values plot
-    plot(fitted, residuals,
-         main = "Residuals vs Fitted",
-         xlab = "Fitted Values",
-         ylab = "Residuals",
-         pch = 19)
+    if (response == "Predict Ending Wage" ||
+        response == "Predict Median Difference Score") {
+      # Generate residuals vs. fitted values plot
+      plot(fitted, residuals,
+           main = "Residuals vs Fitted",
+           xlab = "Fitted Values",
+           ylab = "Residuals",
+           pch = 19)
 
-    # Add a horizontal line at y = 0 for reference
-    abline(h = 0, col = "steelblue", lty = 2)
+      # Add a horizontal line at y = 0 for reference
+      abline(h = 0, col = "steelblue", lty = 2)
+    }
+  })
+
+  # Explanation for ROC or Binned Residuals Plot
+  output$plot_explanation <- renderUI({
+    req(model_metadata())
+
+    # Check the response type
+    response <- input$response
+
+    if (response == "Predict Employment Outcome") {
+      # Explanation for ROC plot
+      HTML("<b>ROC Curve Explanation:</b> The ROC curve plots the true positive rate (sensitivity) against the false positive rate (1-specificity) at various threshold levels. The Area Under the Curve (AUC) represents the model's ability to discriminate between positive and negative outcomes. A higher AUC indicates better model performance.")
+
+    } else if (response == "Predict Ending Wage" || response == "Predict Median Difference Score") {
+      # Explanation for Residuals vs. Fitted plot
+      HTML("<b>Residuals vs Fitted Plot Explanation:</b> This plot helps assess the model fit by showing the residuals (differences between observed and predicted values) against the fitted values (predicted values). Ideally, the residuals should be randomly scattered around 0, indicating that the model's assumptions are valid.")
+
+    } else {
+      # Explanation for Binned Residuals plot
+      HTML("<b>Binned Residuals Plot Explanation:</b> This plot divides the data into bins based on fitted values, showing the average residual versus the average fitted value for each bin. It helps assess how well the model fits in different ranges of the predictor variable.")
+    }
   })
 
   output$model_metadata_summary <- renderPrint({
@@ -2558,7 +2617,8 @@ server <- function(input, output, session) {
         column(12, verbatimTextOutput("model_metadata_summary")),
         column(12, plotOutput("metadata_residuals1")),
         column(12, plotOutput("metadata_residuals2")),
-        column(12, plotOutput("metadata_residuals3"))
+        column(12, plotOutput("metadata_residuals3")),
+        column(12,  uiOutput("plot_explanation"))
       )
     }
   })

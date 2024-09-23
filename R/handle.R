@@ -238,6 +238,9 @@ separate_disability <- function(df) {
          "Secondary_Cause") := tstrsplit(df[[second_disability]],
                                                  ";",
                                                  fixed = TRUE)]
+  # remove original columns
+  df[, (prim_disability) := NULL]
+  df[, (second_disability) := NULL]
 
   return(df)
 }
