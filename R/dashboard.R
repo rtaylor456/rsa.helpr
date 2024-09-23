@@ -2344,11 +2344,11 @@ server <- function(input, output, session) {
 #       exit_work_col <- grep("(?i)_exit*(?i)_work(?!.*(?i)_amt)(?!.*(?i)_desc)",
 #                             names(data), value = TRUE, perl = TRUE)
 
-      if (length(exit_work_col) < 1){
-        return("No employment variable available.")
-      } else{
+      # if (length(exit_work_col) < 1){
+      #   return("No employment variable available.")
+      # } else{
         y <- "Final_Employment"
-      }
+      # }
 
 
     } else if (response == "Predict Ending Wage") {
