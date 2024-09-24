@@ -20,18 +20,18 @@ nrow(metadata) # 1371 # when rsa-911 is aggregated: 322
 length(unique(metadata$Participant_ID)) # 1371 # when rsa-911 is aggregated: 322
 
 
-predictors <- c(race_cols[2], severity_col)
-
-subset <- metadata[, .SD, .SDcols = predictors]
-nrow(subset)
-lapply(subset[, .SD, .SDcols = race_cols], table)
-lapply(subset[, .SD, .SDcols = race_cols], function(x) length(unique(x)))
-table(subset[[severity_col]])
-
-subset2 <- na.omit(subset)
-nrow(subset2)
-lapply(subset2[, .SD, .SDcols = race_cols], table)
-lapply(subset2[, .SD, .SDcols = race_cols], function(x) length(unique(x)))
-table(subset2[[severity_col]])
+# predictors <- c(race_cols[2], severity_col)
+#
+# subset <- metadata[, .SD, .SDcols = predictors]
+# nrow(subset)
+# lapply(subset[, .SD, .SDcols = race_cols], table)
+# lapply(subset[, .SD, .SDcols = race_cols], function(x) length(unique(x)))
+# table(subset[[severity_col]])
+#
+# subset2 <- na.omit(subset)
+# nrow(subset2)
+# lapply(subset2[, .SD, .SDcols = race_cols], table)
+# lapply(subset2[, .SD, .SDcols = race_cols], function(x) length(unique(x)))
+# table(subset2[[severity_col]])
 
 
