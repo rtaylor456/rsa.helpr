@@ -1356,114 +1356,20 @@ server <- function(input, output, session) {
     req(selected_data())
     data <- selected_data()
 
-    plot(as.numeric(data$Enroll_Length), data$Median_Difference_Score,
-         col = "steelblue",
-         main = "Difference Scores Across Quarters Enrolled",
-         ylab = "Median Difference Score",
-         xlab = "Total Quarters Enrolled",
-         pch = 8)
+    # plot(as.numeric(data$Enroll_Length), data$Median_Difference_Score,
+    #      col = "steelblue",
+    #      main = "Difference Scores Across Quarters Enrolled",
+    #      ylab = "Median Difference Score",
+    #      xlab = "Total Quarters Enrolled",
+    #      pch = 8)
+
+    boxplot(Median_Difference_Score ~ data[["Enroll_Length_Grp"]], data = data,
+            main = "Difference Scores Across Quarters Enrolled",
+            xlab = "Enrollment Length (total quarters)",
+            ylab = "Median Difference Scores",
+            col = "steelblue")
 
     })
-
-  # output$meta_diff_plot4 <- renderPlot({
-  #   req(selected_data())
-  #   data <- selected_data()
-  #
-  #   # the name for the gender/sex column could be varied, so we need to
-  #   #   account for this possibility
-  #   sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
-  #                   value = TRUE, perl = TRUE)
-  #
-  #   boxplot(Median_Difference_Score ~ data[[sex_col]], data = data,
-  #           main = "Difference Scores by Gender",
-  #           names = c("Females", "Males", "Did not identify"),
-  #           xlab = "Gender",
-  #           ylab = "Median Difference Scores",
-  #           col = "steelblue")
-  #
-  #   })
-
-  # output$meta_diff_plot4 <- renderPlot({
-  #   req(selected_data())
-  #   data <- selected_data()
-  #
-  #   # the name for the gender/sex column could be varied, so we need to
-  #   # account for this possibility
-  #   sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
-  #                   value = TRUE, perl = TRUE)
-  #
-  #   # Create density for each group
-  #   females_density <- density(data$Median_Difference_Score[
-  #     data[[sex_col]] == 0], na.rm = TRUE)
-  #   males_density <- density(data$Median_Difference_Score[
-  #     data[[sex_col]] == 1], na.rm = TRUE)
-  #   did_not_identify_density <- density(data$Median_Difference_Score[
-  #     data[[sex_col]] == 9], na.rm = TRUE)
-  #
-  #   # Plot the densities
-  #   plot(females_density, col = "steelblue", lwd = 2,
-  #        main = "Density Plot of Median Difference Scores by Gender",
-  #        xlab = "Median Difference Scores", ylab = "Density",
-  #        xlim = range(females_density$x, males_density$x,
-  #                     did_not_identify_density$x))
-  #
-  #   lines(males_density, col = "darkblue", lwd = 2)
-  #
-  #   lines(did_not_identify_density, col = "gray", lwd = 2)
-  #
-  #   # Add a legend
-  #   legend("topright", legend = c("Females", "Males", "Did not identify"),
-  #          col = c("steelblue", "darkblue", "gray"), lwd = 2)
-  #   })
-
-
-
-  # output$meta_diff_plot4 <- renderPlot({
-  #   req(selected_data())
-  #   data <- selected_data()
-  #
-  #   # the name for the gender/sex column could be varied, so we need to
-  #   # account for this possibility
-  #   sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
-  #                   value = TRUE, perl = TRUE)
-  #
-  #   # Create density for each group, checking for sufficient data
-  #   females_density <- density(data$Median_Difference_Score[data[[sex_col]] == 0], na.rm = TRUE)
-  #   males_density <- density(data$Median_Difference_Score[data[[sex_col]] == 1], na.rm = TRUE)
-  #   did_not_identify_density <- density(data$Median_Difference_Score[data[[sex_col]] == 9], na.rm = TRUE)
-  #
-  #   # Initialize the plot
-  #   plot(females_density, col = "steelblue", lwd = 2,
-  #        main = "Density Plot of Median Difference Scores by Gender",
-  #        xlab = "Median Difference Scores", ylab = "Density",
-  #        xlim = range(c(females_density$x, males_density$x,
-  #                       did_not_identify_density$x)))
-  #
-  #   # Add the density lines for other groups
-  #   lines(males_density, col = "darkblue", lwd = 2)
-  #   lines(did_not_identify_density, col = "gray", lwd = 2)
-  #
-  #   # Determine the maximum y value for setting y limits
-  #   max_density_value <- max(c(max(females_density$y, na.rm = TRUE),
-  #                              max(males_density$y, na.rm = TRUE),
-  #                              max(did_not_identify_density$y, na.rm = TRUE)), na.rm = TRUE)
-  #
-  #   # Update y-limits to accommodate the peaks
-  #   ylim <- c(0, max_density_value * 1.1)  # Add a bit of padding
-  #   plot(females_density, col = "steelblue", lwd = 2,
-  #        main = "Density Plot of Median Difference Scores by Gender",
-  #        xlab = "Median Difference Scores", ylab = "Density",
-  #        xlim = range(c(females_density$x, males_density$x, did_not_identify_density$x)),
-  #        ylim = ylim)
-  #
-  #   # Re-add the lines for the densities
-  #   lines(males_density, col = "darkblue", lwd = 2)
-  #   lines(did_not_identify_density, col = "gray", lwd = 2)
-  #
-  #   # Add a legend
-  #   legend("topright", legend = c("Females", "Males", "Did not identify"),
-  #          col = c("steelblue", "darkblue", "gray"), lwd = 2)
-  #   })
 
 
   output$meta_diff_plot4 <- renderPlot({
@@ -1475,69 +1381,73 @@ server <- function(input, output, session) {
     sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
                     value = TRUE, perl = TRUE)
 
-    # Create density for each group
-    females_density <- density(data$Median_Difference_Score[data[[sex_col]] == 0], na.rm = TRUE)
-    males_density <- density(data$Median_Difference_Score[data[[sex_col]] == 1], na.rm = TRUE)
-    did_not_identify_density <- density(data$Median_Difference_Score[data[[sex_col]] == 9], na.rm = TRUE)
 
-    # Determine the maximum y value for setting y limits
-    max_density_value <- max(c(max(females_density$y, na.rm = TRUE),
-                               max(males_density$y, na.rm = TRUE),
-                               max(did_not_identify_density$y, na.rm = TRUE)), na.rm = TRUE)
+    if (length(unique(data$Median_Difference_Score[
+      data[[sex_col]] == 0])) >= 2 &
+      length(unique(data$Median_Difference_Score[
+        data[[sex_col]] == 1])) >= 2 &
+      length(unique(data$Median_Difference_Score[
+        data[[sex_col]] == 9])) >= 2
+    ) {
+      # Create density for each group
+      females_density <- density(data$Median_Difference_Score[
+        data[[sex_col]] == 0], na.rm = TRUE)
+      males_density <- density(data$Median_Difference_Score[
+        data[[sex_col]] == 1], na.rm = TRUE)
+      did_not_identify_density <- density(data$Median_Difference_Score[
+        data[[sex_col]] == 9], na.rm = TRUE)
 
-    # Initialize the plot with dynamic y-limits
-    plot(females_density, col = "steelblue4", lwd = 2,
-         main = "Density Plot of Median Difference Scores by Gender",
-         xlab = "Median Difference Scores", ylab = "Density",
-         xlim = range(c(females_density$x, males_density$x, did_not_identify_density$x)),
-         ylim = c(0, max_density_value * 1.1)) # Add a bit of padding for y-limits
+      # Determine the maximum y value for setting y limits
+      max_density_value <- max(c(max(females_density$y, na.rm = TRUE),
+                                 max(males_density$y, na.rm = TRUE),
+                                 max(did_not_identify_density$y, na.rm = TRUE)),
+                               na.rm = TRUE)
 
-    # Fill under the females density curve
-    polygon(c(females_density$x, rev(females_density$x)),
-            c(rep(0, length(females_density$x)), rev(females_density$y)),
-            col = rgb(0.2, 0.6, 1, alpha = 0.3), border = NA)  # Light blue fill
+      # Initialize the plot with dynamic y-limits
+      plot(females_density, col = "steelblue4", lwd = 2,
+           main = "Density Plot of Median Difference Scores by Gender",
+           xlab = "Median Difference Scores", ylab = "Density",
+           xlim = range(c(females_density$x, males_density$x,
+                          did_not_identify_density$x)),
+           # Add a bit of padding for y-limits
+           ylim = c(0, max_density_value * 1.1))
 
-    # Add the density lines for other groups
-    lines(males_density, col = "darkblue", lwd = 2)
-    lines(did_not_identify_density, col = "darkgray", lwd = 2)
+      # Fill under the females density curve
+      polygon(c(females_density$x, rev(females_density$x)),
+              c(rep(0, length(females_density$x)), rev(females_density$y)),
+              # Light blue fill
+              col = rgb(0.2, 0.6, 1, alpha = 0.3), border = NA)
 
-    # Fill under the males density curve
-    polygon(c(males_density$x, rev(males_density$x)),
-            c(rep(0, length(males_density$x)), rev(males_density$y)),
-            col = rgb(0, 0, 0.5, alpha = 0.3), border = NA)  # Light dark blue fill
+      # Add the density lines for other groups
+      lines(males_density, col = "darkblue", lwd = 2)
+      lines(did_not_identify_density, col = "darkgray", lwd = 2)
 
-    # Fill under the did not identify density curve
-    polygon(c(did_not_identify_density$x, rev(did_not_identify_density$x)),
-            c(rep(0, length(did_not_identify_density$x)), rev(did_not_identify_density$y)),
-            col = rgb(0.5, 0.5, 0.5, alpha = 0.3), border = NA)  # Light gray fill
+      # Fill under the males density curve
+      polygon(c(males_density$x, rev(males_density$x)),
+              c(rep(0, length(males_density$x)), rev(males_density$y)),
+              # Light dark blue fill
+              col = rgb(0, 0, 0.5, alpha = 0.3), border = NA)
 
-    # Add a legend
-    legend("topright", legend = c("Females", "Males", "Did not identify"),
-           col = c("steelblue", "darkblue", "gray"), lwd = 2)
+      # Fill under the did not identify density curve
+      polygon(c(did_not_identify_density$x, rev(did_not_identify_density$x)),
+              c(rep(0, length(did_not_identify_density$x)),
+                rev(did_not_identify_density$y)),
+              # Light gray fill
+              col = rgb(0.5, 0.5, 0.5, alpha = 0.3), border = NA)
+
+      # Add a legend
+      legend("topright", legend = c("Females", "Males", "Did not identify"),
+             col = c("steelblue4", "darkblue", "gray"), lwd = 2)
+    } else{
+      boxplot(Median_Difference_Score ~ data[[sex_col]], data = data,
+              main = "Difference Scores by Gender",
+              names = c("Females", "Males", "Did not identify"),
+              xlab = "Gender",
+              ylab = "Median Difference Scores",
+              col = "steelblue")
+    }
   })
 
-
-
-  # output$meta_diff_plot6 <- renderPlot({
-  #   req(selected_data())
-  #   data <- selected_data()
-  #
-  #   # the name for the gender/sex column could be varied, so we need to
-  #   #   account for this possibility
-  #   # severity_col <- grep("((?i)_SWD|(?i)_severity)(?!.*(?i)_desc|_age)",
-  #   #                      names(data), value = TRUE, perl = TRUE)
-  #   severity_col <- grep("((?i)_priority|(?i)_severity)(?!.*(?i)_desc|_age)",
-  #                        names(data), value = TRUE, perl = TRUE)
-  #
-  #   boxplot(Median_Difference_Score ~ data[[severity_col]], data = data,
-  #           main = "Difference Scores by Disability Severity",
-  #           names = c("Non significant", "Significant",
-  #                     "Most significant"),
-  #           xlab = "Disability Severity",
-  #           ylab = "Median Difference Scores",
-  #           col = "steelblue")
-  #
-  # })
 
   output$meta_diff_plot6 <- renderPlot({
     req(selected_data())
@@ -1547,58 +1457,76 @@ server <- function(input, output, session) {
     severity_col <- grep("((?i)_priority|(?i)_severity)(?!.*(?i)_desc|_age)",
                          names(data), value = TRUE, perl = TRUE)
 
-    # Create density for each group
-    non_significant_density <- density(data$Median_Difference_Score[
-      data[[severity_col]] == 0], na.rm = TRUE)
-    significant_density <- density(data$Median_Difference_Score[
-      data[[severity_col]] == 1], na.rm = TRUE)
-    most_significant_density <- density(data$Median_Difference_Score[
-      data[[severity_col]] == 2], na.rm = TRUE)
+    if (length(unique(data$Median_Difference_Score[
+      data[[severity_col]] == 0])) >= 2 &
+        length(unique(data$Median_Difference_Score[
+          data[[severity_col]] == 1])) >= 2 &
+        length(unique(data$Median_Difference_Score[
+          data[[severity_col]] == 2])) >= 2
+    ) {
+      # Create density for each group
+      non_significant_density <- density(data$Median_Difference_Score[
+        data[[severity_col]] == 0], na.rm = TRUE)
+      significant_density <- density(data$Median_Difference_Score[
+        data[[severity_col]] == 1], na.rm = TRUE)
+      most_significant_density <- density(data$Median_Difference_Score[
+        data[[severity_col]] == 2], na.rm = TRUE)
 
-    # Determine the maximum y value for setting y limits
-    max_density_value <- max(c(max(non_significant_density$y, na.rm = TRUE),
-                               max(significant_density$y, na.rm = TRUE),
-                               max(most_significant_density$y, na.rm = TRUE)),
-                             na.rm = TRUE)
+      # Determine the maximum y value for setting y limits
+      max_density_value <- max(c(max(non_significant_density$y, na.rm = TRUE),
+                                 max(significant_density$y, na.rm = TRUE),
+                                 max(most_significant_density$y, na.rm = TRUE)),
+                               na.rm = TRUE)
 
-    # Initialize the plot with dynamic y-limits
-    plot(non_significant_density, col = "steelblue4", lwd = 2,
-         main = "Density Plot of Median Difference Scores by Disability Severity",
-         xlab = "Median Difference Scores", ylab = "Density",
-         xlim = range(c(non_significant_density$x, significant_density$x,
-                        most_significant_density$x)),
-         ylim = c(0, max_density_value * 1.1))
-    # Add a bit of padding for y-limits
+      # Initialize the plot with dynamic y-limits
+      plot(non_significant_density, col = "steelblue4", lwd = 2,
+           main = "Density Plot of Median Difference Scores by Disability Severity",
+           xlab = "Median Difference Scores", ylab = "Density",
+           xlim = range(c(non_significant_density$x, significant_density$x,
+                          most_significant_density$x)),
+           ylim = c(0, max_density_value * 1.1))
+      # Add a bit of padding for y-limits
 
-    # Fill under the non-significant density curve
-    polygon(c(non_significant_density$x, rev(non_significant_density$x)),
-            c(rep(0, length(non_significant_density$x)),
-              rev(non_significant_density$y)),
-            col = rgb(0.2, 0.6, 1, alpha = 0.3), border = NA)
-    # Light blue fill
+      # Fill under the non-significant density curve
+      polygon(c(non_significant_density$x, rev(non_significant_density$x)),
+              c(rep(0, length(non_significant_density$x)),
+                rev(non_significant_density$y)),
+              col = rgb(0.2, 0.6, 1, alpha = 0.3), border = NA)
+      # Light blue fill
 
-    # Add the density lines for other groups
-    lines(significant_density, col = "darkblue", lwd = 2)
-    lines(most_significant_density, col = "darkgray", lwd = 2)
+      # Add the density lines for other groups
+      lines(significant_density, col = "darkblue", lwd = 2)
+      lines(most_significant_density, col = "darkgray", lwd = 2)
 
-    # Fill under the significant density curve
-    polygon(c(significant_density$x, rev(significant_density$x)),
-            c(rep(0, length(significant_density$x)),
-              rev(significant_density$y)),
-            col = rgb(0, 0, 0.5, alpha = 0.3), border = NA)
-    # Light dark blue fill
+      # Fill under the significant density curve
+      polygon(c(significant_density$x, rev(significant_density$x)),
+              c(rep(0, length(significant_density$x)),
+                rev(significant_density$y)),
+              col = rgb(0, 0, 0.5, alpha = 0.3), border = NA)
+      # Light dark blue fill
 
-    # Fill under the most significant density curve
-    polygon(c(most_significant_density$x, rev(most_significant_density$x)),
-            c(rep(0, length(most_significant_density$x)),
-              rev(most_significant_density$y)),
-            col = rgb(0.5, 0.5, 0.5, alpha = 0.3), border = NA)
-    # Light gray fill
+      # Fill under the most significant density curve
+      polygon(c(most_significant_density$x, rev(most_significant_density$x)),
+              c(rep(0, length(most_significant_density$x)),
+                rev(most_significant_density$y)),
+              col = rgb(0.5, 0.5, 0.5, alpha = 0.3), border = NA)
+      # Light gray fill
 
-    # Add a legend
-    legend("topright", legend = c("Non Significant", "Significant",
-                                  "Most Significant"),
-           col = c("steelblue", "darkblue", "darkgray"), lwd = 2)
+      # Add a legend
+      legend("topright", legend = c("Non Significant", "Significant",
+                                    "Most Significant"),
+             col = c("steelblue4", "darkblue", "darkgray"), lwd = 2)
+    } else{
+      boxplot(Median_Difference_Score ~ data[[severity_col]], data = data,
+              main = "Difference Scores by Disability Severity",
+              names = c("Non significant", "Significant",
+                        "Most significant"),
+              xlab = "Disability Severity",
+              ylab = "Median Difference Scores",
+              col = "steelblue")
+    }
+
+
   })
 
 
@@ -1726,37 +1654,99 @@ server <- function(input, output, session) {
     wages <- data[, .SD, .SDcols = wage_col]
     wages_vector <- as.vector(unlist(wages))
 
-    plot(as.numeric(data$Enroll_Length), wages_vector,
-         col = "steelblue",
-         main = "Exit Wages Across Quarters Enrolled",
-         ylab = "Exit Wages ($ per Hour)",
-         xlab = "Total Quarters Enrolled",
-         pch = 8)
+    # plot(as.numeric(data$Enroll_Length), wages_vector,
+    #      col = "steelblue",
+    #      main = "Exit Wages Across Quarters Enrolled",
+    #      ylab = "Exit Wages ($ per Hour)",
+    #      xlab = "Total Quarters Enrolled",
+    #      pch = 8)
+
+    boxplot(wages_vector ~ data[["Enroll_Length_Grp"]],
+            main = "Exit Wages Across Quarters Enrolled",
+            xlab = "Enrollment Length (total quarters)",
+            ylab = "Exit Wages ($ per Hour)",
+            col = "steelblue")
 
     })
-
 
   output$meta_wage_plot4 <- renderPlot({
     req(selected_data())
     data <- selected_data()
 
+    # Identify the column with wage data (exit wage column)
     wage_col <- grep("(?i)^(?=.*wage)(?=.*exit)(?!.*(desc))", names(data),
                      value = TRUE, perl = TRUE)
-    wages <- data[, .SD, .SDcols = wage_col]
-    wages_vector <- as.vector(unlist(wages))
 
-    # the name for the gender/sex column could be varied, so we need to
-    #   account for this possibility
+    # Extract wage data
+    wages <- data[, .SD, .SDcols = wage_col]
+    wages_vector <- as.vector(unlist(wages)) # Convert to vector if needed
+
+    # Identify the column for gender/sex
     sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
                     value = TRUE, perl = TRUE)
 
-    boxplot(wages_vector ~ data[[sex_col]],
-            main = "Exit Wages by Gender",
-            names = c("Females", "Males", "Did not identify"),
-            xlab = "Gender",
-            ylab = "Exit Wages ($ per Hour)",
-            col = "steelblue")
-    })
+    if (length(sex_col) == 0) {
+      stop("No gender/sex column found in the dataset.")
+    }
+
+
+    if (length(unique(wage_col[data[[sex_col]] == 0])) >= 2 &
+        length(unique(wage_col[data[[sex_col]] == 1])) >= 2 &
+        length(unique(wage_col[data[[sex_col]] == 9])) >= 2
+    ) {
+
+      # Calculate densities for each gender group
+      females_density <- density(wages_vector[data[[sex_col]] == 0],
+                                 na.rm = TRUE)
+      males_density <- density(wages_vector[data[[sex_col]] == 1],
+                               na.rm = TRUE)
+      did_not_identify_density <- density(wages_vector[data[[sex_col]] == 9],
+                                          na.rm = TRUE)
+
+      # Determine the maximum y value for setting y limits
+      max_density_value <- max(c(max(females_density$y, na.rm = TRUE),
+                                 max(males_density$y, na.rm = TRUE),
+                                 max(did_not_identify_density$y, na.rm = TRUE)),
+                               na.rm = TRUE)
+
+      # Initialize the plot with dynamic y-limits
+      plot(females_density, col = "steelblue4", lwd = 2,
+           main = "Density Plot of Exit Wages by Gender",
+           xlab = "Exit Wages ($ per Hour)", ylab = "Density",
+           xlim = range(c(females_density$x, males_density$x,
+                          did_not_identify_density$x)),
+           ylim = c(0, max_density_value * 1.1))
+
+      # Fill under the density curves for each group
+      polygon(c(females_density$x, rev(females_density$x)),
+              c(rep(0, length(females_density$x)), rev(females_density$y)),
+              col = rgb(0.2, 0.6, 1, alpha = 0.3), border = NA)
+
+      lines(males_density, col = "darkblue", lwd = 2)
+      polygon(c(males_density$x, rev(males_density$x)),
+              c(rep(0, length(males_density$x)), rev(males_density$y)),
+              col = rgb(0, 0, 0.5, alpha = 0.3), border = NA)
+
+      lines(did_not_identify_density, col = "darkgray", lwd = 2)
+      polygon(c(did_not_identify_density$x, rev(did_not_identify_density$x)),
+              c(rep(0, length(did_not_identify_density$x)),
+                rev(did_not_identify_density$y)),
+              col = rgb(0.5, 0.5, 0.5, alpha = 0.3), border = NA)
+
+      # Add a legend to identify the gender groups
+      legend("topright", legend = c("Females", "Males", "Did not identify"),
+             col = c("steelblue4", "darkblue", "darkgray"), lwd = 2)
+
+    } else {
+      boxplot(wages_vector ~ data[[sex_col]],
+              main = "Exit Wages by Gender",
+              names = c("Females", "Males", "Did not identify"),
+              xlab = "Gender",
+              ylab = "Exit Wages ($ per Hour)",
+              col = "steelblue")
+    }
+
+  })
 
 
   output$meta_wage_plot6 <- renderPlot({
@@ -1768,22 +1758,77 @@ server <- function(input, output, session) {
     wages <- data[, .SD, .SDcols = wage_col]
     wages_vector <- as.vector(unlist(wages))
 
-    # the name for the gender/sex column could be varied, so we need to
-    #   account for this possibility
-    # severity_col <- grep("((?i)_SWD|(?i)_severity)(?!.*(?i)_desc|_age)",
-    #                      names(data), value = TRUE, perl = TRUE)
+    # Identify the severity column dynamically
     severity_col <- grep("((?i)_priority|(?i)_severity)(?!.*(?i)_desc|_age)",
                          names(data), value = TRUE, perl = TRUE)
 
-    boxplot(wages_vector ~ data[[severity_col]],
-            main = "Exit Wages by Disability Severity",
-            names = c("Non significant", "Significant",
-                      "Most significant"),
-            xlab = "Disability Severity",
-            ylab = "Exit Wages ($ per Hour)",
-            col = "steelblue")
+    if (length(unique(wage_col[metadata[[severity_col]] == 0])) >= 2 &
+        length(unique(wage_col[metadata[[severity_col]] == 1])) >= 2 &
+        length(unique(wage_col[metadata[[severity_col]] == 2])) >= 2
+        ) {
+      # Create density for each group
+      non_significant_density <- density(wage_col[
+        data[[severity_col]] == 0], na.rm = TRUE)
+      significant_density <- density(wage_col[
+        data[[severity_col]] == 1], na.rm = TRUE)
+      most_significant_density <- density(wage_col[
+        data[[severity_col]] == 2], na.rm = TRUE)
 
+      # Determine the maximum y value for setting y limits
+      max_density_value <- max(c(max(non_significant_density$y, na.rm = TRUE),
+                                 max(significant_density$y, na.rm = TRUE),
+                                 max(most_significant_density$y, na.rm = TRUE)),
+                               na.rm = TRUE)
+
+      # Initialize the plot with dynamic y-limits
+      plot(non_significant_density, col = "steelblue4", lwd = 2,
+           main = "Density Plot of Ending Wages by Disability Severity",
+           xlab = "Median Difference Scores", ylab = "Density",
+           xlim = range(c(non_significant_density$x, significant_density$x,
+                          most_significant_density$x)),
+           ylim = c(0, max_density_value * 1.1))
+      # Add a bit of padding for y-limits
+
+      # Fill under the non-significant density curve
+      polygon(c(non_significant_density$x, rev(non_significant_density$x)),
+              c(rep(0, length(non_significant_density$x)),
+                rev(non_significant_density$y)),
+              col = rgb(0.2, 0.6, 1, alpha = 0.3), border = NA)
+      # Light blue fill
+
+      # Add the density lines for other groups
+      lines(significant_density, col = "darkblue", lwd = 2)
+      lines(most_significant_density, col = "darkgray", lwd = 2)
+
+      # Fill under the significant density curve
+      polygon(c(significant_density$x, rev(significant_density$x)),
+              c(rep(0, length(significant_density$x)),
+                rev(significant_density$y)),
+              col = rgb(0, 0, 0.5, alpha = 0.3), border = NA)
+      # Light dark blue fill
+
+      # Fill under the most significant density curve
+      polygon(c(most_significant_density$x, rev(most_significant_density$x)),
+              c(rep(0, length(most_significant_density$x)),
+                rev(most_significant_density$y)),
+              col = rgb(0.5, 0.5, 0.5, alpha = 0.3), border = NA)
+      # Light gray fill
+
+      # Add a legend
+      legend("topright", legend = c("Non Significant", "Significant",
+                                    "Most Significant"),
+             col = c("steelblue4", "darkblue", "darkgray"), lwd = 2)
+    } else {
+      boxplot(wages_vector ~ data[[severity_col]],
+              main = "Exit Wages by Disability Severity",
+              names = c("Non significant", "Significant",
+                        "Most significant"),
+              xlab = "Disability Severity",
+              ylab = "Exit Wages ($ per Hour)",
+              col = "steelblue")
+    }
   })
+
 
 
   output$meta_wage_plot7 <- renderPlot({
@@ -1910,13 +1955,33 @@ server <- function(input, output, session) {
 
     # these variables have been created in the data cleaning process,
     #   so we can use the exact names
-    plot(data$Enroll_Length,
-         as.character(data$Final_Employment),
-         main = "Exit Employment Across Enrollment Length",
-         ylab = "Exit Employment",
-         xlab = "Enrollment Length (total quarters)",
-         col = "steelblue",
-         pch = 8)
+    # plot(data$Enroll_Length,
+    #      as.character(data$Final_Employment),
+    #      main = "Exit Employment Across Enrollment Length",
+    #      ylab = "Exit Employment",
+    #      xlab = "Enrollment Length (total quarters)",
+    #      col = "steelblue",
+    #      pch = 8)
+
+
+    # Create a contingency table of Final_Employment by Gender
+    employment_enroll_table <- table(data$Final_Employment,
+                                     data[["Enroll_Length_Grp"]])
+
+    rownames(employment_enroll_table) <- c("Non-competitive Employment",
+                                           "Competitive Employment")
+
+    colnames(employment_enroll_table) <- c("<5", "5-10", "11+")
+
+
+    # Create a bar plot with bars broken up by gender
+    barplot(employment_enroll_table, beside = TRUE,
+            col = c("lightsteelblue", "steelblue"),
+            legend.text = c("Non-competitive", "Competitive"),
+            args.legend = list(x = "topright", bty = "n",
+                               title = "Employment Type"),
+            xlab = "Enrollment Length (total quarters)", ylab = "Count",
+            main = "Exit Employment Across Quarters Enrolled")
 
   })
 

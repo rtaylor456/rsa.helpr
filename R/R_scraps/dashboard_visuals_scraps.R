@@ -1,3 +1,182 @@
+# output$meta_diff_plot4 <- renderPlot({
+#   req(selected_data())
+#   data <- selected_data()
+#
+#   # the name for the gender/sex column could be varied, so we need to
+#   #   account for this possibility
+#   sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
+#                   value = TRUE, perl = TRUE)
+#
+#   boxplot(Median_Difference_Score ~ data[[sex_col]], data = data,
+#           main = "Difference Scores by Gender",
+#           names = c("Females", "Males", "Did not identify"),
+#           xlab = "Gender",
+#           ylab = "Median Difference Scores",
+#           col = "steelblue")
+#
+#   })
+
+# output$meta_diff_plot4 <- renderPlot({
+#   req(selected_data())
+#   data <- selected_data()
+#
+#   # the name for the gender/sex column could be varied, so we need to
+#   # account for this possibility
+#   sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
+#                   value = TRUE, perl = TRUE)
+#
+#   # Create density for each group
+#   females_density <- density(data$Median_Difference_Score[
+#     data[[sex_col]] == 0], na.rm = TRUE)
+#   males_density <- density(data$Median_Difference_Score[
+#     data[[sex_col]] == 1], na.rm = TRUE)
+#   did_not_identify_density <- density(data$Median_Difference_Score[
+#     data[[sex_col]] == 9], na.rm = TRUE)
+#
+#   # Plot the densities
+#   plot(females_density, col = "steelblue", lwd = 2,
+#        main = "Density Plot of Median Difference Scores by Gender",
+#        xlab = "Median Difference Scores", ylab = "Density",
+#        xlim = range(females_density$x, males_density$x,
+#                     did_not_identify_density$x))
+#
+#   lines(males_density, col = "darkblue", lwd = 2)
+#
+#   lines(did_not_identify_density, col = "gray", lwd = 2)
+#
+#   # Add a legend
+#   legend("topright", legend = c("Females", "Males", "Did not identify"),
+#          col = c("steelblue", "darkblue", "gray"), lwd = 2)
+#   })
+
+
+
+# output$meta_diff_plot4 <- renderPlot({
+#   req(selected_data())
+#   data <- selected_data()
+#
+#   # the name for the gender/sex column could be varied, so we need to
+#   # account for this possibility
+#   sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
+#                   value = TRUE, perl = TRUE)
+#
+#   # Create density for each group, checking for sufficient data
+#   females_density <- density(data$Median_Difference_Score[data[[sex_col]] == 0], na.rm = TRUE)
+#   males_density <- density(data$Median_Difference_Score[data[[sex_col]] == 1], na.rm = TRUE)
+#   did_not_identify_density <- density(data$Median_Difference_Score[data[[sex_col]] == 9], na.rm = TRUE)
+#
+#   # Initialize the plot
+#   plot(females_density, col = "steelblue", lwd = 2,
+#        main = "Density Plot of Median Difference Scores by Gender",
+#        xlab = "Median Difference Scores", ylab = "Density",
+#        xlim = range(c(females_density$x, males_density$x,
+#                       did_not_identify_density$x)))
+#
+#   # Add the density lines for other groups
+#   lines(males_density, col = "darkblue", lwd = 2)
+#   lines(did_not_identify_density, col = "gray", lwd = 2)
+#
+#   # Determine the maximum y value for setting y limits
+#   max_density_value <- max(c(max(females_density$y, na.rm = TRUE),
+#                              max(males_density$y, na.rm = TRUE),
+#                              max(did_not_identify_density$y, na.rm = TRUE)), na.rm = TRUE)
+#
+#   # Update y-limits to accommodate the peaks
+#   ylim <- c(0, max_density_value * 1.1)  # Add a bit of padding
+#   plot(females_density, col = "steelblue", lwd = 2,
+#        main = "Density Plot of Median Difference Scores by Gender",
+#        xlab = "Median Difference Scores", ylab = "Density",
+#        xlim = range(c(females_density$x, males_density$x, did_not_identify_density$x)),
+#        ylim = ylim)
+#
+#   # Re-add the lines for the densities
+#   lines(males_density, col = "darkblue", lwd = 2)
+#   lines(did_not_identify_density, col = "gray", lwd = 2)
+#
+#   # Add a legend
+#   legend("topright", legend = c("Females", "Males", "Did not identify"),
+#          col = c("steelblue", "darkblue", "gray"), lwd = 2)
+#   })
+
+
+
+
+# output$meta_diff_plot6 <- renderPlot({
+#   req(selected_data())
+#   data <- selected_data()
+#
+#   # the name for the gender/sex column could be varied, so we need to
+#   #   account for this possibility
+#   # severity_col <- grep("((?i)_SWD|(?i)_severity)(?!.*(?i)_desc|_age)",
+#   #                      names(data), value = TRUE, perl = TRUE)
+#   severity_col <- grep("((?i)_priority|(?i)_severity)(?!.*(?i)_desc|_age)",
+#                        names(data), value = TRUE, perl = TRUE)
+#
+#   boxplot(Median_Difference_Score ~ data[[severity_col]], data = data,
+#           main = "Difference Scores by Disability Severity",
+#           names = c("Non significant", "Significant",
+#                     "Most significant"),
+#           xlab = "Disability Severity",
+#           ylab = "Median Difference Scores",
+#           col = "steelblue")
+#
+# })
+
+
+
+
+# output$meta_wage_plot6 <- renderPlot({
+#   req(selected_data())
+#   data <- selected_data()
+#
+#   wage_col <- grep("(?i)^(?=.*wage)(?=.*exit)(?!.*(desc))", names(data),
+#                    value = TRUE, perl = TRUE)
+#   wages <- data[, .SD, .SDcols = wage_col]
+#   wages_vector <- as.vector(unlist(wages))
+#
+#   # the name for the gender/sex column could be varied, so we need to
+#   #   account for this possibility
+#   # severity_col <- grep("((?i)_SWD|(?i)_severity)(?!.*(?i)_desc|_age)",
+#   #                      names(data), value = TRUE, perl = TRUE)
+#   severity_col <- grep("((?i)_priority|(?i)_severity)(?!.*(?i)_desc|_age)",
+#                        names(data), value = TRUE, perl = TRUE)
+#
+#   boxplot(wages_vector ~ data[[severity_col]],
+#           main = "Exit Wages by Disability Severity",
+#           names = c("Non significant", "Significant",
+#                     "Most significant"),
+#           xlab = "Disability Severity",
+#           ylab = "Exit Wages ($ per Hour)",
+#           col = "steelblue")
+#
+# })
+
+
+
+#   output$meta_wage_plot4 <- renderPlot({
+#     req(selected_data())
+#     data <- selected_data()
+#
+#     wage_col <- grep("(?i)^(?=.*wage)(?=.*exit)(?!.*(desc))", names(data),
+#                      value = TRUE, perl = TRUE)
+#     wages <- data[, .SD, .SDcols = wage_col]
+#     wages_vector <- as.vector(unlist(wages))
+#
+#     # the name for the gender/sex column could be varied, so we need to
+#     #   account for this possibility
+#     sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
+#                     value = TRUE, perl = TRUE)
+#
+#     boxplot(wages_vector ~ data[[sex_col]],
+#             main = "Exit Wages by Gender",
+#             names = c("Females", "Males", "Did not identify"),
+#             xlab = "Gender",
+#             ylab = "Exit Wages ($ per Hour)",
+#             col = "steelblue")
+#     })
+
+
+
 library(shiny)
 
 ui <- fluidPage(
