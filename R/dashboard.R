@@ -363,31 +363,183 @@ server <- function(input, output, session) {
 
 
   # Function to create metadata from merged data
-  generate_metadata <- eventReactive(input$generate_metadata, {
+  # generate_metadata <- eventReactive(input$generate_metadata, {
+  #   withProgress(message = 'Generating Metadata...', value = 0, {
+  #     if (is.null(merged_data()) | nrow(merged_data()) < 1){
+  #       incProgress(1/2, detail = "Condensing RSA-911 data, merged data not available...")
+  #       metadata <- create_metadata(read_and_clean_rsa_data(),
+  #                                   includes_scores = FALSE)
+  #     } else if (input$meta_source == "merged"){
+  #       incProgress(1/2, detail = "Condensing merged data...")
+  #       metadata <- create_metadata(merged_data(),
+  #                                   includes_scores = TRUE)
+  #     } else {
+  #       incProgress(1/2, detail = "Condensing RSA-911 data...")
+  #       metadata <- create_metadata(read_and_clean_rsa_data(),
+  #                                   includes_scores = FALSE)
+  #     }
+  #
+  #     incProgress(1/2, detail = "Finishing up!...")
+  #     rv$metadata <- metadata
+  #     return(metadata)
+  #   })
+  # })
+
+
+  # generate_metadata <- eventReactive(input$generate_metadata, {
+  #
+  #   # req(input$generate_metadata, merged_data() || read_and_clean_rsa_data())
+  #
+  #   withProgress(message = 'Generating Metadata...', value = 0, {
+  #     req(merged_data())
+  #     # Check the state of merged_data
+  #     cat("Checking merged_data...\n")
+  #
+  #     merged <- merged_data()  # Store the result of merged_data() in a variable for re-use
+  #
+  #     if (is.null(merged)) {
+  #       cat("merged_data is NULL\n")
+  #     } else {
+  #       cat("merged_data has", nrow(merged), "rows\n")
+  #     }
+  #
+  #     # Handling when merged_data is null or empty
+  #     if (is.null(merged) || nrow(merged) < 1) {
+  #       incProgress(1/2, detail = "Condensing RSA-911 data, merged data not available...")
+  #       cat("Using RSA-911 data for metadata creation...\n")
+  #
+  #       rsa_data <- read_and_clean_rsa_data()
+  #       if (is.null(rsa_data) || nrow(rsa_data) == 0) {
+  #         cat("RSA-911 data is empty or not properly loaded.\n")
+  #         return(NULL)
+  #       }
+  #
+  #       metadata <- tryCatch({
+  #         create_metadata(rsa_data, includes_scores = FALSE)
+  #       }, error = function(e) {
+  #         cat("Error in create_metadata with RSA data: ", e$message, "\n")
+  #         return(NULL)
+  #       })
+  #
+  #       if (is.null(metadata)) {
+  #         cat("Metadata generation failed for RSA-911 data.\n")
+  #         return(NULL)
+  #       }
+  #     }
+  #     # Handling when merged_data exists and meta_source is "merged"
+  #     else if (input$meta_source == "merged") {
+  #       incProgress(1/2, detail = "Condensing merged data...")
+  #       cat("Using merged data for metadata creation...\n")
+  #
+  #       metadata <- tryCatch({
+  #         create_metadata(merged, includes_scores = TRUE)
+  #       }, error = function(e) {
+  #         cat("Error in create_metadata with merged data: ", e$message, "\n")
+  #         return(NULL)
+  #       })
+  #
+  #       if (is.null(metadata)) {
+  #         cat("Metadata generation failed for merged data.\n")
+  #         return(NULL)
+  #       }
+  #     }
+  #     # Handling other cases (fall back to RSA-911 data)
+  #     else {
+  #       incProgress(1/2, detail = "Condensing RSA-911 data...")
+  #       cat("Using RSA-911 data (non-merged) for metadata creation...\n")
+  #
+  #       rsa_data <- read_and_clean_rsa_data()
+  #       if (is.null(rsa_data) || nrow(rsa_data) == 0) {
+  #         cat("RSA-911 data is empty or not properly loaded.\n")
+  #         return(NULL)
+  #       }
+  #
+  #       metadata <- tryCatch({
+  #         create_metadata(rsa_data, includes_scores = FALSE)
+  #       }, error = function(e) {
+  #         cat("Error in create_metadata with RSA data: ", e$message, "\n")
+  #         return(NULL)
+  #       })
+  #
+  #       if (is.null(metadata)) {
+  #         cat("Metadata generation failed for RSA-911 data.\n")
+  #         return(NULL)
+  #       }
+  #     }
+  #
+  #     incProgress(1/2, detail = "Finishing up!...")
+  #
+  #     # Store metadata and log completion
+  #     rv$metadata <- metadata
+  #     cat("Metadata generation completed successfully.\n")
+  #     return(metadata)
+  #   })
+  # })
+  #
+
+  # generate_metadata <- eventReactive(input$generate_metadata, {
+  #
+  #   withProgress(message = 'Generating Metadata...', value = 0, {
+  #     data <- NULL
+  #     if (!is.null(merged_data()) && input$meta_source == "merged") {
+  #       incProgress(1/2, detail = "Condensing merged data...")
+  #       data <- merged_data()
+  #       includes_scores <- TRUE
+  #     } else {
+  #       incProgress(1/2, detail = "Condensing RSA-911 data...")
+  #       data <- read_and_clean_rsa_data()
+  #       includes_scores <- FALSE
+  #     }
+  #
+  #     metadata <- create_metadata(data, includes_scores = includes_scores)
+  #
+  #     incProgress(1/2, detail = "Finishing up!")
+  #     rv$metadata <- metadata
+  #     return(metadata)
+  #   })
+  # })
+  #
+  generate_metadata <- reactive({
+    req(input$generate_metadata)  # Ensure the button was clicked
+    req(input$meta_source)         # Ensure a source is selected
+
     withProgress(message = 'Generating Metadata...', value = 0, {
-      if (is.null(merged_data()) | nrow(merged_data()) < 1){
-        incProgress(1/2, detail = "Condensing RSA-911 data, merged data not available...")
-        metadata <- create_metadata(read_and_clean_rsa_data(),
-                                    includes_scores = FALSE)
-      } else if (input$meta_source == "merged"){
+      data <- NULL
+      includes_scores <- FALSE
+
+      if (!is.null(merged_data()) && input$meta_source == "merged") {
         incProgress(1/2, detail = "Condensing merged data...")
-        metadata <- create_metadata(merged_data(),
-                                    includes_scores = TRUE)
+        data <- merged_data()
+        includes_scores <- TRUE
       } else {
         incProgress(1/2, detail = "Condensing RSA-911 data...")
-        metadata <- create_metadata(read_and_clean_rsa_data(),
-                                    includes_scores = FALSE)
+        data <- read_and_clean_rsa_data()
+        includes_scores <- FALSE
       }
 
-      incProgress(1/2, detail = "Finishing up!...")
+      metadata <- create_metadata(data, includes_scores = includes_scores)
+
+      incProgress(1/2, detail = "Finishing up!")
       rv$metadata <- metadata
       return(metadata)
     })
   })
 
+
+
+
+  # output$metadata_exists <- reactive({
+  #   !is.null(generate_metadata()) && nrow(generate_metadata()) > 0
+  # })
+  #
   output$metadata_exists <- reactive({
-    !is.null(generate_metadata()) && nrow(generate_metadata()) > 0
+    # Store the result of generate_metadata() in a local variable
+    metadata <- generate_metadata()
+
+    # Check if metadata exists and has rows
+    !is.null(metadata) && nrow(metadata) > 0
   })
+
 
   outputOptions(output, "rsa_data_exists", suspendWhenHidden = FALSE)
   outputOptions(output, "scores_data_exists", suspendWhenHidden = FALSE)

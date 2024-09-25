@@ -23,6 +23,11 @@ create_metadata <- function(data, includes_scores = TRUE) {
   # Convert data to data.table if it's not already
   data <- as.data.table(data)
 
+  # id_col <- grep("(?i)participant|(?i)_id(?!.*(?i)_desc)", names(data),
+  #                value = TRUE, perl = TRUE)
+
+  setkey(data, Participant_ID)
+
   ## INITIAL FACTOR CONVERSION
   data[, lapply(.SD, function(col) {
     if (any(names(col) %in% c("Provider", grep("Has_Multiple_Scores",
@@ -39,28 +44,27 @@ create_metadata <- function(data, includes_scores = TRUE) {
   data[, Overall_Quarter := ((E1_Year_911 - 2020) * 4 + E2_Quarter_911)]
 
   data[, `:=`(Min_Overall_Quarter = min(Overall_Quarter),
-              Max_Overall_Quarter = max(Overall_Quarter)),
-       by = Participant_ID]
+              Max_Overall_Quarter = max(Overall_Quarter))]
 
   # Compute Enroll Length
   data[, Enroll_Length := Max_Overall_Quarter - Min_Overall_Quarter + 1]
 
   # group enrollment length
   data[, Enroll_Length_Grp := fifelse(Enroll_Length < 5, "<5",
-                          fifelse(Enroll_Length >= 5 & Enroll_Length < 11,
-                                  "5-10",
-                          "11+"))]
+                                      fifelse(Enroll_Length >= 5 &
+                                                Enroll_Length < 11,
+                                              "5-10",
+                                              "11+"))]
 
   # Convert Grade_Level to an ordered factor
   data[, Enroll_Length_Grp := factor(Enroll_Length_Grp,
-                               levels = c("<5", "5-10", "11+"),
-                               ordered = TRUE)]
+                                     levels = c("<5", "5-10", "11+"),
+                                     ordered = TRUE)]
 
 
   # Create variables that count the number of years and quarters
   data[, `:=`(Total_Years = uniqueN(E1_Year_911),
-              Total_Quarters = uniqueN(E2_Quarter_911)),
-       by = Participant_ID]
+              Total_Quarters = uniqueN(E2_Quarter_911))]
 
 
   # Remove the year and quarter columns
@@ -81,11 +85,11 @@ create_metadata <- function(data, includes_scores = TRUE) {
 
   # to handle different types of numeric variables
   data[, (integer_cols) := lapply(.SD, function(x) as.integer(median(x,
-                                                           na.rm = TRUE))),
-       .SDcols = integer_cols, by = Participant_ID]
+                                                                na.rm = TRUE))),
+       .SDcols = integer_cols]
 
   data[, (double_cols) := lapply(.SD, function(x) median(x, na.rm = TRUE)),
-       .SDcols = double_cols, by = Participant_ID]
+       .SDcols = double_cols]
 
 
   ## DATE VARIABLES
@@ -96,20 +100,20 @@ create_metadata <- function(data, includes_scores = TRUE) {
   data[, (date_cols) := lapply(.SD,
                                function(x) as.Date(ifelse(all(is.na(unique(x))),
                                                           NA,
-                                                        max(x, na.rm = TRUE)))),
-       .SDcols = date_cols,
-       by = Participant_ID]
+                                                          max(x, na.rm = TRUE)))),
+       .SDcols = date_cols]
 
 
   ## FACTOR VARIABLES
   factor_cols <- names(data)[sapply(data, is.factor)]
+  factor_cols <- setdiff(factor_cols, "Participant_ID")
+
 
   get_mode <- function(x) {
     uniq_x <- unique(x)
     uniq_x[which.max(tabulate(match(x, uniq_x)))]
   }
-  data[, (factor_cols) := lapply(.SD, get_mode), .SDcols = factor_cols,
-       by = Participant_ID]
+  data[, (factor_cols) := lapply(.SD, get_mode), .SDcols = factor_cols]
 
   if (includes_scores == TRUE) {
 
@@ -120,12 +124,12 @@ create_metadata <- function(data, includes_scores = TRUE) {
 
     # Calculate Differences_Available
     data[, Differences_Available := rowSums(!is.na(.SD)),
-         .SDcols = difference_cols, by = Participant_ID]
+         .SDcols = difference_cols]
 
     # Calculate Median_Difference_Score
     if (length(difference_cols) > 0) {
       data[, Median_Difference_Score := median(unlist(.SD), na.rm = TRUE),
-           .SDcols = difference_cols, by = Participant_ID]
+           .SDcols = difference_cols]
     } else {
       data[, Median_Difference_Score := NA_real_]
     }
@@ -133,7 +137,7 @@ create_metadata <- function(data, includes_scores = TRUE) {
     # Calculate Median_Time_Passed_Days
     if (length(time_cols) > 0) {
       data[, Median_Time_Passed_Days := median(unlist(.SD), na.rm = TRUE),
-           .SDcols = time_cols, by = Participant_ID]
+           .SDcols = time_cols]
     } else {
       data[, Median_Time_Passed_Days := NA_real_]
     }
@@ -172,4 +176,3 @@ create_metadata <- function(data, includes_scores = TRUE) {
 
   return(metadata)
 }
-
