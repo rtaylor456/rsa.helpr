@@ -114,7 +114,7 @@ desc_vars <- grep("(?i)_Desc", names(data), value = TRUE)
 without_e_number <- str_replace(desc_vars, "E\\d+_", "")
 
 # Step 3: Remove the "_Desc" suffix to get base variable names
-base_names <- str_replace(without_e_number, "_Desc", "")
+# base_names <- str_replace(without_e_number, "_Desc", "")
 
 
 # Step 3: For variables with multiple underscores, remove the last part before "_Desc"
@@ -309,7 +309,7 @@ cat_vars_try <- data |> select(contains(base_names) & -(contains("amt") |
 cat_vars_try2 <- cat_vars_try |> str_replace("E\\d+_", "") |>
   str_replace("_911", "")
 
-setdiff(base_names, cat_vars_try2)
+# setdiff(base_names, cat_vars_try2)
 
 # Step 6: Handle special cases manually (if needed)
 # Example: Add manual mapping for special cases
@@ -331,7 +331,7 @@ for (name in names(manual_mappings)) {
 
 # Step 7: Check for unmatched variables
 unmatched <- setdiff(base_names, final_matches)
-print("Unmatched variables:")
-print(unmatched)
+# print("Unmatched variables:")
+# print(unmatched)
 
 
