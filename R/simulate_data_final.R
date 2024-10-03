@@ -28,12 +28,12 @@ base_names <- sapply(without_e_number, function(x) {
 
 
 
-group_vars_by_pattern <- function(data, patterns){
-  groups <- map(patterns, ~ data |>
-                  select(matches(.x)))
-  names(groups) <- patterns
-  return(groups)
-}
+# group_vars_by_pattern <- function(data, patterns){
+#   groups <- map(patterns, ~ data |>
+#                   select(matches(.x)))
+#   names(groups) <- patterns
+#   return(groups)
+# }
 
 
 group_vars_by_pattern <- function(data, patterns) {
@@ -46,6 +46,22 @@ group_vars_by_pattern <- function(data, patterns) {
   names(groups) <- patterns
   return(groups)
 }
+
+
+group_columns_by_pattern <- function(df, patterns) {
+  groups <- lapply(patterns, function(pattern) {
+    data |> select(matches(pattern))
+  })
+  # Assign names to the groups
+  names(groups) <- patterns
+
+  # Identify non-grouped columns
+  grouped_columns <- unlist(map(groups, colnames))
+  non_grouped_columns <- df |> select(-all_of(grouped_columns))
+
+  list(groups = groups, non_grouped = non_grouped_columns)
+}
+
 
 
 vars_grouped <- group_vars_by_pattern(data, base_names)
@@ -65,6 +81,39 @@ permuted_groups <- map(vars_grouped, permute_group)
 
 # Show permuted groups
 permuted_groups
+
+permute_non_grouped <- function(non_grouped) {
+  apply(non_grouped, 2, function(col) sample(col))  # Permute each column independently
+}
+
+# permuted_data <- c()
+# for (i in seq(length(permuted_groups))) {
+#   permuted_data <- cbind(permuted_data, permuted_groups[[i]])
+# }
+permuted_data <- do.call(cbind, permuted_groups)
+
+
+permute_dataset <- function(df, patterns, seed = 894) {
+  # Group columns and get non-grouped columns
+  grouped_data <- group_columns_by_pattern(df, patterns)
+
+  # Permute the grouped columns
+  permuted_groups <- map(grouped_data$groups, permute_group)
+  permuted_cols <- do.call(cbind, permuted_groups)
+
+  # Permute non-grouped columns
+  permuted_non_grouped <- permute_non_grouped(grouped_data$non_grouped)
+
+  # Combine the permuted groups and non-grouped columns
+  permuted_df <- bind_cols(permuted_groups,
+                           as.data.frame(permuted_non_grouped))
+
+  # Reorder columns to match original dataset
+  permuted_df <- permuted_df[, colnames(df)]
+
+  return(permuted_df)
+}
+
 
 
 ################################################################################
