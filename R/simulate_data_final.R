@@ -2,8 +2,9 @@ library(data.table)
 library(tidyverse)
 
 data <- fread("data-raw/data_full_new.csv", stringsAsFactors = FALSE)
-data <- fread("data-raw/full_data.csv", stringsAsFactors = FALSE)
 
+data <- fread("data-raw/full_data.csv", stringsAsFactors = FALSE)
+data[, V1 := NULL]
 
 # Step 1: List of description variables
 desc_vars <- grep("(?i)_Desc", names(data), value = TRUE)
@@ -26,18 +27,19 @@ base_names <- sapply(without_e_number, function(x) {
   }
 })
 
+vars_to_group <- data |>
+  select(matches(base_names)) |>
+  names()
 
-
-# group_vars_by_pattern <- function(data, patterns){
-#   groups <- map(patterns, ~ data |>
-#                   select(matches(.x)))
-#   names(groups) <- patterns
-#   return(groups)
-# }
 
 
 group_vars_by_pattern <- function(data, patterns) {
-  patterns <- unique(patterns)
+  patterns <- unique(patterns) # there are some repeats
+  # App_Employer and App_Employer_Insurance groups capture the same variables,
+  #   so if we don't remove one, we will end up with duplicate variables.
+  # (Same for Exit_Employer)
+  patterns <- patterns[!(patterns %in% c("App_Employer_Insurance",
+                                         "Exit_Employer_Insurance"))]
   # Use lapply to create groups based on the provided patterns
   groups <- lapply(patterns, function(pattern) {
     data |> select(matches(pattern))
@@ -48,26 +50,40 @@ group_vars_by_pattern <- function(data, patterns) {
 }
 
 
-group_columns_by_pattern <- function(df, patterns) {
-  groups <- lapply(patterns, function(pattern) {
-    data |> select(matches(pattern))
-  })
-  # Assign names to the groups
-  names(groups) <- patterns
 
-  # Identify non-grouped columns
-  grouped_columns <- unlist(map(groups, colnames))
-  non_grouped_columns <- df |> select(-all_of(grouped_columns))
-
-  list(groups = groups, non_grouped = non_grouped_columns)
-}
+# group_columns_by_pattern <- function(df, patterns) {
+#   patterns <- unique(patterns) # there are some repeats
+#   groups <- lapply(patterns, function(pattern) {
+#     data |> select(matches(pattern))
+#   })
+#   # Assign names to the groups
+#   names(groups) <- patterns
+#
+#   # Identify non-grouped columns
+#   grouped_columns <- unlist(map(groups, colnames))
+#   non_grouped_columns <- df |> select(-all_of(grouped_columns))
+#
+#   list(groups = groups, non_grouped = non_grouped_columns)
+# }
 
 
 
 vars_grouped <- group_vars_by_pattern(data, base_names)
-
 vars_grouped
 
+# to get variables out of list of groups
+try <- do.call(cbind, vars_grouped)
+# to remove the group names that get attached to each variable
+try_names <- names(try)
+cleaned_names <- sub(".*\\.", "", try_names)
+
+# (check that the variable names of those grouped are what we expected)
+setdiff(vars_to_group, cleaned_names) # character(0)
+setdiff(cleaned_names, vars_to_group) # character(0)
+length(cleaned_names) == length(vars_to_group) # TRUE
+
+# to get the columns that aren't grouped
+names(data)[!(names(data) %in% cleaned_names)]
 
 # Function to permute the rows of each group
 permute_group <- function(group, seed = 7783) {
@@ -78,6 +94,19 @@ permute_group <- function(group, seed = 7783) {
 
 # Apply permutation to each group
 permuted_groups <- map(vars_grouped, permute_group)
+# Show permuted groups
+permuted_groups
+
+# to get variables out of list of groups
+try <- do.call(cbind, permuted_groups)
+# to remove the group names that get attached to each variable
+try_names <- names(try)
+cleaned_names <- sub(".*\\.", "", try_names)
+
+# (check that the variable names of those grouped are what we expected)
+setdiff(vars_to_group, cleaned_names) # character(0)
+setdiff(cleaned_names, vars_to_group) # character(0)
+length(cleaned_names) == length(vars_to_group) # TRUE
 
 # Show permuted groups
 permuted_groups
@@ -94,24 +123,53 @@ permuted_data <- do.call(cbind, permuted_groups)
 
 
 permute_dataset <- function(df, patterns, seed = 894) {
-  # Group columns and get non-grouped columns
-  grouped_data <- group_columns_by_pattern(df, patterns)
+  # get a vector of variable names we expect to group
+  # vars_to_group <- data |>
+  #   select(matches(base_names)) |>
+  #   names()
 
-  # Permute the grouped columns
-  permuted_groups <- map(grouped_data$groups, permute_group)
-  permuted_cols <- do.call(cbind, permuted_groups)
+  # Group columns
+  vars_grouped <- group_vars_by_pattern(df, patterns)
+  permuted_groups <- map(vars_grouped, permute_group)
 
-  # Permute non-grouped columns
-  permuted_non_grouped <- permute_non_grouped(grouped_data$non_grouped)
+  # # Permute the grouped columns
+  # permuted_groups <- map(grouped_data$groups, permute_group)
+  permuted_cols <- as.data.frame(do.call(cbind, permuted_groups))
+  permuted_colnames <- sub(".*\\.", "", names(permuted_cols))
+  colnames(permuted_cols) <- permuted_colnames
 
-  # Combine the permuted groups and non-grouped columns
-  permuted_df <- bind_cols(permuted_groups,
-                           as.data.frame(permuted_non_grouped))
+  # Permute the rest of the columns independently
+  other_colnames <- names(data)[!(names(data) %in% permuted_colnames)]
+  # other_cols <- data[, other_colnames]
+  other_cols <- data[, ..other_colnames] # as data is a data.table, we have to
+  #   use this weird format
 
-  # Reorder columns to match original dataset
-  permuted_df <- permuted_df[, colnames(df)]
+  # permuted_other_cols <- as.data.frame(lapply(other_cols,
+  #                                             function(col) sample(col)))
 
-  return(permuted_df)
+  permuted_other_cols <- as.data.frame(lapply(other_cols, sample))
+
+  # # Permute non-grouped columns
+  # permuted_non_grouped <- permute_non_grouped(grouped_data$non_grouped)
+  #
+  # # Combine the permuted groups and non-grouped columns
+  # permuted_df <- bind_cols(permuted_groups,
+  #                          as.data.frame(permuted_non_grouped))
+  #
+  # # Reorder columns to match original dataset
+  # permuted_df <- permuted_df[, colnames(df)]
+
+  permuted_data <- as.data.table(cbind(permuted_other_cols, permuted_cols))
+
+  # Reorder columns in permutated_data to match the original order
+  original_col_order <- names(data)
+  original_col_order <- gsub("Age at Application", "Age.at.Application",
+                             original_col_order)
+
+  permuted_data <- permuted_data[, ..original_col_order]
+  permuted_data$Participant_ID <- seq(1:nrow(permuted_data))
+
+  return(permuted_data)
 }
 
 
