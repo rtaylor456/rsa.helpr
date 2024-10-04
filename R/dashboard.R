@@ -1914,9 +1914,9 @@ server <- function(input, output, session) {
     severity_col <- grep("((?i)_priority|(?i)_severity)(?!.*(?i)_desc|_age)",
                          names(data), value = TRUE, perl = TRUE)
 
-    if (length(unique(wage_col[metadata[[severity_col]] == 0])) >= 2 &
-        length(unique(wage_col[metadata[[severity_col]] == 1])) >= 2 &
-        length(unique(wage_col[metadata[[severity_col]] == 2])) >= 2
+    if (length(unique(wage_col[data[[severity_col]] == 0])) >= 2 &
+        length(unique(wage_col[data[[severity_col]] == 1])) >= 2 &
+        length(unique(wage_col[data[[severity_col]] == 2])) >= 2
         ) {
       # Create density for each group
       non_significant_density <- density(wage_col[

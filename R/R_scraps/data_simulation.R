@@ -87,3 +87,18 @@ permute_dataset <- function(df, patterns, seed = 894) {
 
   return(permuted_data)
 }
+
+
+simulated_data <- permute_dataset(data, base_names)
+
+# this adds the V1 column and is SUPER slow, so we will not use this version
+# check <- fread("data-raw/simulated_data.csv", stringsAsFactors = FALSE)
+# write.csv(simulated_data, "data-raw/simulated_data.csv")
+
+# much faster and doesn't add in additional column
+fwrite(simulated_data, "data-raw/simulated_data2.csv")
+
+# check <- fread("data-raw/simulated_data.csv", stringsAsFactors = FALSE)
+
+# much
+check2 <- fread("data-raw/simulated_data2.csv", stringsAsFactors = FALSE)
