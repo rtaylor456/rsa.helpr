@@ -1,23 +1,24 @@
-#' Visualize Scores Data
+#' Visualize TRT Scores Data
 #'
-#' This function
+#' This function produces tailored visualizations for a TRT scores dataset in
+#'   one step.
 #'
-#' @param data
-#' @param option
-#' @param one_window
-#' @param
-#' @param
-#' @param
-#' @param
-#' @param
+#' @param data A cleaned TRT scores dataset. Apply clean_scores function first.
+#' @param option The selected visual analysis option. The options are
+#'   "overview":
+#'   "across_service":
+#'   "across_provider":
+#' @param one_window Whether or not the user wants the visuals to be displayed
+#'   in one plotting window, or spread across multiple plot windows. Defaults to
+#'   FALSE.
 #'
-#' @returns
+#' @returns The appropriate plots for the chosen visual analysis.
 #'
 #' @export
 #'
 
 visualize_scores <- function(data, option = c("overview", "across_service",
-                                  "across_provider"), one_window = TRUE) {
+                                  "across_provider"), one_window = FALSE) {
   option <- match.arg(option)
 
   if (option == "overview") {

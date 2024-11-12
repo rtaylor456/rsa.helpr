@@ -40,16 +40,20 @@ visualize_densities <- function(cat_var, num_var,
   #   {
   #   stop("There must be at least two observations of the numeric variable per level of the categorical variable.")
   # }
+  #
 
+
+  # insufficient_data <- any(sapply(split(num_var, cat_var),
+  #                                 function(x) sum(!is.na(x)) < 2))
 
   insufficient_data <- any(sapply(split(num_var, cat_var),
-                                  function(x) sum(!is.na(x)) < 2))
+                                  function(x) length(unique(x[!is.na(x)])) < 2))
 
   if (insufficient_data) {
     warning("Not enough observations for density plot. Displaying boxplots instead.")
 
     # Plot side-by-side boxplots
-    if (is.null(level_labels)) level_labels <- unique(cat_var)
+    if (is.null(level_labels)) level_labels <- unique(na.omit(cat_var))
     if (is.null(xlab)) xlab <- cat_var_name
     if (is.null(main)) main <- paste("Boxplot of", num_var_name, "by", cat_var_name)
 
@@ -57,21 +61,7 @@ visualize_densities <- function(cat_var, num_var,
             names = level_labels)
     return()
   }
-
-  # # Check that there are enough observations of the num var per level of cat var
-  # else if (all(sapply(split(num_var, cat_var),
-  #                     function(x) sum(!is.na(x)) >= 2)) == FALSE) {
-  #   warning("Not enough observations for density plot. Displaying boxplots instead.")
-  #
-  #   # Plot side-by-side boxplots
-  #   if (is.null(level_labels)) level_labels <- unique(cat_var)
-  #   if (is.null(xlab)) xlab <- cat_var_name
-  #   if (is.null(main)) main <- paste("Boxplot of", num_var_name, "by", cat_var_name)
-  #
-  #   boxplot(num_var ~ cat_var, col = colors, main = main, xlab = xlab, ylab = num_var_name,
-  #           names = level_labels)
-  #   return()
-  # } # if we meet these conditions, run the visualization code
+  # if we meet these conditions, run the visualization code
   else {
 
     levels <- unique(cat_var)
