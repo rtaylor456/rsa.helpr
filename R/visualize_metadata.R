@@ -20,7 +20,7 @@ visualize_metadata <- function(data, option = c("general_demo",
                                                 "investigate_scores",
                                                 "investigate_wage",
                                                 "investigate_employment"),
-                               one_window = TRUE) {
+                               one_window = FALSE) {
 
   option <- match.arg(option)
   if (option == "general_demo") {
