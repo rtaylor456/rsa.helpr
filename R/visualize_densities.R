@@ -1,17 +1,22 @@
 #' Visualize Densities
 #'
-#' This function
+#' This function provides a user-friendly way to visualize densities of a
+#'   numeric variable across levels of a categorical variable.
 #'
-#' @param cat_var
-#' @param num_var
-#' @param cat_var_name
-#' @param num_var_name
-#' @param level_labels
-#' @param xlab
-#' @param main
-#' @param colors
+#' @param cat_var The categorical variable.
+#' @param num_var The numerical variable.
+#' @param cat_var_name The desired name/label of the categorical variable. If no
+#'   name is provided, it will default to "Categorical Variable."
+#' @param num_var_name The desired name/label of the numeric variable. If no
+#'   name is provided, it will default to "Numeric Variable."
+#' @param level_labels The desired labels of the levels of the categorical
+#'   variable. If no labels are provided, the labels will be the values found in
+#'   the data.
+#' @param xlab The desired label of the x-axis, a character string.
+#' @param main The desired title, a character string.
+#' @param colors The desired colors for the densities, a character vector.
 #'
-#' @returns
+#' @returns A density plot of the inputted variables.
 #'
 #' @export
 #'
@@ -24,18 +29,49 @@ visualize_densities <- function(cat_var, num_var,
                                 colors = NULL) {
 
   # check that there are at least two factor levels in the variable
-  if (length(unique(cat_var)) < 2
+  if (length(unique(cat_var)) < 1
   ) {
-    stop("There must be at least two populated levels of the categorical variable.")
+    stop("There must be at least one populated level of the categorical variable.")
   }
   # check that there are enough obs of the num var per level of cat var
-  else if (all(sapply(split(num_var, cat_var), function(x) {
-    sum(!is.na(x)) >= 2} )) == FALSE
-             )
-    {
-    stop("There must be at least two observations of the numeric variable per level of the categorical variable.")
+  # else if (all(sapply(split(num_var, cat_var), function(x) {
+  #   sum(!is.na(x)) >= 2} )) == FALSE
+  #            )
+  #   {
+  #   stop("There must be at least two observations of the numeric variable per level of the categorical variable.")
+  # }
+
+
+  insufficient_data <- any(sapply(split(num_var, cat_var),
+                                  function(x) sum(!is.na(x)) < 2))
+
+  if (insufficient_data) {
+    warning("Not enough observations for density plot. Displaying boxplots instead.")
+
+    # Plot side-by-side boxplots
+    if (is.null(level_labels)) level_labels <- unique(cat_var)
+    if (is.null(xlab)) xlab <- cat_var_name
+    if (is.null(main)) main <- paste("Boxplot of", num_var_name, "by", cat_var_name)
+
+    boxplot(num_var ~ cat_var, col = colors, main = main, xlab = xlab, ylab = num_var_name,
+            names = level_labels)
+    return()
   }
-  # if we meet these conditions, run the visualization code
+
+  # # Check that there are enough observations of the num var per level of cat var
+  # else if (all(sapply(split(num_var, cat_var),
+  #                     function(x) sum(!is.na(x)) >= 2)) == FALSE) {
+  #   warning("Not enough observations for density plot. Displaying boxplots instead.")
+  #
+  #   # Plot side-by-side boxplots
+  #   if (is.null(level_labels)) level_labels <- unique(cat_var)
+  #   if (is.null(xlab)) xlab <- cat_var_name
+  #   if (is.null(main)) main <- paste("Boxplot of", num_var_name, "by", cat_var_name)
+  #
+  #   boxplot(num_var ~ cat_var, col = colors, main = main, xlab = xlab, ylab = num_var_name,
+  #           names = level_labels)
+  #   return()
+  # } # if we meet these conditions, run the visualization code
   else {
 
     levels <- unique(cat_var)
