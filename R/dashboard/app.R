@@ -320,7 +320,8 @@ server <- function(input, output, session) {
         if (type == "csv") {
           fread(path, stringsAsFactors = FALSE)
         } else {
-          read_excel(path, row.names = NULL)
+          # read_excel(path, row.names = NULL)
+          read_excel(path)
         }
       }, file_paths, file_types, SIMPLIFY = FALSE)
 
