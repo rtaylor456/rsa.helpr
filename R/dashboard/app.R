@@ -5,7 +5,8 @@ library(readxl)
 library(ggplot2)
 
 if (!requireNamespace("rsa.helpr", quietly = TRUE)) {
-  devtools::install_github("rtaylor456/rsa.helpr")
+  # devtools::install_github("rtaylor456/rsa.helpr")
+  remotes::install_github("rtaylor456/rsa.helpr")
 }
 library(rsa.helpr)
 
