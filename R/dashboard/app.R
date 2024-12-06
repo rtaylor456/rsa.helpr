@@ -4,6 +4,11 @@ library(data.table)
 library(readxl)
 library(ggplot2)
 
+if (!requireNamespace("rsa.helpr", quietly = TRUE)) {
+  devtools::install_github("rtaylor456/rsa.helpr")
+}
+library(rsa.helpr)
+
 options(shiny.maxRequestSize = 1000 * 1024^2)  # 500MB
 
 # Define UI
