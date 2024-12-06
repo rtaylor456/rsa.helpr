@@ -5,9 +5,7 @@ Authors@R:
     person("Ruth", "Taylor", , "ruth.eloisa.456@gmail.com", 
     role = c("aut", "cre"),
     comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: A package that provides functions for cleaning and analyzing 
-RSA-911 data, including tools for data preparation, transformation, and 
-visualization.
+Description: A package that provides functions for cleaning and analyzing RSA-911 data, including tools for data preparation, transformation, and visualization.
 License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
