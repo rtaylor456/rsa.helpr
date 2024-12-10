@@ -976,35 +976,81 @@ server <- function(input, output, session) {
                  downloadButton("download_meta_gen_demo_plot4", "Download Plot"),
 
                  plotOutput("meta_gen_demo_plot5"),
+                 downloadButton("download_meta_gen_demo_plot5", "Download Plot"),
 
                  plotOutput("meta_gen_demo_plot6"),
+                 downloadButton("download_meta_gen_demo_plot6", "Download Plot"),
 
-                 plotOutput("meta_gen_demo_plot7")),
+                 plotOutput("meta_gen_demo_plot7"),
+                 downloadButton("download_meta_gen_demo_plot7", "Download Plot"),
+                 ),
 
         tabPanel("Investigate Difference Scores",
                  plotOutput("meta_diff_plot1"),
+                 downloadButton("download_meta_diff_plot1", "Download Plot"),
+
                  plotOutput("meta_diff_plot2"),
+                 downloadButton("download_meta_diff_plot2", "Download Plot"),
+
                  plotOutput("meta_diff_plot3"),
+                 downloadButton("download_meta_diff_plot3", "Download Plot"),
+
                  plotOutput("meta_diff_plot4"),
+                 downloadButton("download_meta_diff_plot4", "Download Plot"),
+
                  plotOutput("meta_diff_plot5"),
+                 downloadButton("download_meta_diff_plot5", "Download Plot"),
+
                  plotOutput("meta_diff_plot6"),
-                 plotOutput("meta_diff_plot7")),
+                 downloadButton("download_meta_diff_plot6", "Download Plot"),
+
+                 plotOutput("meta_diff_plot7"),
+                 downloadButton("download_meta_diff_plot7", "Download Plot")
+                 ),
         tabPanel("Investigate Wage",
                  plotOutput("meta_wage_plot1"),
+                 downloadButton("download_meta_wage_plot1", "Download Plot"),
+
                  plotOutput("meta_wage_plot2"),
+                 downloadButton("download_meta_wage_plot2", "Download Plot"),
+
                  plotOutput("meta_wage_plot3"),
+                 downloadButton("download_meta_wage_plot3", "Download Plot"),
+
                  plotOutput("meta_wage_plot4"),
+                 downloadButton("download_meta_wage_plot4", "Download Plot"),
+
                  plotOutput("meta_wage_plot5"),
+                 downloadButton("download_meta_wage_plot5", "Download Plot"),
+
                  plotOutput("meta_wage_plot6"),
-                 plotOutput("meta_wage_plot7")),
+                 downloadButton("download_meta_wage_plot6", "Download Plot"),
+
+                 plotOutput("meta_wage_plot7"),
+                 downloadButton("download_meta_wage_plot7", "Download Plot")
+                 ),
         tabPanel("Investigate Employment",
                  plotOutput("meta_employ_plot1"),
+                 downloadButton("download_meta_employ_plot1", "Download Plot"),
+
                  plotOutput("meta_employ_plot2"),
+                 downloadButton("download_meta_employ_plot2", "Download Plot"),
+
                  plotOutput("meta_employ_plot3"),
+                 downloadButton("download_meta_employ_plot3", "Download Plot"),
+
                  plotOutput("meta_employ_plot4"),
+                 downloadButton("download_meta_employ_plot4", "Download Plot"),
+
                  plotOutput("meta_employ_plot5"),
+                 downloadButton("download_meta_employ_plot5", "Download Plot"),
+
                  plotOutput("meta_employ_plot6"),
-                 plotOutput("meta_employ_plot7"))
+                 downloadButton("download_meta_employ_plot6", "Download Plot"),
+
+                 plotOutput("meta_employ_plot7"),
+                 downloadButton("download_meta_employ_plot7", "Download Plot")
+                 )
       )
     }
   })
@@ -1549,6 +1595,27 @@ server <- function(input, output, session) {
 
     })
 
+  # Download handler for Severity Distribution Plot
+  output$download_meta_gen_demo_plot5 <- downloadHandler(
+    filename = function() { "severity_distribution_plot.png" },
+    content = function(file) {
+      png(file)
+      req(selected_data())
+      data <- selected_data()
+
+      severity_col <- grep("((?i)_priority|(?i)_severity)(?!.*(?i)_desc|_age)",
+                           names(data), value = TRUE, perl = TRUE)
+
+      barplot(table(data[[severity_col]]),
+              main = "Distribution of Disability Severity",
+              xlab = "Severity",
+              names = c("Non-significant", "Significant", "Most significant"),
+              col = c("lightsteelblue", "steelblue", "darkblue"))
+      dev.off()
+    }
+  )
+
+
   # Primary impairment
   output$meta_gen_demo_plot6 <- renderPlot({
     req(selected_data())
@@ -1560,6 +1627,23 @@ server <- function(input, output, session) {
             col = "steelblue")
 
   })
+
+  # Download handler for Primary Impairment Distribution Plot
+  output$download_meta_gen_demo_plot6 <- downloadHandler(
+    filename = function() { "primary_impairment_distribution_plot.png" },
+    content = function(file) {
+      png(file)
+      req(selected_data())
+      data <- selected_data()
+
+      barplot(table(data$Primary_Impairment_Group),
+              main = "Distribution of Primary Impairments",
+              xlab = "Primary Impairment",
+              col = "steelblue")
+      dev.off()
+    }
+  )
+
 
   # Primary impairment
   output$meta_gen_demo_plot7 <- renderPlot({
@@ -1573,8 +1657,34 @@ server <- function(input, output, session) {
 
   })
 
+  # Download handler for Secondary Impairment Distribution Plot
+  output$download_meta_gen_demo_plot7 <- downloadHandler(
+    filename = function() { "secondary_impairment_distribution_plot.png" },
+    content = function(file) {
+      png(file)
+      req(selected_data())
+      data <- selected_data()
+
+      barplot(table(data$Secondary_Impairment_Group),
+              main = "Distribution of Secondary Impairments",
+              xlab = "Secondary Impairment",
+              col = "steelblue")
+      dev.off()
+    }
+  )
 
 
+
+
+  output$meta_diff_plot1 <- renderPlot({
+    req(selected_data())
+    data <- selected_data()
+
+    hist(data$Median_Difference_Score,
+         col = "steelblue",
+         main = "Distribution of Median Difference Scores",
+         xlab = "Median Difference Scores")
+  })
 
   output$meta_diff_plot1 <- renderPlot({
     req(selected_data())
@@ -1599,7 +1709,59 @@ server <- function(input, output, session) {
          xlab = "Median Days Spent in Programs (per individual)",
          col = "steelblue",
          pch = 3)
+  })
+
+  output$meta_diff_plot3 <- renderPlot({
+    req(selected_data())
+    data <- selected_data()
+
+    # plot(as.numeric(data$Enroll_Length), data$Median_Difference_Score,
+    #      col = "steelblue",
+    #      main = "Difference Scores Across Quarters Enrolled",
+    #      ylab = "Median Difference Score",
+    #      xlab = "Total Quarters Enrolled",
+    #      pch = 8)
+
+    boxplot(Median_Difference_Score ~ data[["Enroll_Length_Grp"]], data = data,
+            main = "Difference Scores Across Quarters Enrolled",
+            xlab = "Enrollment Length (total quarters)",
+            ylab = "Median Difference Scores",
+            col = "steelblue")
+
+  })
+
+
+  output$meta_diff_plot2 <- renderPlot({
+    req(selected_data())
+    data <- selected_data()
+
+    # these variables have been created in the data cleaning process,
+    #   so we can use the exact names
+    plot(data$Median_Time_Passed_Days,
+         data$Median_Difference_Score,
+         main = "Difference Scores Across Time in Program",
+         ylab = "Median Difference Scores",
+         xlab = "Median Days Spent in Programs (per individual)",
+         col = "steelblue",
+         pch = 3)
     })
+
+  # Download handler for meta_diff_plot2
+  output$download_meta_diff_plot2 <- downloadHandler(
+    filename = function() { "difference_scores_across_time_plot.png" },
+    content = function(file) {
+      png(file)
+      data <- selected_data()
+      plot(data$Median_Time_Passed_Days,
+           data$Median_Difference_Score,
+           main = "Difference Scores Across Time in Program",
+           ylab = "Median Difference Scores",
+           xlab = "Median Days Spent in Programs (per individual)",
+           col = "steelblue",
+           pch = 3)
+      dev.off()
+    }
+  )
 
   output$meta_diff_plot3 <- renderPlot({
     req(selected_data())
@@ -1619,6 +1781,21 @@ server <- function(input, output, session) {
             col = "steelblue")
 
     })
+
+  # Download handler for meta_diff_plot3
+  output$download_meta_diff_plot3 <- downloadHandler(
+    filename = function() { "difference_scores_across_quarters_plot.png" },
+    content = function(file) {
+      png(file)
+      data <- selected_data()
+      boxplot(Median_Difference_Score ~ data[["Enroll_Length_Grp"]], data = data,
+              main = "Difference Scores Across Quarters Enrolled",
+              xlab = "Enrollment Length (total quarters)",
+              ylab = "Median Difference Scores",
+              col = "steelblue")
+      dev.off()
+    }
+  )
 
 
   output$meta_diff_plot4 <- renderPlot({
@@ -1696,6 +1873,71 @@ server <- function(input, output, session) {
               col = "steelblue")
     }
   })
+
+  # Download handler for meta_diff_plot4
+  output$download_meta_diff_plot4 <- downloadHandler(
+    filename = function() { "difference_scores_by_gender_plot.png" },
+    content = function(file) {
+      png(file)
+      data <- selected_data()
+
+      # Generate the plot for meta_diff_plot4
+      sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
+                      value = TRUE, perl = TRUE)
+
+      if (length(unique(data$Median_Difference_Score[
+        data[[sex_col]] == 0])) >= 2 &
+        length(unique(data$Median_Difference_Score[
+          data[[sex_col]] == 1])) >= 2 &
+        length(unique(data$Median_Difference_Score[
+          data[[sex_col]] == 9])) >= 2
+      ) {
+        # Create density plot
+        females_density <- density(data$Median_Difference_Score[
+          data[[sex_col]] == 0], na.rm = TRUE)
+        males_density <- density(data$Median_Difference_Score[
+          data[[sex_col]] == 1], na.rm = TRUE)
+        did_not_identify_density <- density(data$Median_Difference_Score[
+          data[[sex_col]] == 9], na.rm = TRUE)
+
+        max_density_value <- max(c(max(females_density$y, na.rm = TRUE),
+                                   max(males_density$y, na.rm = TRUE),
+                                   max(did_not_identify_density$y, na.rm = TRUE)),
+                                 na.rm = TRUE)
+
+        plot(females_density, col = "steelblue4", lwd = 2,
+             main = "Density Plot of Median Difference Scores by Gender",
+             xlab = "Median Difference Scores", ylab = "Density",
+             xlim = range(c(females_density$x, males_density$x,
+                            did_not_identify_density$x)),
+             ylim = c(0, max_density_value * 1.1))
+        polygon(c(females_density$x, rev(females_density$x)),
+                c(rep(0, length(females_density$x)), rev(females_density$y)),
+                col = rgb(0.2, 0.6, 1, alpha = 0.3), border = NA)
+        lines(males_density, col = "darkblue", lwd = 2)
+        lines(did_not_identify_density, col = "darkgray", lwd = 2)
+        polygon(c(males_density$x, rev(males_density$x)),
+                c(rep(0, length(males_density$x)), rev(males_density$y)),
+                col = rgb(0, 0, 0.5, alpha = 0.3), border = NA)
+        polygon(c(did_not_identify_density$x, rev(did_not_identify_density$x)),
+                c(rep(0, length(did_not_identify_density$x)),
+                  rev(did_not_identify_density$y)),
+                col = rgb(0.5, 0.5, 0.5, alpha = 0.3), border = NA)
+        legend("topright", legend = c("Females", "Males", "Did not identify"),
+               col = c("steelblue4", "darkblue", "gray"), lwd = 2)
+      } else {
+        boxplot(Median_Difference_Score ~ data[[sex_col]], data = data,
+                main = "Difference Scores by Gender",
+                names = c("Females", "Males", "Did not identify"),
+                xlab = "Gender",
+                ylab = "Median Difference Scores",
+                col = "steelblue")
+      }
+      dev.off()
+    }
+  )
+
+
 
 
   output$meta_diff_plot6 <- renderPlot({
@@ -1779,6 +2021,73 @@ server <- function(input, output, session) {
   })
 
 
+  # Download handler for meta_diff_plot6
+  output$download_meta_diff_plot6 <- downloadHandler(
+    filename = function() { "difference_scores_by_severity_plot.png" },
+    content = function(file) {
+      png(file)
+      data <- selected_data()
+
+      severity_col <- grep("((?i)_priority|(?i)_severity)(?!.*(?i)_desc|_age)",
+                           names(data), value = TRUE, perl = TRUE)
+
+      if (length(unique(data$Median_Difference_Score[
+        data[[severity_col]] == 0])) >= 2 &
+        length(unique(data$Median_Difference_Score[
+          data[[severity_col]] == 1])) >= 2 &
+        length(unique(data$Median_Difference_Score[
+          data[[severity_col]] == 2])) >= 2
+      ) {
+        non_significant_density <- density(data$Median_Difference_Score[
+          data[[severity_col]] == 0], na.rm = TRUE)
+        significant_density <- density(data$Median_Difference_Score[
+          data[[severity_col]] == 1], na.rm = TRUE)
+        most_significant_density <- density(data$Median_Difference_Score[
+          data[[severity_col]] == 2], na.rm = TRUE)
+
+        max_density_value <- max(c(max(non_significant_density$y, na.rm = TRUE),
+                                   max(significant_density$y, na.rm = TRUE),
+                                   max(most_significant_density$y, na.rm = TRUE)),
+                                 na.rm = TRUE)
+
+        plot(non_significant_density, col = "steelblue4", lwd = 2,
+             main = "Density Plot of Median Difference Scores by Disability Severity",
+             xlab = "Median Difference Scores", ylab = "Density",
+             xlim = range(c(non_significant_density$x, significant_density$x,
+                            most_significant_density$x)),
+             ylim = c(0, max_density_value * 1.1))
+        polygon(c(non_significant_density$x, rev(non_significant_density$x)),
+                c(rep(0, length(non_significant_density$x)),
+                  rev(non_significant_density$y)),
+                col = rgb(0.2, 0.6, 1, alpha = 0.3), border = NA)
+        lines(significant_density, col = "darkblue", lwd = 2)
+        lines(most_significant_density, col = "darkgray", lwd = 2)
+        polygon(c(significant_density$x, rev(significant_density$x)),
+                c(rep(0, length(significant_density$x)),
+                  rev(significant_density$y)),
+                col = rgb(0, 0, 0.5, alpha = 0.3), border = NA)
+        polygon(c(most_significant_density$x, rev(most_significant_density$x)),
+                c(rep(0, length(most_significant_density$x)),
+                  rev(most_significant_density$y)),
+                col = rgb(0.5, 0.5, 0.5, alpha = 0.3), border = NA)
+        legend("topright", legend = c("Non Significant", "Significant",
+                                      "Most Significant"),
+               col = c("steelblue4", "darkblue", "darkgray"), lwd = 2)
+      } else {
+        boxplot(Median_Difference_Score ~ data[[severity_col]], data = data,
+                main = "Difference Scores by Disability Severity",
+                names = c("Non significant", "Significant",
+                          "Most significant"),
+                xlab = "Disability Severity",
+                ylab = "Median Difference Scores",
+                col = "steelblue")
+      }
+      dev.off()
+    }
+  )
+
+
+
   output$meta_diff_plot7 <- renderPlot({
     req(selected_data())
     data <- selected_data()
@@ -1795,6 +2104,23 @@ server <- function(input, output, session) {
             col = "steelblue")
 
   })
+
+  # Download handler for meta_diff_plot7
+  output$download_meta_diff_plot7 <- downloadHandler(
+    filename = function() { "difference_scores_by_disability_type_plot.png" },
+    content = function(file) {
+      png(file)
+      data <- selected_data()
+
+      boxplot(Median_Difference_Score ~ Primary_Impairment_Group,
+              data = data,
+              main = "Difference Scores by Primary Disability Type",
+              xlab = "Primary Disability",
+              ylab = "Median Difference Scores",
+              col = "steelblue")
+      dev.off()
+    }
+  )
 
   output$meta_diff_plot5 <- renderPlot({
     req(selected_data())
@@ -1852,6 +2178,41 @@ server <- function(input, output, session) {
 
   })
 
+  # Download handler for meta_diff_plot5
+  output$download_meta_diff_plot5 <- downloadHandler(
+    filename = function() { "difference_scores_by_race_plot.png" },
+    content = function(file) {
+      png(file)
+      data <- selected_data()
+
+      race_cols <- grep("(?i)(_indian|_asian|_black|_hawaiian|_islander|_white|hispanic)(?!.*(?i)_desc)",
+                        names(data),
+                        value = TRUE, perl = TRUE)
+
+      data_subset <- data[, .SD, .SDcols = c("Median_Difference_Score", race_cols)]
+
+      long_data <- melt(data_subset,
+                        id.vars = "Median_Difference_Score",
+                        measure.vars = race_cols,
+                        variable.name = "Race",
+                        value.name = "Has_Race")
+      filtered_data <- long_data[Has_Race == 1]
+
+      par(oma = c(0, 0, 0, 0) + 0.6)
+      boxplot(Median_Difference_Score ~ Race, data = filtered_data,
+              col = "steelblue",
+              xaxt = "n", yaxt = "n",
+              xlab = "", ylab = "Median Difference Score",
+              main = "Difference Scores Across Race")
+      axis(side = 2, las = 2, mgp = c(3, 0.75, 0))
+      text(x = 1:length(race_cols),
+           y = par("usr")[3] - 0.45,
+           labels = gsub("^E[0-9]+_|_911$", "", race_cols),
+           xpd = NA, srt = 45, cex = .8, adj = 1)
+      dev.off()
+    }
+  )
+
 
   output$meta_wage_plot1 <- renderPlot({
     req(selected_data())
@@ -1873,6 +2234,30 @@ server <- function(input, output, session) {
 
   })
 
+  # Download handler for meta_wage_plot1
+  output$download_meta_wage_plot1 <- downloadHandler(
+    filename = function() { "exit_wages_distribution_plot.png" },
+    content = function(file) {
+      png(file)
+      data <- selected_data()
+
+      if (is.null(data)) {
+        return("No data available.")
+      }
+
+      wage_col <- grep("(?i)^(?=.*wage)(?=.*exit)(?!.*(desc))", names(data),
+                       value = TRUE, perl = TRUE)
+      wages <- data[, .SD, .SDcols = wage_col]
+      wages_vector <- as.vector(unlist(wages))
+
+      hist(wages_vector,
+           col = "steelblue",
+           main = "Distribution of Exit Wages",
+           xlab = "Exit Wage ($ per hour)")
+      dev.off()
+    }
+  )
+
 
   output$meta_wage_plot2 <- renderPlot({
     req(selected_data())
@@ -1893,6 +2278,29 @@ server <- function(input, output, session) {
          col = "steelblue",
          pch = 3)
   })
+
+  # Download handler for meta_wage_plot2
+  output$download_meta_wage_plot2 <- downloadHandler(
+    filename = function() { "exit_wages_across_days_plot.png" },
+    content = function(file) {
+      png(file)
+      data <- selected_data()
+
+      wage_col <- grep("(?i)^(?=.*wage)(?=.*exit)(?!.*(desc))", names(data),
+                       value = TRUE, perl = TRUE)
+      wages <- data[, .SD, .SDcols = wage_col]
+      wages_vector <- as.vector(unlist(wages))
+
+      plot(data$Median_Time_Passed_Days,
+           wages_vector,
+           main = "Exit Wages Across Days in Program",
+           ylab = "Exit Wages ($ per hour)",
+           xlab = "Median Days Spent in Programs (per individual)",
+           col = "steelblue",
+           pch = 3)
+      dev.off()
+    }
+  )
 
   output$meta_wage_plot3 <- renderPlot({
     req(selected_data())
@@ -1917,6 +2325,28 @@ server <- function(input, output, session) {
             col = "steelblue")
 
     })
+
+  # Download handler for meta_wage_plot3
+  output$download_meta_wage_plot3 <- downloadHandler(
+    filename = function() { "exit_wages_across_quarters_plot.png" },
+    content = function(file) {
+      png(file)
+      data <- selected_data()
+
+      wage_col <- grep("(?i)^(?=.*wage)(?=.*exit)(?!.*(desc))", names(data),
+                       value = TRUE, perl = TRUE)
+      wages <- data[, .SD, .SDcols = wage_col]
+      wages_vector <- as.vector(unlist(wages))
+
+      boxplot(wages_vector ~ data[["Enroll_Length_Grp"]],
+              main = "Exit Wages Across Quarters Enrolled",
+              xlab = "Enrollment Length (total quarters)",
+              ylab = "Exit Wages ($ per Hour)",
+              col = "steelblue")
+      dev.off()
+    }
+  )
+
 
   output$meta_wage_plot4 <- renderPlot({
     req(selected_data())
@@ -1996,6 +2426,75 @@ server <- function(input, output, session) {
     }
 
   })
+
+  # Download handler for meta_wage_plot4
+  output$download_meta_wage_plot4 <- downloadHandler(
+    filename = function() { "exit_wages_by_gender_plot.png" },
+    content = function(file) {
+      png(file)
+      data <- selected_data()
+
+      wage_col <- grep("(?i)^(?=.*wage)(?=.*exit)(?!.*(desc))", names(data),
+                       value = TRUE, perl = TRUE)
+      wages <- data[, .SD, .SDcols = wage_col]
+      wages_vector <- as.vector(unlist(wages))
+
+      sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
+                      value = TRUE, perl = TRUE)
+
+      if (length(sex_col) == 0) {
+        stop("No gender/sex column found in the dataset.")
+      }
+
+      if (length(unique(wage_col[data[[sex_col]] == 0])) >= 2 &
+          length(unique(wage_col[data[[sex_col]] == 1])) >= 2 &
+          length(unique(wage_col[data[[sex_col]] == 9])) >= 2
+      ) {
+        females_density <- density(wages_vector[data[[sex_col]] == 0], na.rm = TRUE)
+        males_density <- density(wages_vector[data[[sex_col]] == 1], na.rm = TRUE)
+        did_not_identify_density <- density(wages_vector[data[[sex_col]] == 9], na.rm = TRUE)
+
+        max_density_value <- max(c(max(females_density$y, na.rm = TRUE),
+                                   max(males_density$y, na.rm = TRUE),
+                                   max(did_not_identify_density$y, na.rm = TRUE)),
+                                 na.rm = TRUE)
+
+        plot(females_density, col = "steelblue4", lwd = 2,
+             main = "Density Plot of Exit Wages by Gender",
+             xlab = "Exit Wages ($ per Hour)", ylab = "Density",
+             xlim = range(c(females_density$x, males_density$x,
+                            did_not_identify_density$x)),
+             ylim = c(0, max_density_value * 1.1))
+
+        polygon(c(females_density$x, rev(females_density$x)),
+                c(rep(0, length(females_density$x)), rev(females_density$y)),
+                col = rgb(0.2, 0.6, 1, alpha = 0.3), border = NA)
+
+        lines(males_density, col = "darkblue", lwd = 2)
+        polygon(c(males_density$x, rev(males_density$x)),
+                c(rep(0, length(males_density$x)), rev(males_density$y)),
+                col = rgb(0, 0, 0.5, alpha = 0.3), border = NA)
+
+        lines(did_not_identify_density, col = "darkgray", lwd = 2)
+        polygon(c(did_not_identify_density$x, rev(did_not_identify_density$x)),
+                c(rep(0, length(did_not_identify_density$x)),
+                  rev(did_not_identify_density$y)),
+                col = rgb(0.5, 0.5, 0.5, alpha = 0.3), border = NA)
+
+        legend("topright", legend = c("Females", "Males", "Did not identify"),
+               col = c("steelblue4", "darkblue", "darkgray"), lwd = 2)
+      } else {
+        boxplot(wages_vector ~ data[[sex_col]],
+                main = "Exit Wages by Gender",
+                names = c("Females", "Males", "Did not identify"),
+                xlab = "Gender",
+                ylab = "Exit Wages ($ per Hour)",
+                col = "steelblue")
+      }
+      dev.off()
+    }
+  )
+
 
 
   output$meta_wage_plot6 <- renderPlot({
@@ -2078,6 +2577,70 @@ server <- function(input, output, session) {
     }
   })
 
+  output$download_meta_wage_plot6 <- downloadHandler(
+    filename = function() { "exit_wages_by_severity_plot.png" },
+    content = function(file) {
+      png(file)
+      data <- selected_data()
+
+      wage_col <- grep("(?i)^(?=.*wage)(?=.*exit)(?!.*(desc))", names(data),
+                       value = TRUE, perl = TRUE)
+      wages <- data[, .SD, .SDcols = wage_col]
+      wages_vector <- as.vector(unlist(wages))
+
+      severity_col <- grep("((?i)_priority|(?i)_severity)(?!.*(?i)_desc|_age)",
+                           names(data), value = TRUE, perl = TRUE)
+
+      if (length(unique(wage_col[data[[severity_col]] == 0])) >= 2 &
+          length(unique(wage_col[data[[severity_col]] == 1])) >= 2 &
+          length(unique(wage_col[data[[severity_col]] == 2])) >= 2
+      ) {
+        non_significant_density <- density(wage_col[data[[severity_col]] == 0], na.rm = TRUE)
+        significant_density <- density(wage_col[data[[severity_col]] == 1], na.rm = TRUE)
+        most_significant_density <- density(wage_col[data[[severity_col]] == 2], na.rm = TRUE)
+
+        max_density_value <- max(c(max(non_significant_density$y, na.rm = TRUE),
+                                   max(significant_density$y, na.rm = TRUE),
+                                   max(most_significant_density$y, na.rm = TRUE)),
+                                 na.rm = TRUE)
+
+        plot(non_significant_density, col = "steelblue4", lwd = 2,
+             main = "Density Plot of Exit Wages by Disability Severity",
+             xlab = "Median Difference Scores", ylab = "Density",
+             xlim = range(c(non_significant_density$x, significant_density$x, most_significant_density$x)),
+             ylim = c(0, max_density_value * 1.1))
+
+        polygon(c(non_significant_density$x, rev(non_significant_density$x)),
+                c(rep(0, length(non_significant_density$x)),
+                  rev(non_significant_density$y)),
+                col = rgb(0.2, 0.6, 1, alpha = 0.3), border = NA)
+
+        lines(significant_density, col = "darkblue", lwd = 2)
+        lines(most_significant_density, col = "darkgray", lwd = 2)
+
+        polygon(c(significant_density$x, rev(significant_density$x)),
+                c(rep(0, length(significant_density$x)),
+                  rev(significant_density$y)),
+                col = rgb(0, 0, 0.5, alpha = 0.3), border = NA)
+
+        polygon(c(most_significant_density$x, rev(most_significant_density$x)),
+                c(rep(0, length(most_significant_density$x)),
+                  rev(most_significant_density$y)),
+                col = rgb(0.5, 0.5, 0.5, alpha = 0.3), border = NA)
+
+        legend("topright", legend = c("Non Significant", "Significant", "Most Significant"),
+               col = c("steelblue4", "darkblue", "darkgray"), lwd = 2)
+      } else {
+        boxplot(wages_vector ~ data[[severity_col]],
+                main = "Exit Wages by Disability Severity",
+                names = c("Non significant", "Significant", "Most significant"),
+                xlab = "Disability Severity",
+                ylab = "Exit Wages ($ per Hour)",
+                col = "steelblue")
+      }
+      dev.off()
+    }
+  )
 
 
   output$meta_wage_plot7 <- renderPlot({
@@ -2100,6 +2663,28 @@ server <- function(input, output, session) {
             col = "steelblue")
 
   })
+
+  output$download_meta_wage_plot7 <- downloadHandler(
+    filename = function() { "exit_wages_by_impairment_type_plot.png" },
+    content = function(file) {
+      png(file)
+      data <- selected_data()
+
+      wage_col <- grep("(?i)^(?=.*wage)(?=.*exit)(?!.*(desc))", names(data),
+                       value = TRUE, perl = TRUE)
+      wages <- data[, .SD, .SDcols = wage_col]
+      wages_vector <- as.vector(unlist(wages))
+
+      boxplot(wages_vector ~ Primary_Impairment_Group,
+              data = data,
+              main = "Exit Wages by Primary Impairment Type",
+              xlab = "Primary Impairment",
+              ylab = "Exit Wages ($ per Hour)",
+              col = "steelblue")
+      dev.off()
+    }
+  )
+
 
 
   output$meta_wage_plot5 <- renderPlot({
@@ -2162,6 +2747,32 @@ server <- function(input, output, session) {
 
   })
 
+  output$download_meta_wage_plot5 <- downloadHandler(
+    filename = function() { "exit_wages_by_race_plot.png" },
+    content = function(file) {
+      png(file)
+      data <- selected_data()
+
+      wage_col <- grep("(?i)^(?=.*wage)(?=.*exit)(?!.*(desc))", names(data),
+                       value = TRUE, perl = TRUE)
+      wages <- data[, .SD, .SDcols = wage_col]
+      wages_vector <- as.vector(unlist(wages))
+
+      race_cols <- grep("(?i)(_indian|_asian|_black|_hawaiian|_islander|_white|hispanic)(?!.*(?i)_desc)",
+                        names(data),
+                        value = TRUE, perl = TRUE)
+
+      data_subset <- data[, .SD, .SDcols = race_cols]
+
+      boxplot(wages_vector ~ data[[race_cols[1]]],
+              main = "Exit Wages by Race/Ethnicity",
+              xlab = "Race/Ethnicity",
+              ylab = "Exit Wages ($ per Hour)",
+              col = "steelblue")
+      dev.off()
+    }
+  )
+
 
 
   output$meta_employ_plot1 <- renderPlot({
@@ -2175,6 +2786,22 @@ server <- function(input, output, session) {
             col = c("lightsteelblue", "steelblue"))
 
   })
+
+  output$download_meta_employ_plot1 <- downloadHandler(
+    filename = function() { "exit_employment_distribution_plot.png" },
+    content = function(file) {
+      png(file)
+      data <- selected_data()
+
+      barplot(table(data$Final_Employment),
+              main = "Distribution of Exit Employment",
+              names = c("Non-competitive", "Competitive"),
+              xlab = "Exit Employment Status",
+              col = c("lightsteelblue", "steelblue"))
+      dev.off()
+    }
+  )
+
 
   output$meta_employ_plot2 <- renderPlot({
     req(selected_data())
@@ -2194,6 +2821,27 @@ server <- function(input, output, session) {
          pch = 8)
 
   })
+
+  output$download_meta_employ_plot2 <- downloadHandler(
+    filename = function() { "exit_employment_across_time_in_program_plot.png" },
+    content = function(file) {
+      png(file)
+      data <- selected_data()
+
+      exit_work_col <- grep("(?i)_exit*(?i)_work(?!.*(?i)_amt)(?!.*(?i)_desc)",
+                            names(data), value = TRUE, perl = TRUE)
+
+      plot(data$Median_Time_Passed_Days,
+           as.character(data$Final_Employment),
+           main = "Exit Employment Across Time in Program",
+           ylab = "Exit Employment",
+           xlab = "Median Days Spent in Programs (per individual)",
+           col = "steelblue",
+           pch = 8)
+      dev.off()
+    }
+  )
+
 
   output$meta_employ_plot3 <- renderPlot({
     req(selected_data())
@@ -2234,6 +2882,32 @@ server <- function(input, output, session) {
 
   })
 
+  output$download_meta_employ_plot3 <- downloadHandler(
+    filename = function() { "exit_employment_across_enrollment_length_plot.png" },
+    content = function(file) {
+      png(file)
+      data <- selected_data()
+
+      employment_enroll_table <- table(data$Final_Employment,
+                                       data[["Enroll_Length_Grp"]])
+
+      rownames(employment_enroll_table) <- c("Non-competitive Employment",
+                                             "Competitive Employment")
+
+      colnames(employment_enroll_table) <- c("<5", "5-10", "11+")
+
+      barplot(employment_enroll_table, beside = TRUE,
+              col = c("lightsteelblue", "steelblue"),
+              legend.text = c("Non-competitive", "Competitive"),
+              args.legend = list(x = "topright", bty = "n",
+                                 title = "Employment Type"),
+              xlab = "Enrollment Length (total quarters)", ylab = "Count",
+              main = "Exit Employment Across Quarters Enrolled")
+      dev.off()
+    }
+  )
+
+
   output$meta_employ_plot4 <- renderPlot({
     req(selected_data())
     data <- selected_data()
@@ -2266,6 +2940,37 @@ server <- function(input, output, session) {
             main = "Exit Employment by Gender")
 
   })
+
+  output$download_meta_employ_plot4 <- downloadHandler(
+    filename = function() { "exit_employment_by_gender_plot.png" },
+    content = function(file) {
+      png(file)
+      data <- selected_data()
+
+      sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
+                      value = TRUE, perl = TRUE)
+
+      employment_gender_table <- table(data$Final_Employment,
+                                       data[[sex_col]])
+
+      rownames(employment_gender_table) <- c("Non-competitive Employment",
+                                             "Competitive Employment")
+
+      colnames(employment_gender_table) <- c("Female",
+                                             "Male",
+                                             "Did not identify")
+
+      barplot(employment_gender_table, beside = TRUE,
+              col = c("lightsteelblue", "steelblue"),
+              legend.text = c("Non-competitive", "Competitive"),
+              args.legend = list(x = "topleft", bty = "n",
+                                 title = "Employment Type"),
+              xlab = "Gender", ylab = "Count",
+              main = "Exit Employment by Gender")
+      dev.off()
+    }
+  )
+
 
   output$meta_employ_plot5 <- renderPlot({
     req(selected_data())
@@ -2331,6 +3036,51 @@ server <- function(input, output, session) {
 
   })
 
+  output$download_meta_employ_plot5 <- downloadHandler(
+    filename = function() { "exit_employment_by_race_plot.png" },
+    content = function(file) {
+      png(file)
+      data <- selected_data()
+
+      race_cols <- grep("(?i)(_indian|_asian|_black|_hawaiian|_islander|_white|hispanic)(?!.*(?i)_desc)",
+                        names(data),
+                        value = TRUE, perl = TRUE)
+
+      data_subset <- data[, .SD, .SDcols = c("Final_Employment",
+                                             race_cols)]
+
+      long_data <- melt(data_subset,
+                        id.vars = "Final_Employment",
+                        measure.vars = race_cols,
+                        variable.name = "Race",
+                        value.name = "Has_Race")
+      filtered_data <- long_data[Has_Race == 1]
+
+      employment_race_table <- table(filtered_data$Final_Employment,
+                                     filtered_data$Race)
+
+      bar_midpoints <- barplot(employment_race_table, beside = TRUE,
+                               col = c("lightsteelblue", "steelblue"),
+                               legend.text = c("Non-competitive", "Competitive"),
+                               args.legend = list(x = "topleft", bty = "n",
+                                                  title = "Employment Type"),
+                               ylab = "Count",
+                               xaxt = "n", yaxt = "n", xlab = "",
+                               main = "Final Employment by Race", las = 2)
+
+      axis(side = 2, las = 2, mgp = c(3, 0.75, 0))
+
+      text(x = colMeans(bar_midpoints),
+           y = par("usr")[3] - 0.45,
+           labels = gsub("^E[0-9]+_|_911$", "", race_cols),
+           xpd = NA,
+           srt = 45,
+           cex = .8,
+           adj = 1)
+      dev.off()
+    }
+  )
+
 
 
   output$meta_employ_plot6 <- renderPlot({
@@ -2363,6 +3113,37 @@ server <- function(input, output, session) {
 
   })
 
+  output$download_meta_employ_plot6 <- downloadHandler(
+    filename = function() { "exit_employment_by_severity_plot.png" },
+    content = function(file) {
+      png(file)
+      data <- selected_data()
+
+      severity_col <- grep("((?i)_priority|(?i)_severity)(?!.*(?i)_desc|_age)",
+                           names(data), value = TRUE, perl = TRUE)
+
+      employment_severity_table <- table(data$Final_Employment,
+                                         data[[severity_col]])
+
+      rownames(employment_severity_table) <- c("Non-competitive Employment",
+                                               "Competitive Employment")
+
+      colnames(employment_severity_table) <- c("Non-significant",
+                                               "Significant",
+                                               "Most significant")
+
+      barplot(employment_severity_table, beside = TRUE,
+              col = c("lightsteelblue", "steelblue"),
+              legend.text = c("Non-competitive", "Competitive"),
+              args.legend = list(x = "topleft", bty = "n",
+                                 title = "Employment Type"),
+              xlab = "Disability Severity", ylab = "Count",
+              main = "Exit Employment by Disability Severity")
+      dev.off()
+    }
+  )
+
+
 
   output$meta_employ_plot7 <- renderPlot({
     req(selected_data())
@@ -2393,6 +3174,30 @@ server <- function(input, output, session) {
             )
 
   })
+
+  output$download_meta_employ_plot7 <- downloadHandler(
+    filename = function() { "exit_employment_by_primary_impairment_plot.png" },
+    content = function(file) {
+      png(file)
+      data <- selected_data()
+
+      employment_prim_dis_table <- table(data$Final_Employment,
+                                         data$Primary_Impairment_Group)
+
+      rownames(employment_prim_dis_table) <- c("Non-competitive Employment",
+                                               "Competitive Employment")
+
+      barplot(employment_prim_dis_table, beside = TRUE,
+              col = c("lightsteelblue", "steelblue"),
+              legend.text = c("Non-competitive", "Competitive"),
+              args.legend = list(x = "topleft", bty = "n",
+                                 title = "Employment Type"),
+              xlab = "Primary Impairment", ylab = "Count",
+              main = "Exit Employment by Primary Impairment")
+      dev.off()
+    }
+  )
+
 
 
 
@@ -2781,6 +3586,20 @@ server <- function(input, output, session) {
     print(rounded_anova)
   })
 
+
+  output$download_model_scores_summary <- downloadHandler(
+    filename = function() {
+      "anova_summary.txt"  # The name of the file to download
+    },
+    content = function(file) {
+      # Extract and round the ANOVA table again for downloading
+      anova_table <- summary(model_scores()$anova)[[1]]
+      rounded_anova <- round(anova_table, 2)
+
+      # Write the summary to a text file
+      write.table(rounded_anova, file, sep = "\t", col.names = NA, quote = FALSE)
+    }
+  )
 
 
   # # Render Tukey HSD pairwise comparison results (significant pairs only)
@@ -3279,6 +4098,42 @@ server <- function(input, output, session) {
   })
 
 
+  output$download_pdf <- downloadHandler(
+    filename = function() {
+      paste("model_results_", Sys.Date(), ".pdf", sep = "")
+    },
+    content = function(file) {
+      # Create a temporary R Markdown file
+      temp_rmd <- tempfile(fileext = ".Rmd")
+
+      # Create the content for the report (replace with actual dynamic content)
+      report_content <- "
+    ---
+    title: 'Model Results Report'
+    output: pdf_document
+    ---
+
+    # Model Summary
+    `r model_summary`
+
+    # Residuals Plots
+    ![Residual Plot 1](residual_plot1.png)
+    ![Residual Plot 2](residual_plot2.png)
+
+    # Other Plots
+    ![Other Plot](other_plot.png)
+    "
+
+      # Write the Rmd content to the temporary file
+      writeLines(report_content, temp_rmd)
+
+      # Render the Rmd file to PDF
+      rmarkdown::render(temp_rmd, output_file = file, clean = TRUE)
+    }
+  )
+
+
+
 
 
   ###################
@@ -3307,22 +4162,34 @@ server <- function(input, output, session) {
             fluidRow(
               column(12, tags$p("ANOVA results:",
                                 style = "font-size: 14px; font-weight: bold;")),
-              column(12, verbatimTextOutput("model_scores_summary"))
+              column(12, verbatimTextOutput("model_scores_summary")),
+              column(12, downloadButton("download_model_scores_summary",
+                                        "Download ANOVA Summary"))
             ),
             fluidRow(
               column(12, tags$p("Significant pairwise comparisons:",
                                 style = "font-size: 14px; font-weight: bold;")),
-              column(12, verbatimTextOutput("tukey_scores_summary"))
+              column(12, verbatimTextOutput("tukey_scores_summary")),
+              column(12, downloadButton("download_tukey_scores_summary",
+                                        "Download Pairwise Summary"))
             )
           )
         },
         fluidRow(
           uiOutput("histogram_explanation2"),
           column(12, plotOutput("scores_residuals1")),
+          column(12, downloadButton("download_scores_residuals1",
+                                    "Download")),
+
           uiOutput("qqplot_explanation2"),
           column(12, plotOutput("scores_residuals2")),
+          column(12, downloadButton("download_scores_residuals2",
+                                    "Download")),
+
           uiOutput("residuals_explanation2"),
-          column(12, plotOutput("scores_residuals3"))
+          column(12, plotOutput("scores_residuals3")),
+          column(12, downloadButton("download_scores_residuals3",
+                                    "Download"))
         )
       )
 
@@ -3440,6 +4307,8 @@ server <- function(input, output, session) {
       #
       fluidRow(
         column(12, verbatimTextOutput("model_metadata_summary")),
+        column(12, downloadButton("download_model_metadata_summary",
+                                  "Download Model Summary")),
 
         # Plot 1 with the appropriate explanation above it
         column(12,
@@ -3453,6 +4322,8 @@ server <- function(input, output, session) {
                ),
                plotOutput("metadata_residuals1")
         ),
+        column(12, downloadButton("download_metadata_residuals1",
+                                  "Download")),
 
         # Plot 2 with the appropriate explanation above it
         column(12,
@@ -3466,6 +4337,8 @@ server <- function(input, output, session) {
                ),
                plotOutput("metadata_residuals2")
         ),
+        column(12, downloadButton("download_metadata_residuals2",
+                                  "Download")),
 
         # Plot 3 with its explanation above it, only for specific responses
         conditionalPanel(
@@ -3473,8 +4346,11 @@ server <- function(input, output, session) {
           column(12,
                  uiOutput("residuals_explanation"),
                  plotOutput("metadata_residuals3")
-          )
+          ),
+          column(12, downloadButton("download_metadata_residuals3",
+                                    "Download"))
         )
+
       )
 
 
