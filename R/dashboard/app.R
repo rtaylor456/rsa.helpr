@@ -964,12 +964,23 @@ server <- function(input, output, session) {
       tabsetPanel(
         tabPanel("General Demographics",
                  plotOutput("meta_gen_demo_plot1"),
+                 downloadButton("download_meta_gen_demo_plot1", "Download Plot"),
+
                  plotOutput("meta_gen_demo_plot2"),
+                 downloadButton("download_meta_gen_demo_plot2", "Download Plot"),
+
                  plotOutput("meta_gen_demo_plot3"),
+                 downloadButton("download_meta_gen_demo_plot3", "Download Plot"),
+
                  plotOutput("meta_gen_demo_plot4"),
+                 downloadButton("download_meta_gen_demo_plot4", "Download Plot"),
+
                  plotOutput("meta_gen_demo_plot5"),
+
                  plotOutput("meta_gen_demo_plot6"),
+
                  plotOutput("meta_gen_demo_plot7")),
+
         tabPanel("Investigate Difference Scores",
                  plotOutput("meta_diff_plot1"),
                  plotOutput("meta_diff_plot2"),
@@ -1364,6 +1375,19 @@ server <- function(input, output, session) {
 
     })
 
+  # Download handler for Time in Programs Plot
+  output$download_meta_gen_demo_plot1 <- downloadHandler(
+    filename = function() { "time_in_programs_plot.png" },
+    content = function(file) {
+      png(file)
+      hist(selected_data()$Median_Time_Passed_Days,
+           col = "steelblue",
+           main = "Distribution of Time in Programs",
+           xlab = "Median Time in Program (per individual)")
+      dev.off()
+    }
+  )
+
   # Enrollment length
   output$meta_gen_demo_plot2 <- renderPlot({
     req(selected_data())
@@ -1375,6 +1399,20 @@ server <- function(input, output, session) {
          xlab = "Enrollment Length (Quarters)")
 
   })
+
+  # Download handler for Enrollment Length Plot
+  output$download_meta_gen_demo_plot2 <- downloadHandler(
+    filename = function() { "enrollment_length_plot.png" },
+    content = function(file) {
+      png(file)
+      hist(selected_data()$Enroll_Length,
+           col = "steelblue",
+           main = "Distribution of Enrollment Lengths",
+           xlab = "Enrollment Length (Quarters)")
+      dev.off()
+    }
+  )
+
 
 
   # Gender
@@ -1392,6 +1430,24 @@ server <- function(input, output, session) {
             col = c("lightsteelblue", "steelblue", "darkblue"))
 
     })
+
+  # Download handler for Gender Distribution Plot
+  output$download_meta_gen_demo_plot3 <- downloadHandler(
+    filename = function() { "gender_distribution_plot.png" },
+    content = function(file) {
+      png(file)
+      sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(selected_data()),
+                      value = TRUE, perl = TRUE)
+
+      barplot(table(selected_data()[[sex_col]]),
+              main = "Distribution of Genders",
+              xlab = "Gender",
+              names = c("Females", "Males", "Did not identify"),
+              col = c("lightsteelblue", "steelblue", "darkblue"))
+      dev.off()
+    }
+  )
+
 
 
   # Race
@@ -1442,6 +1498,40 @@ server <- function(input, output, session) {
          adj = c(1, 1))  # Adjust text alignment to center under bars
 
     })
+
+  # Download handler for Race Distribution Plot
+  output$download_meta_gen_demo_plot4 <- downloadHandler(
+    filename = function() { "race_distribution_plot.png" },
+    content = function(file) {
+      png(file)
+      race_cols <- grep("(?i)(_indian|_asian|_black|_hawaiian|_islander|_white|hispanic)(?!.*(?i)_desc)",
+                        names(selected_data()),
+                        value = TRUE, perl = TRUE)
+
+      data_subset <- selected_data()[, .SD, .SDcols = c("Final_Employment", race_cols)]
+      long_data <- melt(data_subset, id.vars = "Final_Employment", measure.vars = race_cols,
+                        variable.name = "Race", value.name = "Has_Race")
+      filtered_data <- long_data[Has_Race == 1]
+      race_table <- table(filtered_data$Race)
+
+      barplot_heights <- barplot(race_table, beside = TRUE,
+                                 ylab = "Count",
+                                 xaxt = "n",
+                                 yaxt = "n",
+                                 xlab = "",
+                                 main = "Distribution of Race", las = 2,
+                                 col = "steelblue")
+      axis(side = 2, las = 2, mgp = c(3, 0.75, 0))
+      text(x = barplot_heights, y = par("usr")[3] - 0.45,
+           labels = gsub("^E[0-9]+_|_911$", "", race_cols),
+           xpd = NA,
+           srt = 45,
+           cex = .8,
+           adj = c(1, 1))
+      dev.off()
+    }
+  )
+
 
   # Severity
   output$meta_gen_demo_plot5 <- renderPlot({
@@ -2676,30 +2766,109 @@ server <- function(input, output, session) {
   #   anova_run(TRUE)
   # })
 
+  # output$model_scores_summary <- renderPrint({
+  #   req(model_scores())
+  #   summary(model_scores()$anova)
+  # })
+
   output$model_scores_summary <- renderPrint({
     req(model_scores())
-    summary(model_scores()$anova)
+
+    # Extract and round the ANOVA table
+    anova_table <- summary(model_scores()$anova)[[1]]  # Extract the main ANOVA table
+    rounded_anova <- round(anova_table, 2)            # Round the numeric values
+
+    print(rounded_anova)
   })
 
-  # Render Tukey HSD pairwise comparison results (significant pairs only)
+
+
+  # # Render Tukey HSD pairwise comparison results (significant pairs only)
+  # output$tukey_scores_summary <- renderPrint({
+  #   req(model_scores())
+  #   tukey_result <- model_scores()$tukey
+  #
+  #   # Get the Tukey HSD results as a data frame
+  #   tukey_df <- as.data.frame(tukey_result$Services)
+  #   # Or use $Provider for "ANOVA across Providers"
+  #
+  #   # Filter only significant pairs (p-value < 0.05)
+  #   significant_pairs <- tukey_df[tukey_df$`p adj` < 0.05, ]
+  #
+  #   # If there are no significant pairs, print a message
+  #   if (nrow(significant_pairs) == 0) {
+  #     cat("No significant (alpha = 0.05) pairwise comparisons found. May be due to sampling sizes.")
+  #   } else {
+  #     print(significant_pairs)
+  #   }
+  # })
+
+  # output$tukey_scores_summary <- renderPrint({
+  #   req(selected_data())
+  #   req(input$anova)
+  #   data <- selected_data()
+  #   anova_test <- input$anova
+  #
+  #   req(model_scores())
+  #   tukey_result <- model_scores()$tukey
+  #
+  #
+  #   # Get the Tukey HSD results as a data frame
+  #   tukey_df <- as.data.frame(tukey_result$Services)  # Or $Provider for providers
+  #
+  #   # Round numeric columns
+  #   numeric_cols <- sapply(tukey_df, is.numeric)
+  #   tukey_df[, numeric_cols] <- lapply(tukey_df[, numeric_cols], round, 2)
+  #
+  #   # Filter only significant pairs (p-value < 0.05)
+  #   significant_pairs <- tukey_df[tukey_df$`p adj` < 0.05, ]
+  #
+  #   # If there are no significant pairs, print a message
+  #   if (nrow(significant_pairs) == 0) {
+  #     cat("No significant pairwise comparisons found. May be due to sampling sizes.")
+  #   } else {
+  #     print(significant_pairs)
+  #   }
+  # })
+
   output$tukey_scores_summary <- renderPrint({
+    req(selected_data())
+    req(input$anova)
+    data <- selected_data()
+    anova_test <- input$anova
+
     req(model_scores())
     tukey_result <- model_scores()$tukey
 
-    # Get the Tukey HSD results as a data frame
-    tukey_df <- as.data.frame(tukey_result$Services)
-    # Or use $Provider for "ANOVA across Providers"
+    if (anova_test == "ANOVA across Services") {
+      # Get the Tukey HSD results for Services
+      tukey_df <- as.data.frame(tukey_result$Services)
+    } else if (anova_test == "ANOVA across Providers") {
+      # Get the Tukey HSD results for Providers
+      tukey_df <- as.data.frame(tukey_result$Provider)
+    } else {
+      # Print a message if the input is not recognized
+      cat("Invalid selection for ANOVA test. Please choose 'Services' or 'Provider'.")
+      return()
+    }
+
+    # Round numeric columns
+    numeric_cols <- sapply(tukey_df, is.numeric)
+    tukey_df[, numeric_cols] <- lapply(tukey_df[, numeric_cols], round, 2)
 
     # Filter only significant pairs (p-value < 0.05)
     significant_pairs <- tukey_df[tukey_df$`p adj` < 0.05, ]
 
     # If there are no significant pairs, print a message
     if (nrow(significant_pairs) == 0) {
-      cat("No significant pairwise comparisons found. May be due to sampling sizes.")
+      cat("No significant (alpha = 0.05) pairwise comparisons found. May be due to sampling sizes.")
     } else {
       print(significant_pairs)
     }
   })
+
+
+
 
 
   # Reactive function to create residual plots
@@ -2962,31 +3131,153 @@ server <- function(input, output, session) {
     }
   })
 
+  # # Explanation for ROC or Binned Residuals Plot
+  # output$plot_explanation <- renderUI({
+  #   req(model_metadata())
+  #
+  #   # Check the response type
+  #   response <- input$response
+  #
+  #   if (response == "Predict Employment Outcome") {
+  #     # Explanation for ROC plot
+  #     HTML("<b>ROC Curve Explanation:</b> The ROC curve plots the true positive rate (sensitivity) against the false positive rate (1-specificity) at various threshold levels. The Area Under the Curve (AUC) represents the model's ability to discriminate between positive and negative outcomes. A higher AUC indicates better model performance.")
+  #
+  #   } else if (response == "Predict Ending Wage" || response == "Predict Median Difference Score") {
+  #     # Explanation for Residuals vs. Fitted plot
+  #     HTML("<b>Residuals vs Fitted Plot Explanation:</b> This plot helps assess the model fit by showing the residuals (differences between observed and predicted values) against the fitted values (predicted values). Ideally, the residuals should be randomly scattered around 0, indicating that the model's assumptions are valid.")
+  #
+  #   } else {
+  #     # Explanation for Binned Residuals plot
+  #     HTML("<b>Binned Residuals Plot Explanation:</b> This plot divides the data into bins based on fitted values, showing the average residual versus the average fitted value for each bin. It helps assess how well the model fits in different ranges of the predictor variable.")
+  #   }
+  # })
+
   # Explanation for ROC or Binned Residuals Plot
-  output$plot_explanation <- renderUI({
-    req(model_metadata())
+  # output$roc_explanation <- renderUI({
+  #   HTML("<b>ROC Curve Explanation:</b> The ROC curve plots the true positive rate (sensitivity) against the false positive rate (1-specificity) at various threshold levels. The Area Under the Curve (AUC) represents the model's ability to discriminate between positive and negative outcomes. A higher AUC indicates better model performance.")
+  # })
+  # output$binned_explanation <- renderUI({
+  #   HTML("<b>Binned Residuals Plot Explanation:</b> This plot divides the data into bins based on fitted values, showing the average residual versus the average fitted value for each bin. It helps assess how well the model fits in different ranges of the predictor variable.")
+  # })
+  # output$residuals_explanation <- renderUI({
+  #   HTML("<b>Residuals vs Fitted Plot Explanation:</b> This plot helps assess the model fit by showing the residuals (differences between observed and predicted values) against the fitted values (predicted values). Ideally, the residuals should be randomly scattered around 0, indicating that the model's assumptions are valid.")
+  # })
 
-    # Check the response type
-    response <- input$response
 
-    if (response == "Predict Employment Outcome") {
-      # Explanation for ROC plot
+  output$roc_explanation <- renderUI({
+    if (input$response == "Predict Employment Outcome") {
       HTML("<b>ROC Curve Explanation:</b> The ROC curve plots the true positive rate (sensitivity) against the false positive rate (1-specificity) at various threshold levels. The Area Under the Curve (AUC) represents the model's ability to discriminate between positive and negative outcomes. A higher AUC indicates better model performance.")
+    }
+  })
 
-    } else if (response == "Predict Ending Wage" || response == "Predict Median Difference Score") {
-      # Explanation for Residuals vs. Fitted plot
-      HTML("<b>Residuals vs Fitted Plot Explanation:</b> This plot helps assess the model fit by showing the residuals (differences between observed and predicted values) against the fitted values (predicted values). Ideally, the residuals should be randomly scattered around 0, indicating that the model's assumptions are valid.")
-
-    } else {
-      # Explanation for Binned Residuals plot
+  output$binned_explanation <- renderUI({
+    if (input$response == "Predict Employment Outcome") {
       HTML("<b>Binned Residuals Plot Explanation:</b> This plot divides the data into bins based on fitted values, showing the average residual versus the average fitted value for each bin. It helps assess how well the model fits in different ranges of the predictor variable.")
     }
   })
 
+  output$residuals_explanation <- renderUI({
+    if (input$response == "Predict Ending Wage" || input$response == "Predict Median Difference Score") {
+      HTML("<b>Residuals vs Fitted Plot Explanation:</b> This plot helps assess the model fit by showing the residuals (differences between observed and predicted values) against the fitted values (predicted values). Ideally, the residuals should be randomly scattered around 0, indicating that the model's assumptions are valid.")
+    }
+  })
+
+  output$histogram_explanation <- renderUI({
+    if (input$response == "Predict Ending Wage" || input$response == "Predict Median Difference Score") {
+      HTML("<b>Histogram of Residuals Explanation:</b> This plot shows the distribution of the residuals from the model. It helps assess the normality of the residuals, which is an important assumption for linear regression. Ideally, the histogram should resemble a bell-shaped curve, indicating that the residuals are approximately normally distributed.")
+    }
+  })
+
+  output$qqplot_explanation <- renderUI({
+    if (input$response == "Predict Ending Wage" || input$response == "Predict Median Difference Score") {
+      HTML("<b>QQ Plot Explanation:</b> The QQ plot is used to check if the residuals follow a normal distribution. Points should lie approximately on the diagonal line if the residuals are normally distributed. Deviations from the line suggest departures from normality.")
+    }
+  })
+
+
+  # For ANOVA model
+  output$residuals_explanation2 <- renderUI({
+    HTML("<b>Residuals vs Fitted Plot Explanation:</b> This plot helps assess the model fit by showing the residuals (differences between observed and predicted values) against the fitted values (predicted values). Ideally, the residuals should be randomly scattered around 0, indicating that the model's assumptions are valid.")
+  })
+
+  output$histogram_explanation2 <- renderUI({
+    HTML("<b>Histogram of Residuals Explanation:</b> This plot shows the distribution of the residuals from the model. It helps assess the normality of the residuals, which is an important assumption for linear regression. Ideally, the histogram should resemble a bell-shaped curve, indicating that the residuals are approximately normally distributed.")
+  })
+
+  output$qqplot_explanation2 <- renderUI({
+    HTML("<b>QQ Plot Explanation:</b> The QQ plot is used to check if the residuals follow a normal distribution. Points should lie approximately on the diagonal line if the residuals are normally distributed. Deviations from the line suggest departures from normality.")
+  })
+
+
+  # output$model_metadata_summary <- renderPrint({
+  #   req(model_metadata())
+  #   summary(model_metadata())
+  # })
+
+
+  # output$model_metadata_summary <- renderPrint({
+  #   req(model_metadata())
+  #
+  #   # Fit the model (assuming `model_metadata()` is the result of your model fitting)
+  #   model <- model_metadata()
+  #
+  #   # Extract the desired components
+  #   coefficients <- round(coef(summary(model)), 2)
+  #   sigma <- round(summary(model)$sigma, 2)
+  #   r_squared <- round(summary(model)$r.squared, 2)
+  #   adj_r_squared <- round(summary(model)$adj.r.squared, 2)
+  #   f_stat <- round(summary(model)$fstatistic[1], 2) # F-statistic
+  #
+  #   # Print the extracted information
+  #   cat("Coefficients:\n")
+  #   print(coefficients)
+  #   cat("\nResidual Standard Error (sigma):", sigma)
+  #   cat("\nR-squared:", r_squared)
+  #   cat("\nAdjusted R-squared:", adj_r_squared)
+  #   cat("\nF-statistic:", f_stat, "\n")
+  # })
+
   output$model_metadata_summary <- renderPrint({
     req(model_metadata())
-    summary(model_metadata())
+
+    model <- model_metadata()
+
+    # Check if the model is a logistic regression (glm with family binomial)
+    if (inherits(model, "glm") && model$family$family == "binomial") {
+      coefficients <- round(coef(summary(model)), 2)
+      null_deviance <- round(model$null.deviance, 2)
+      residual_deviance <- round(model$deviance, 2)
+      aic <- round(AIC(model), 2)
+
+      # Print the logistic regression summary
+      cat("Logistic Regression Summary:\n")
+      cat("Coefficients:\n")
+      print(coefficients)
+      cat("\nNull Deviance:", null_deviance)
+      cat("\nResidual Deviance:", residual_deviance)
+      cat("\nAIC:", aic, "\n")
+    } else if (inherits(model, "lm")) {
+      # Handle linear model
+      coefficients <- round(coef(summary(model)), 2)
+      sigma <- round(summary(model)$sigma, 2)
+      r_squared <- round(summary(model)$r.squared, 2)
+      adj_r_squared <- round(summary(model)$adj.r.squared, 2)
+      f_stat <- round(summary(model)$fstatistic[1], 2) # F-statistic
+
+      # Print the linear model summary
+      cat("Linear Model Summary:\n")
+      cat("Coefficients:\n")
+      print(coefficients)
+      cat("\nResidual Standard Error (sigma):", sigma)
+      cat("\nR-squared:", r_squared)
+      cat("\nAdjusted R-squared:", adj_r_squared)
+      cat("\nF-statistic:", f_stat, "\n")
+    } else {
+      # Handle unsupported model types
+      cat("Model type not supported for summary output.\n")
+    }
   })
+
 
 
 
@@ -3014,7 +3305,7 @@ server <- function(input, output, session) {
         if (anova_run()) {
           tagList(
             fluidRow(
-              column(12, tags$p("ANOVA results",
+              column(12, tags$p("ANOVA results:",
                                 style = "font-size: 14px; font-weight: bold;")),
               column(12, verbatimTextOutput("model_scores_summary"))
             ),
@@ -3026,8 +3317,11 @@ server <- function(input, output, session) {
           )
         },
         fluidRow(
+          uiOutput("histogram_explanation2"),
           column(12, plotOutput("scores_residuals1")),
+          uiOutput("qqplot_explanation2"),
           column(12, plotOutput("scores_residuals2")),
+          uiOutput("residuals_explanation2"),
           column(12, plotOutput("scores_residuals3"))
         )
       )
@@ -3035,15 +3329,161 @@ server <- function(input, output, session) {
     } else if ((data_choice == "Use Generated Metadata") ||
                (data_choice == "Upload New Dataset" &&
                 dataset_type == "metadata")) {
+      # fluidRow(
+      #   column(12, verbatimTextOutput("model_metadata_summary")),
+      #   column(12, plotOutput("metadata_residuals1")),
+      #   column(12, plotOutput("metadata_residuals2")),
+      #   conditionalPanel(
+      #     condition = "input.response === 'Predict Ending Wage' || input.response === 'Predict Median Difference Score'",
+      #     column(12, plotOutput("metadata_residuals3"))
+      #   ))
+
+      # # this one works so far
+      # fluidRow(
+      #   column(12, verbatimTextOutput("model_metadata_summary")),
+      #   column(12, uiOutput("roc_explanation")),
+      #   column(12, plotOutput("metadata_residuals1")),
+      #   column(12, uiOutput("binned_explanation")),
+      #   column(12, plotOutput("metadata_residuals2")),
+      #   conditionalPanel(
+      #     condition = "input.response === 'Predict Ending Wage' || input.response === 'Predict Median Difference Score'",
+      #     column(12, uiOutput("residuals_explanation")),
+      #     column(12, plotOutput("metadata_residuals3"))
+      #   )
+      # )
+
+      # fluidRow(
+      #   column(12, verbatimTextOutput("model_metadata_summary")),
+      #   column(12, uiOutput("roc_explanation")),
+      #   column(12, plotOutput("metadata_residuals1")),
+      #   column(12, uiOutput("binned_explanation")),
+      #   column(12, plotOutput("metadata_residuals2")),
+      #   conditionalPanel(
+      #     condition = "input.response === 'Predict Ending Wage' || input.response === 'Predict Median Difference Score'",
+      #     column(12, uiOutput("histogram_explanation")),
+      #     column(12, plotOutput("metadata_residuals1")),
+      #     column(12, uiOutput("qqplot_explanation")),
+      #     column(12, plotOutput("metadata_residuals2")),
+      #     column(12, uiOutput("residuals_explanation")),
+      #     column(12, plotOutput("metadata_residuals3")),
+      #   ))
+
+      # fluidRow(
+      #   column(12, verbatimTextOutput("model_metadata_summary")),
+      #
+      #   # Display roc_explanation above plot1 if response is "Predict Employment Outcome"
+      #   # Otherwise, display histogram_explanation above plot1
+      #   conditionalPanel(
+      #     condition = "input.response === 'Predict Employment Outcome'",
+      #     column(12, uiOutput("roc_explanation")),
+      #   ),
+      #   conditionalPanel(
+      #     condition = "input.response !== 'Predict Employment Outcome'",
+      #     column(12, uiOutput("histogram_explanation")),
+      #   ),
+      #
+      #   column(12, plotOutput("metadata_residuals1")),
+      #
+      #   # Display binned_explanation above plot2 if response is "Predict Employment Outcome"
+      #   # Otherwise, display qqplot_explanation above plot2
+      #   conditionalPanel(
+      #     condition = "input.response === 'Predict Employment Outcome'",
+      #     column(12, uiOutput("binned_explanation")),
+      #   ),
+      #   conditionalPanel(
+      #     condition = "input.response !== 'Predict Employment Outcome'",
+      #     column(12, uiOutput("qqplot_explanation")),
+      #   ),
+      #
+      #   column(12, plotOutput("metadata_residuals2")),
+      #
+      #   # Display residuals_explanation above plot3 if response is "Predict Ending Wage" or "Predict Median Difference Score"
+      #   conditionalPanel(
+      #     condition = "input.response === 'Predict Ending Wage' || input.response === 'Predict Median Difference Score'",
+      #     column(12, uiOutput("residuals_explanation")),
+      #     column(12, plotOutput("metadata_residuals3")),
+      #   )
+      # )
+
+      # fluidRow(
+      #   column(12, verbatimTextOutput("model_metadata_summary")),
+      #
+      #   # Plot 1 with explanation above it
+      #   conditionalPanel(
+      #     condition = "input.response === 'Predict Employment Outcome'",
+      #     column(12, uiOutput("roc_explanation"))
+      #   ),
+      #   conditionalPanel(
+      #     condition = "input.response !== 'Predict Employment Outcome'",
+      #     column(12, uiOutput("histogram_explanation"))
+      #   ),
+      #   column(12, plotOutput("metadata_residuals1")),
+      #
+      #   # Plot 2 with explanation above it
+      #   conditionalPanel(
+      #     condition = "input.response === 'Predict Employment Outcome'",
+      #     column(12, uiOutput("binned_explanation"))
+      #   ),
+      #   conditionalPanel(
+      #     condition = "input.response !== 'Predict Employment Outcome'",
+      #     column(12, uiOutput("qqplot_explanation"))
+      #   ),
+      #   column(12, plotOutput("metadata_residuals2")),
+      #
+      #   # Plot 3 with explanation above it, only for specific responses
+      #   conditionalPanel(
+      #     condition = "input.response === 'Predict Ending Wage' || input.response === 'Predict Median Difference Score'",
+      #     column(12, uiOutput("residuals_explanation")),
+      #     column(12, plotOutput("metadata_residuals3"))
+      #   )
+      # )
+      #
       fluidRow(
         column(12, verbatimTextOutput("model_metadata_summary")),
-        column(12, plotOutput("metadata_residuals1")),
-        column(12, plotOutput("metadata_residuals2")),
-        column(12, plotOutput("metadata_residuals3")),
-        column(12,  uiOutput("plot_explanation"))
+
+        # Plot 1 with the appropriate explanation above it
+        column(12,
+               conditionalPanel(
+                 condition = "input.response === 'Predict Employment Outcome'",
+                 uiOutput("roc_explanation")
+               ),
+               conditionalPanel(
+                 condition = "input.response !== 'Predict Employment Outcome'",
+                 uiOutput("histogram_explanation")
+               ),
+               plotOutput("metadata_residuals1")
+        ),
+
+        # Plot 2 with the appropriate explanation above it
+        column(12,
+               conditionalPanel(
+                 condition = "input.response === 'Predict Employment Outcome'",
+                 uiOutput("binned_explanation")
+               ),
+               conditionalPanel(
+                 condition = "input.response !== 'Predict Employment Outcome'",
+                 uiOutput("qqplot_explanation")
+               ),
+               plotOutput("metadata_residuals2")
+        ),
+
+        # Plot 3 with its explanation above it, only for specific responses
+        conditionalPanel(
+          condition = "input.response === 'Predict Ending Wage' || input.response === 'Predict Median Difference Score'",
+          column(12,
+                 uiOutput("residuals_explanation"),
+                 plotOutput("metadata_residuals3")
+          )
+        )
       )
+
+
     }
   })
+
+
+
+
 
 }
 
