@@ -12,7 +12,9 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.1
 Depends: R (>= 4.0.0)
 Imports:
+    rsa.helpr
     data.table
+    shiny
 Suggests: 
     knitr,
     rmarkdown
