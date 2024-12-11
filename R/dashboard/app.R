@@ -3587,6 +3587,14 @@ server <- function(input, output, session) {
   })
 
 
+  output$model_scores_exists <- reactive({
+    req(model_scores())  # Ensure model_scores() is not NULL
+    !is.null(model_scores()$anova)
+    # !is.null(model_scores())
+  })
+
+
+
   output$download_model_scores_summary <- downloadHandler(
     filename = function() {
       "anova_summary.txt"  # The name of the file to download
@@ -3688,8 +3696,6 @@ server <- function(input, output, session) {
 
 
 
-
-
   # Reactive function to create residual plots
   output$scores_residuals1 <- renderPlot({
     req(model_scores())
@@ -3740,6 +3746,8 @@ server <- function(input, output, session) {
   ##################
   # METADATA MODEL #
   ##################
+
+  # model_run <- reactiveVal(FALSE)
 
   model_metadata <- reactive({
     req(selected_data())
@@ -3866,6 +3874,9 @@ server <- function(input, output, session) {
       glm(formula, family = binomial, data = data)
     }
 
+    # # Set model_run to TRUE when the model is executed
+    # model_run(TRUE)
+
   })
 
   # Reactive function to create residual plots
@@ -3984,49 +3995,56 @@ server <- function(input, output, session) {
 
 
   output$roc_explanation <- renderUI({
+    req(model_metadata())
     if (input$response == "Predict Employment Outcome") {
-      HTML("<b>ROC Curve Explanation:</b> The ROC curve plots the true positive rate (sensitivity) against the false positive rate (1-specificity) at various threshold levels. The Area Under the Curve (AUC) represents the model's ability to discriminate between positive and negative outcomes. A higher AUC indicates better model performance.")
+      tags$p(HTML("<b>ROC Curve Explanation:</b> The ROC curve plots the true positive rate (sensitivity) against the false positive rate (1-specificity) at various threshold levels. The Area Under the Curve (AUC) represents the model's ability to discriminate between positive and negative outcomes. A higher AUC indicates better model performance."))
     }
   })
 
   output$binned_explanation <- renderUI({
+    req(model_metadata())
     if (input$response == "Predict Employment Outcome") {
-      HTML("<b>Binned Residuals Plot Explanation:</b> This plot divides the data into bins based on fitted values, showing the average residual versus the average fitted value for each bin. It helps assess how well the model fits in different ranges of the predictor variable.")
+      tags$p(HTML("<b>Binned Residuals Plot Explanation:</b> This plot divides the data into bins based on fitted values, showing the average residual versus the average fitted value for each bin. It helps assess how well the model fits in different ranges of the predictor variable."))
     }
   })
 
   output$residuals_explanation <- renderUI({
+    req(model_metadata())
     if (input$response == "Predict Ending Wage" || input$response == "Predict Median Difference Score") {
-      HTML("<b>Residuals vs Fitted Plot Explanation:</b> This plot helps assess the model fit by showing the residuals (differences between observed and predicted values) against the fitted values (predicted values). Ideally, the residuals should be randomly scattered around 0, indicating that the model's assumptions are valid.")
+      tags$p(HTML("<b>Residuals vs Fitted Plot Explanation:</b> This plot helps assess the model fit by showing the residuals (differences between observed and predicted values) against the fitted values (predicted values). Ideally, the residuals should be randomly scattered around 0, indicating that the model's assumptions are valid."))
     }
   })
 
   output$histogram_explanation <- renderUI({
+    req(model_metadata())
     if (input$response == "Predict Ending Wage" || input$response == "Predict Median Difference Score") {
-      HTML("<b>Histogram of Residuals Explanation:</b> This plot shows the distribution of the residuals from the model. It helps assess the normality of the residuals, which is an important assumption for linear regression. Ideally, the histogram should resemble a bell-shaped curve, indicating that the residuals are approximately normally distributed.")
+      tags$p(HTML("<b>Histogram of Residuals Explanation:</b> This plot shows the distribution of the residuals from the model. It helps assess the normality of the residuals, which is an important assumption for linear regression. Ideally, the histogram should resemble a bell-shaped curve, indicating that the residuals are approximately normally distributed."))
     }
   })
 
   output$qqplot_explanation <- renderUI({
+    req(model_metadata())  # Ensure model_scores() exists
     if (input$response == "Predict Ending Wage" || input$response == "Predict Median Difference Score") {
-      HTML("<b>QQ Plot Explanation:</b> The QQ plot is used to check if the residuals follow a normal distribution. Points should lie approximately on the diagonal line if the residuals are normally distributed. Deviations from the line suggest departures from normality.")
+      tags$p(HTML("<b>QQ Plot Explanation:</b> The QQ plot is used to check if the residuals follow a normal distribution. Points should lie approximately on the diagonal line if the residuals are normally distributed. Deviations from the line suggest departures from normality."))
     }
   })
 
 
   # For ANOVA model
   output$residuals_explanation2 <- renderUI({
-    HTML("<b>Residuals vs Fitted Plot Explanation:</b> This plot helps assess the model fit by showing the residuals (differences between observed and predicted values) against the fitted values (predicted values). Ideally, the residuals should be randomly scattered around 0, indicating that the model's assumptions are valid.")
+    req(model_scores())  # Ensure model_scores() exists
+    tags$p(HTML("<b>Residuals vs Fitted Plot Explanation:</b> This plot helps assess the model fit by showing the residuals (differences between observed and predicted values) against the fitted values (predicted values). Ideally, the residuals should be randomly scattered around 0, indicating that the model's assumptions are valid."))
   })
 
   output$histogram_explanation2 <- renderUI({
-    HTML("<b>Histogram of Residuals Explanation:</b> This plot shows the distribution of the residuals from the model. It helps assess the normality of the residuals, which is an important assumption for linear regression. Ideally, the histogram should resemble a bell-shaped curve, indicating that the residuals are approximately normally distributed.")
+    req(model_scores())  # Ensure model_scores() exists
+    tags$p(HTML("<b>Histogram of Residuals Explanation:</b> This plot shows the distribution of the residuals from the model. It helps assess the normality of the residuals, which is an important assumption for linear regression. Ideally, the histogram should resemble a bell-shaped curve, indicating that the residuals are approximately normally distributed."))
   })
 
   output$qqplot_explanation2 <- renderUI({
-    HTML("<b>QQ Plot Explanation:</b> The QQ plot is used to check if the residuals follow a normal distribution. Points should lie approximately on the diagonal line if the residuals are normally distributed. Deviations from the line suggest departures from normality.")
+    req(model_scores())  # Ensure model_scores() exists
+    tags$p(HTML("<b>QQ Plot Explanation:</b> The QQ plot is used to check if the residuals follow a normal distribution. Points should lie approximately on the diagonal line if the residuals are normally distributed. Deviations from the line suggest departures from normality."))
   })
-
 
   # output$model_metadata_summary <- renderPrint({
   #   req(model_metadata())
@@ -4098,42 +4116,44 @@ server <- function(input, output, session) {
   })
 
 
-  output$download_pdf <- downloadHandler(
-    filename = function() {
-      paste("model_results_", Sys.Date(), ".pdf", sep = "")
-    },
-    content = function(file) {
-      # Create a temporary R Markdown file
-      temp_rmd <- tempfile(fileext = ".Rmd")
+  # output$download_pdf <- downloadHandler(
+  #   filename = function() {
+  #     paste("model_results_", Sys.Date(), ".pdf", sep = "")
+  #   },
+  #   content = function(file) {
+  #     # Create a temporary R Markdown file
+  #     temp_rmd <- tempfile(fileext = ".Rmd")
+  #
+  #     # Create the content for the report (replace with actual dynamic content)
+  #     report_content <- "
+  #   ---
+  #   title: 'Model Results Report'
+  #   output: pdf_document
+  #   ---
+  #
+  #   # Model Summary
+  #   `r model_summary`
+  #
+  #   # Residuals Plots
+  #   ![Residual Plot 1](residual_plot1.png)
+  #   ![Residual Plot 2](residual_plot2.png)
+  #
+  #   # Other Plots
+  #   ![Other Plot](other_plot.png)
+  #   "
+  #
+  #     # Write the Rmd content to the temporary file
+  #     writeLines(report_content, temp_rmd)
+  #
+  #     # Render the Rmd file to PDF
+  #     rmarkdown::render(temp_rmd, output_file = file, clean = TRUE)
+  #   }
+  # )
 
-      # Create the content for the report (replace with actual dynamic content)
-      report_content <- "
-    ---
-    title: 'Model Results Report'
-    output: pdf_document
-    ---
 
-    # Model Summary
-    `r model_summary`
-
-    # Residuals Plots
-    ![Residual Plot 1](residual_plot1.png)
-    ![Residual Plot 2](residual_plot2.png)
-
-    # Other Plots
-    ![Other Plot](other_plot.png)
-    "
-
-      # Write the Rmd content to the temporary file
-      writeLines(report_content, temp_rmd)
-
-      # Render the Rmd file to PDF
-      rmarkdown::render(temp_rmd, output_file = file, clean = TRUE)
-    }
-  )
-
-
-
+  output$model_metadata_exists <- reactive({
+    !is.null(model_metadata())
+  })
 
 
   ###################
@@ -4162,6 +4182,8 @@ server <- function(input, output, session) {
             fluidRow(
               column(12, tags$p("ANOVA results:",
                                 style = "font-size: 14px; font-weight: bold;")),
+
+
               column(12, verbatimTextOutput("model_scores_summary")),
               column(12, downloadButton("download_model_scores_summary",
                                         "Download ANOVA Summary"))
@@ -4176,21 +4198,41 @@ server <- function(input, output, session) {
           )
         },
         fluidRow(
+
+          # conditionalPanel(condition = "output.model_scores_exists==true" ,
+          #                  uiOutput("histogram_explanation2"),
+          #                  column(12, plotOutput("scores_residuals1")),
+          #                  column(12, downloadButton("download_scores_residuals1",
+          #                                            "Download")),
+          #
+          #                  uiOutput("qqplot_explanation2"),
+          #                  column(12, plotOutput("scores_residuals2")),
+          #                  column(12, downloadButton("download_scores_residuals2",
+          #                                            "Download")),
+          #
+          #                  uiOutput("residuals_explanation2"),
+          #                  column(12, plotOutput("scores_residuals3")),
+          #                  column(12, downloadButton("download_scores_residuals3",
+          #                                            "Download"))
+          #                  )
+
           uiOutput("histogram_explanation2"),
           column(12, plotOutput("scores_residuals1")),
-          column(12, downloadButton("download_scores_residuals1",
-                                    "Download")),
+          # column(12, downloadButton("download_scores_residuals1",
+          #                           "Download")),
 
           uiOutput("qqplot_explanation2"),
           column(12, plotOutput("scores_residuals2")),
-          column(12, downloadButton("download_scores_residuals2",
-                                    "Download")),
+          # column(12, downloadButton("download_scores_residuals2",
+          #                           "Download")),
 
           uiOutput("residuals_explanation2"),
           column(12, plotOutput("scores_residuals3")),
-          column(12, downloadButton("download_scores_residuals3",
-                                    "Download"))
+          # column(12, downloadButton("download_scores_residuals3",
+          #                           "Download"))
         )
+
+
       )
 
     } else if ((data_choice == "Use Generated Metadata") ||
@@ -4307,6 +4349,11 @@ server <- function(input, output, session) {
       #
       fluidRow(
         column(12, verbatimTextOutput("model_metadata_summary")),
+        # conditionalPanel(
+        #   condition = "output.model_run == true",
+        #   column(12, downloadButton("download_model_metadata_summary", "Download Model Summary"))
+        # ),
+
         column(12, downloadButton("download_model_metadata_summary",
                                   "Download Model Summary")),
 
@@ -4322,8 +4369,8 @@ server <- function(input, output, session) {
                ),
                plotOutput("metadata_residuals1")
         ),
-        column(12, downloadButton("download_metadata_residuals1",
-                                  "Download")),
+        # column(12, downloadButton("download_metadata_residuals1",
+        #                           "Download")),
 
         # Plot 2 with the appropriate explanation above it
         column(12,
@@ -4337,8 +4384,8 @@ server <- function(input, output, session) {
                ),
                plotOutput("metadata_residuals2")
         ),
-        column(12, downloadButton("download_metadata_residuals2",
-                                  "Download")),
+        # column(12, downloadButton("download_metadata_residuals2",
+        #                           "Download")),
 
         # Plot 3 with its explanation above it, only for specific responses
         conditionalPanel(
@@ -4347,11 +4394,13 @@ server <- function(input, output, session) {
                  uiOutput("residuals_explanation"),
                  plotOutput("metadata_residuals3")
           ),
-          column(12, downloadButton("download_metadata_residuals3",
-                                    "Download"))
+          # column(12, downloadButton("download_metadata_residuals3",
+          #                           "Download"))
         )
 
       )
+
+
 
 
     }
