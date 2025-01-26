@@ -61,13 +61,16 @@ clean_utah <- function(data,
 
   # EXTRA columns that occurs when writing to csv in R--who knows why
   # Remove column X or x if it exists
-  if ("X" %in% names(data)) {
-    data[, X := NULL]
-  }
-  if ("x" %in% names(data)) {
-    data[, x := NULL]
-  }
+  # if ("X" %in% names(data)) {
+  #   data[, X := NULL]
+  # }
+  # if ("x" %in% names(data)) {
+  #   data[, x := NULL]
+  # }
 
+  # add additional miscellaneous columns to add
+  columns_to_remove <- c("X", "x", "V1")
+  data[, (columns_to_remove) := NULL, with = FALSE]
 
 
   ######################
@@ -185,8 +188,12 @@ clean_utah <- function(data,
   sex_cols <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
                    value = TRUE, perl = TRUE)
 
-  data[, (sex_cols) := lapply(.SD, function(x) handle_sex(x, convert_sex)),
-       .SDcols = sex_cols]
+  # data[, (sex_cols) := lapply(.SD, function(x) handle_sex(x, convert_sex)),
+  #      .SDcols = sex_cols]
+
+  data[, (sex_cols) := lapply(.SD, function(x) {
+    handle_values(x, c(1, 2, 3, 9), blank_value = 9)
+  }), .SDcols = sex_cols]
 
 
   # E45_Disability_Priority_911 - 0, 1, 2, NULL (null means something different
