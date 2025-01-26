@@ -1,5 +1,3 @@
-library(data.table)
-
 #' Clean Scores Data
 #'
 #' This function cleans a scores dataset, based on the standard data
