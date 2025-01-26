@@ -15,7 +15,7 @@ library(data.table)
 #' @export
 #' @import data.table
 
-clean_scores2 <- function(data, aggregate = TRUE) {
+clean_scores <- function(data, aggregate = TRUE) {
 
   # Convert to data.table format
   setDT(data)
