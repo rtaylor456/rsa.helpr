@@ -10,7 +10,8 @@ if (!requireNamespace("rsa.helpr", quietly = TRUE)) {
 }
 library(rsa.helpr)
 
-options(shiny.maxRequestSize = 1000 * 1024^2)  # 500MB
+# options(shiny.maxRequestSize = 1000 * 1024^2)  # 500MB
+options(shiny.maxRequestSize = 1.5 * 1024^3)  # 1.5GB
 
 # Define UI
 ui <- fluidPage(

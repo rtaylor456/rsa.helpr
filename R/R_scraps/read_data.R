@@ -1,7 +1,15 @@
 data <- fread("data-raw/data_full_new.csv", stringsAsFactors = FALSE)
 data <- fread("data-raw/full_data.csv", stringsAsFactors = FALSE)
 
+data2 <- fread("data-raw/rsa_full_1_21_25.csv", stringsAsFactors = FALSE)
+
 scores <- fread("data-raw/trt_utah_4_8_2024.csv", stringsAsFactors = FALSE)
+
+scores_NEW <- fread("data-raw/TRT Export 1.13.2025.csv",
+                    stringsAsFactors = FALSE)
+
+scores_NEW_filter <- scores_NEW |> filter(State == "Utah") |>
+  arrange(`Participant ID`)
 
 data_cleaned <- clean_utah(data, aggregate = TRUE)
 nrow(data_cleaned) # 251215 # aggregated: 203427

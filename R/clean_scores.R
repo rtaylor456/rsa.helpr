@@ -15,7 +15,7 @@ library(data.table)
 #' @export
 #' @import data.table
 
-clean_scores <- function(data, aggregate = TRUE) {
+clean_scores2 <- function(data, aggregate = TRUE) {
 
   # Convert to data.table format
   setDT(data)
@@ -32,6 +32,7 @@ clean_scores <- function(data, aggregate = TRUE) {
 
   # remove any unnecessary info from Provider
   provider <- grep("(?i)provider", names(data), value = TRUE, perl = TRUE)
+  # remove stuff in parentheses
   data[, (provider) := lapply(.SD, function(x) sub("\\s*\\([^\\)]+\\)", "", x)),
        .SDcols = provider]
 
@@ -93,21 +94,81 @@ clean_scores <- function(data, aggregate = TRUE) {
                                  Post_Score = Score,
                                  Difference)]
 
+
+  # Select and rename columns, including provider-related variables
+  # pre_selected <- pre_data[, .(Participant_ID,
+  #                              Service,
+  #                              Provider,
+  #                              Time_Passed_Days,
+  #                              Pre_Score = Score,
+  #                              Proctor,
+  #                              Caseload,
+  #                              Group_Frequency = "Group Frequency",
+  #                              Online_Frequency = "Online Frequency",
+  #                              Rural_Frequency = "Rural Frequency")]
+  #             # Add more variables here if needed
+  #
+  # post_selected <- post_data[, .(Participant_ID,
+  #                                Service,
+  #                                Provider,
+  #                                Time_Passed_Days,
+  #                                Post_Score = Score,
+  #                                Difference,
+  #                                Proctor,
+  #                                Caseload,
+  #                                Group_Frequency = "Group Frequency",
+  #                                Online_Frequency = "Online Frequency",
+  #                                Rural_Frequency = "Rural Frequency")]
+  #                         # Same as above
+
+
+
   # Merge the pre and post data
   merged_data <- merge(pre_selected, post_selected,
-                       by = c("Participant_ID", "Service", "Provider", "Time_Passed_Days"),
+                       by = c("Participant_ID", "Service", "Provider",
+                              "Time_Passed_Days"),
                        all = TRUE)
 
+  ## This is the new code to try to prevent an error in merge ##
+  # Convert Participant_ID to factor in both data.tables to ensure the
+  #.  final_data merge works
+  merged_data[, Participant_ID := as.factor(Participant_ID)]
+  overall_scores[, Participant_ID := as.factor(Participant_ID)]
+
   # Merge with overall_scores to get correct Has_Multiple_Scores
-  final_data <- merge(merged_data, overall_scores, by = "Participant_ID", all.x = TRUE)
+  final_data <- merge(merged_data, overall_scores, by = "Participant_ID",
+                      all.x = TRUE)
 
   # Reshape the data from long to wide format
   scores_final <- dcast(
     final_data,
     Participant_ID + Provider ~ Service,
-    value.var = c("Pre_Score", "Post_Score", "Difference", "Time_Passed_Days", "Has_Multiple_Scores"),
+    value.var = c("Pre_Score", "Post_Score", "Difference", "Time_Passed_Days",
+                  "Has_Multiple_Scores"),
     sep = "_"
   )
+
+
+  # Aggregating provider-related variables to retain only one value per
+  #    participant
+  # data[, `:=`(Proctor = first("Proctor"),
+  #             Caseload = first("Caseload"),
+  #             Group_Frequency = first("Group_Frequency"),
+  #             Online_Frequency = first("Online_Frequency"),
+  #             Rural_Frequency = first("Rural_Frequency")),
+  #      by = Participant_ID]
+
+  # Reshape the data from long to wide format
+  # scores_final <- dcast(
+  #   final_data,
+  #   Participant_ID + Provider ~ Service,
+  #   value.var = c("Pre_Score", "Post_Score", "Difference", "Time_Passed_Days",
+  #                 "Has_Multiple_Scores", "Proctor", "Caseload",
+  #                 "Group_Frequency", "Online_Frequency", "Rural_Frequency"),
+  #         # Include provider-related variables here
+  #   sep = "_"
+  # )
+
 
   data <- scores_final
 
