@@ -2076,6 +2076,76 @@ server <- function(input, output, session) {
   #   }
   # )
 
+  # Download handler for meta_diff_plot4
+  output$download_meta_diff_plot4 <- downloadHandler(
+    filename = function() { "difference_scores_by_gender_plot.png" },
+    content = function(file) {
+      png(file)
+      data <- selected_data()
+
+      # Identify the gender/sex column dynamically
+      sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
+                      value = TRUE, perl = TRUE)
+
+      # Define the mapping of numeric values to labels
+      gender_labels <- c(
+        "1" = "Male",
+        "2" = "Female",
+        "3" = "Other",
+        "9" = "Did not identify"
+      )
+
+      # Replace numeric values with labels
+      labeled_gender_data <- factor(data[[sex_col]], levels = names(gender_labels),
+                                    labels = gender_labels)
+
+      # Ensure Median_Difference_Score has enough unique values for each gender
+      if (all(sapply(levels(labeled_gender_data), function(g) {
+        sum(data[[sex_col]] == g & !is.na(data$Median_Difference_Score)) >= 2
+      }))) {
+        # Compute density for each gender
+        density_data <- lapply(levels(labeled_gender_data), function(g) {
+          density(data$Median_Difference_Score[labeled_gender_data == g], na.rm = TRUE)
+        })
+
+        # Determine maximum y-limit for all densities
+        max_density_value <- max(sapply(density_data, function(d) max(d$y, na.rm = TRUE)), na.rm = TRUE)
+
+        # Plot the first density curve to set up the plot
+        plot(density_data[[1]], col = "steelblue4", lwd = 2,
+             main = "Density Plot of Median Difference Scores by Gender",
+             xlab = "Median Difference Scores", ylab = "Density",
+             xlim = range(sapply(density_data, function(d) range(d$x))),
+             ylim = c(0, max_density_value * 1.1))
+
+        # Fill under the first density curve
+        polygon(c(density_data[[1]]$x, rev(density_data[[1]]$x)),
+                c(rep(0, length(density_data[[1]]$x)), rev(density_data[[1]]$y)),
+                col = rgb(0.2, 0.6, 1, alpha = 0.3), border = NA)
+
+        # Add the remaining density curves and their fills
+        colors <- c("darkblue", "darkgray", "lightsteelblue")
+        for (i in 2:length(density_data)) {
+          lines(density_data[[i]], col = colors[i - 1], lwd = 2)
+          polygon(c(density_data[[i]]$x, rev(density_data[[i]]$x)),
+                  c(rep(0, length(density_data[[i]]$x)), rev(density_data[[i]]$y)),
+                  col = rgb(0, 0, 0.5, alpha = 0.3), border = NA)
+        }
+
+        # Add a legend
+        legend("topright", legend = levels(labeled_gender_data), col = c("steelblue4", "darkblue", "darkgray"), lwd = 2)
+      } else {
+        # Fallback: Create a boxplot if densities cannot be plotted
+        boxplot(Median_Difference_Score ~ labeled_gender_data, data = data,
+                main = "Difference Scores by Gender",
+                xlab = "Gender",
+                ylab = "Median Difference Scores",
+                col = "steelblue")
+      }
+
+      dev.off()
+    }
+  )
 
 
 
@@ -2566,74 +2636,147 @@ server <- function(input, output, session) {
   #
   # })
 
+  # output$meta_wage_plot4 <- renderPlot({
+  #   req(selected_data())
+  #   data <- selected_data()
+  #
+  #   # Identify the column with wage data (exit wage column)
+  #   wage_col <- grep("(?i)^(?=.*wage)(?=.*exit)(?!.*(desc))", names(data), value = TRUE, perl = TRUE)
+  #   wages <- data[, .SD, .SDcols = wage_col]
+  #   wages_vector <- as.vector(unlist(wages)) # Convert to vector if needed
+  #
+  #   # Identify the column for gender/sex
+  #   sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data), value = TRUE, perl = TRUE)
+  #
+  #   if (length(sex_col) == 0) {
+  #     stop("No gender/sex column found in the dataset.")
+  #   }
+  #
+  #   if (all(sapply(c(0, 1, 3, 9), function(g) length(unique(wages_vector[data[[sex_col]] == g])) >= 2))) {
+  #     # Calculate densities for each group
+  #     females_density <- density(wages_vector[data[[sex_col]] == 0], na.rm = TRUE)
+  #     males_density <- density(wages_vector[data[[sex_col]] == 1], na.rm = TRUE)
+  #     other_density <- density(wages_vector[data[[sex_col]] == 3], na.rm = TRUE)
+  #     did_not_identify_density <- density(wages_vector[data[[sex_col]] == 9], na.rm = TRUE)
+  #
+  #     # Determine the maximum y value for setting y limits
+  #     max_density_value <- max(c(max(females_density$y, na.rm = TRUE),
+  #                                max(males_density$y, na.rm = TRUE),
+  #                                max(other_density$y, na.rm = TRUE),
+  #                                max(did_not_identify_density$y, na.rm = TRUE)), na.rm = TRUE)
+  #
+  #     # Initialize the plot with dynamic y-limits
+  #     plot(females_density, col = "steelblue4", lwd = 2,
+  #          main = "Density Plot of Exit Wages by Gender",
+  #          xlab = "Exit Wages ($ per Hour)", ylab = "Density",
+  #          xlim = range(c(females_density$x, males_density$x, other_density$x, did_not_identify_density$x)),
+  #          ylim = c(0, max_density_value * 1.1))
+  #
+  #     # Fill under the density curves for each group
+  #     polygon(c(females_density$x, rev(females_density$x)),
+  #             c(rep(0, length(females_density$x)), rev(females_density$y)),
+  #             col = rgb(0.2, 0.6, 1, alpha = 0.3), border = NA)
+  #
+  #     lines(males_density, col = "darkblue", lwd = 2)
+  #     polygon(c(males_density$x, rev(males_density$x)),
+  #             c(rep(0, length(males_density$x)), rev(males_density$y)),
+  #             col = rgb(0, 0, 0.5, alpha = 0.3), border = NA)
+  #
+  #     lines(other_density, col = "darkgreen", lwd = 2)
+  #     polygon(c(other_density$x, rev(other_density$x)),
+  #             c(rep(0, length(other_density$x)), rev(other_density$y)),
+  #             col = rgb(0.2, 0.8, 0.2, alpha = 0.3), border = NA)
+  #
+  #     lines(did_not_identify_density, col = "darkgray", lwd = 2)
+  #     polygon(c(did_not_identify_density$x, rev(did_not_identify_density$x)),
+  #             c(rep(0, length(did_not_identify_density$x)), rev(did_not_identify_density$y)),
+  #             col = rgb(0.5, 0.5, 0.5, alpha = 0.3), border = NA)
+  #
+  #     # Add a legend to identify the gender groups
+  #     legend("topright", legend = c("Females", "Males", "Other", "Did not identify"),
+  #            col = c("steelblue4", "darkblue", "darkgreen", "darkgray"), lwd = 2)
+  #   } else {
+  #     boxplot(wages_vector ~ data[[sex_col]],
+  #             main = "Exit Wages by Gender",
+  #             names = c("Females", "Males", "Other", "Did not identify"),
+  #             xlab = "Gender",
+  #             ylab = "Exit Wages ($ per Hour)",
+  #             col = c("steelblue", "darkblue", "darkgreen", "darkgray"))
+  #   }
+  # })
+
   output$meta_wage_plot4 <- renderPlot({
     req(selected_data())
     data <- selected_data()
 
     # Identify the column with wage data (exit wage column)
-    wage_col <- grep("(?i)^(?=.*wage)(?=.*exit)(?!.*(desc))", names(data), value = TRUE, perl = TRUE)
+    wage_col <- grep("(?i)^(?=.*wage)(?=.*exit)(?!.*(desc))", names(data),
+                     value = TRUE, perl = TRUE)
     wages <- data[, .SD, .SDcols = wage_col]
     wages_vector <- as.vector(unlist(wages)) # Convert to vector if needed
 
     # Identify the column for gender/sex
-    sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data), value = TRUE, perl = TRUE)
+    sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
+                    value = TRUE, perl = TRUE)
 
     if (length(sex_col) == 0) {
       stop("No gender/sex column found in the dataset.")
     }
 
-    if (all(sapply(c(0, 1, 3, 9), function(g) length(unique(wages_vector[data[[sex_col]] == g])) >= 2))) {
-      # Calculate densities for each group
-      females_density <- density(wages_vector[data[[sex_col]] == 0], na.rm = TRUE)
-      males_density <- density(wages_vector[data[[sex_col]] == 1], na.rm = TRUE)
-      other_density <- density(wages_vector[data[[sex_col]] == 3], na.rm = TRUE)
-      did_not_identify_density <- density(wages_vector[data[[sex_col]] == 9], na.rm = TRUE)
+    # Define the mapping of numeric values to labels
+    gender_labels <- c(
+      "1" = "Male",
+      "2" = "Female",
+      "3" = "Other",
+      "9" = "Did not identify"
+    )
 
-      # Determine the maximum y value for setting y limits
-      max_density_value <- max(c(max(females_density$y, na.rm = TRUE),
-                                 max(males_density$y, na.rm = TRUE),
-                                 max(other_density$y, na.rm = TRUE),
-                                 max(did_not_identify_density$y, na.rm = TRUE)), na.rm = TRUE)
+    # Replace numeric values with labels
+    labeled_gender_data <- factor(data[[sex_col]], levels = names(gender_labels),
+                                  labels = gender_labels)
 
-      # Initialize the plot with dynamic y-limits
-      plot(females_density, col = "steelblue4", lwd = 2,
+    # Check if each gender group has enough unique values for density computation
+    if (all(sapply(levels(labeled_gender_data), function(g) {
+      sum(labeled_gender_data == g & !is.na(wages_vector)) >= 2
+    }))) {
+      # Compute density for each gender group
+      density_data <- lapply(levels(labeled_gender_data), function(g) {
+        density(wages_vector[labeled_gender_data == g], na.rm = TRUE)
+      })
+
+      # Determine maximum y-limit for all densities
+      max_density_value <- max(sapply(density_data, function(d) max(d$y, na.rm = TRUE)), na.rm = TRUE)
+
+      # Plot the first density curve to set up the plot
+      plot(density_data[[1]], col = "steelblue4", lwd = 2,
            main = "Density Plot of Exit Wages by Gender",
            xlab = "Exit Wages ($ per Hour)", ylab = "Density",
-           xlim = range(c(females_density$x, males_density$x, other_density$x, did_not_identify_density$x)),
+           xlim = range(sapply(density_data, function(d) range(d$x))),
            ylim = c(0, max_density_value * 1.1))
 
-      # Fill under the density curves for each group
-      polygon(c(females_density$x, rev(females_density$x)),
-              c(rep(0, length(females_density$x)), rev(females_density$y)),
-              col = rgb(0.2, 0.6, 1, alpha = 0.3), border = NA)
+      # Add density curves and fill areas for each group
+      colors <- c("steelblue4", "darkblue", "darkgreen", "darkgray")
+      for (i in seq_along(density_data)) {
+        lines(density_data[[i]], col = colors[i], lwd = 2)
+        polygon(c(density_data[[i]]$x, rev(density_data[[i]]$x)),
+                c(rep(0, length(density_data[[i]]$x)), rev(density_data[[i]]$y)),
+                col = adjustcolor(colors[i], alpha.f = 0.3), border = NA)
+      }
 
-      lines(males_density, col = "darkblue", lwd = 2)
-      polygon(c(males_density$x, rev(males_density$x)),
-              c(rep(0, length(males_density$x)), rev(males_density$y)),
-              col = rgb(0, 0, 0.5, alpha = 0.3), border = NA)
-
-      lines(other_density, col = "darkgreen", lwd = 2)
-      polygon(c(other_density$x, rev(other_density$x)),
-              c(rep(0, length(other_density$x)), rev(other_density$y)),
-              col = rgb(0.2, 0.8, 0.2, alpha = 0.3), border = NA)
-
-      lines(did_not_identify_density, col = "darkgray", lwd = 2)
-      polygon(c(did_not_identify_density$x, rev(did_not_identify_density$x)),
-              c(rep(0, length(did_not_identify_density$x)), rev(did_not_identify_density$y)),
-              col = rgb(0.5, 0.5, 0.5, alpha = 0.3), border = NA)
-
-      # Add a legend to identify the gender groups
-      legend("topright", legend = c("Females", "Males", "Other", "Did not identify"),
-             col = c("steelblue4", "darkblue", "darkgreen", "darkgray"), lwd = 2)
+      # Add legend
+      legend("topright", legend = levels(labeled_gender_data),
+             col = colors, lwd = 2)
     } else {
-      boxplot(wages_vector ~ data[[sex_col]],
+      # Fallback: Create a boxplot if densities cannot be computed
+      boxplot(wages_vector ~ labeled_gender_data, data = data,
               main = "Exit Wages by Gender",
-              names = c("Females", "Males", "Other", "Did not identify"),
               xlab = "Gender",
               ylab = "Exit Wages ($ per Hour)",
               col = c("steelblue", "darkblue", "darkgreen", "darkgray"))
     }
   })
+
+
 
   # output$download_meta_wage_plot4 <- downloadHandler(
   #   filename = function() { "exit_wages_by_gender_plot.png" },
@@ -2702,6 +2845,73 @@ server <- function(input, output, session) {
   # )
 
 
+  # Download handler for meta_wage_plot4
+  # output$download_meta_wage_plot4 <- downloadHandler(
+  #   filename = function() { "exit_wages_by_gender_plot.png" },
+  #   content = function(file) {
+  #     png(file)
+  #     data <- selected_data()
+  #
+  #     wage_col <- grep("(?i)^(?=.*wage)(?=.*exit)(?!.*(desc))", names(data),
+  #                      value = TRUE, perl = TRUE)
+  #     wages <- data[, .SD, .SDcols = wage_col]
+  #     wages_vector <- as.vector(unlist(wages))
+  #
+  #     sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
+  #                     value = TRUE, perl = TRUE)
+  #
+  #     if (length(sex_col) == 0) {
+  #       stop("No gender/sex column found in the dataset.")
+  #     }
+  #
+  #     if (length(unique(wage_col[data[[sex_col]] == 0])) >= 2 &
+  #         length(unique(wage_col[data[[sex_col]] == 1])) >= 2 &
+  #         length(unique(wage_col[data[[sex_col]] == 9])) >= 2
+  #     ) {
+  #       females_density <- density(wages_vector[data[[sex_col]] == 0], na.rm = TRUE)
+  #       males_density <- density(wages_vector[data[[sex_col]] == 1], na.rm = TRUE)
+  #       did_not_identify_density <- density(wages_vector[data[[sex_col]] == 9], na.rm = TRUE)
+  #
+  #       max_density_value <- max(c(max(females_density$y, na.rm = TRUE),
+  #                                  max(males_density$y, na.rm = TRUE),
+  #                                  max(did_not_identify_density$y, na.rm = TRUE)),
+  #                                na.rm = TRUE)
+  #
+  #       plot(females_density, col = "steelblue4", lwd = 2,
+  #            main = "Density Plot of Exit Wages by Gender",
+  #            xlab = "Exit Wages ($ per Hour)", ylab = "Density",
+  #            xlim = range(c(females_density$x, males_density$x,
+  #                           did_not_identify_density$x)),
+  #            ylim = c(0, max_density_value * 1.1))
+  #
+  #       polygon(c(females_density$x, rev(females_density$x)),
+  #               c(rep(0, length(females_density$x)), rev(females_density$y)),
+  #               col = rgb(0.2, 0.6, 1, alpha = 0.3), border = NA)
+  #
+  #       lines(males_density, col = "darkblue", lwd = 2)
+  #       polygon(c(males_density$x, rev(males_density$x)),
+  #               c(rep(0, length(males_density$x)), rev(males_density$y)),
+  #               col = rgb(0, 0, 0.5, alpha = 0.3), border = NA)
+  #
+  #       lines(did_not_identify_density, col = "darkgray", lwd = 2)
+  #       polygon(c(did_not_identify_density$x, rev(did_not_identify_density$x)),
+  #               c(rep(0, length(did_not_identify_density$x)),
+  #                 rev(did_not_identify_density$y)),
+  #               col = rgb(0.5, 0.5, 0.5, alpha = 0.3), border = NA)
+  #
+  #       legend("topright", legend = c("Females", "Males", "Did not identify"),
+  #              col = c("steelblue4", "darkblue", "darkgray"), lwd = 2)
+  #     } else {
+  #       boxplot(wages_vector ~ data[[sex_col]],
+  #               main = "Exit Wages by Gender",
+  #               names = c("Females", "Males", "Did not identify"),
+  #               xlab = "Gender",
+  #               ylab = "Exit Wages ($ per Hour)",
+  #               col = "steelblue")
+  #     }
+  #     dev.off()
+  #   }
+  # )
 
   # Download handler for meta_wage_plot4
   output$download_meta_wage_plot4 <- downloadHandler(
@@ -2710,11 +2920,13 @@ server <- function(input, output, session) {
       png(file)
       data <- selected_data()
 
+      # Identify the column with wage data (exit wage column)
       wage_col <- grep("(?i)^(?=.*wage)(?=.*exit)(?!.*(desc))", names(data),
                        value = TRUE, perl = TRUE)
       wages <- data[, .SD, .SDcols = wage_col]
       wages_vector <- as.vector(unlist(wages))
 
+      # Identify the column for gender/sex
       sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
                       value = TRUE, perl = TRUE)
 
@@ -2722,54 +2934,62 @@ server <- function(input, output, session) {
         stop("No gender/sex column found in the dataset.")
       }
 
-      if (length(unique(wage_col[data[[sex_col]] == 0])) >= 2 &
-          length(unique(wage_col[data[[sex_col]] == 1])) >= 2 &
-          length(unique(wage_col[data[[sex_col]] == 9])) >= 2
-      ) {
-        females_density <- density(wages_vector[data[[sex_col]] == 0], na.rm = TRUE)
-        males_density <- density(wages_vector[data[[sex_col]] == 1], na.rm = TRUE)
-        did_not_identify_density <- density(wages_vector[data[[sex_col]] == 9], na.rm = TRUE)
+      # Define the mapping of numeric values to labels
+      gender_labels <- c(
+        "1" = "Male",
+        "2" = "Female",
+        "3" = "Other",
+        "9" = "Did not identify"
+      )
 
-        max_density_value <- max(c(max(females_density$y, na.rm = TRUE),
-                                   max(males_density$y, na.rm = TRUE),
-                                   max(did_not_identify_density$y, na.rm = TRUE)),
-                                 na.rm = TRUE)
+      # Replace numeric values with labels
+      labeled_gender_data <- factor(data[[sex_col]], levels = names(gender_labels),
+                                    labels = gender_labels)
 
-        plot(females_density, col = "steelblue4", lwd = 2,
+      # Check if each gender group has enough unique values for density computation
+      if (all(sapply(levels(labeled_gender_data), function(g) {
+        sum(labeled_gender_data == g & !is.na(wages_vector)) >= 2
+      }))) {
+        # Compute density for each gender group
+        density_data <- lapply(levels(labeled_gender_data), function(g) {
+          density(wages_vector[labeled_gender_data == g], na.rm = TRUE)
+        })
+
+        # Determine maximum y-limit for all densities
+        max_density_value <- max(sapply(density_data, function(d) max(d$y, na.rm = TRUE)), na.rm = TRUE)
+
+        # Plot the first density curve to set up the plot
+        plot(density_data[[1]], col = "steelblue4", lwd = 2,
              main = "Density Plot of Exit Wages by Gender",
              xlab = "Exit Wages ($ per Hour)", ylab = "Density",
-             xlim = range(c(females_density$x, males_density$x,
-                            did_not_identify_density$x)),
+             xlim = range(sapply(density_data, function(d) range(d$x))),
              ylim = c(0, max_density_value * 1.1))
 
-        polygon(c(females_density$x, rev(females_density$x)),
-                c(rep(0, length(females_density$x)), rev(females_density$y)),
-                col = rgb(0.2, 0.6, 1, alpha = 0.3), border = NA)
+        # Add density curves and fill areas for each group
+        colors <- c("steelblue4", "darkblue", "darkgreen", "darkgray")
+        for (i in seq_along(density_data)) {
+          lines(density_data[[i]], col = colors[i], lwd = 2)
+          polygon(c(density_data[[i]]$x, rev(density_data[[i]]$x)),
+                  c(rep(0, length(density_data[[i]]$x)), rev(density_data[[i]]$y)),
+                  col = adjustcolor(colors[i], alpha.f = 0.3), border = NA)
+        }
 
-        lines(males_density, col = "darkblue", lwd = 2)
-        polygon(c(males_density$x, rev(males_density$x)),
-                c(rep(0, length(males_density$x)), rev(males_density$y)),
-                col = rgb(0, 0, 0.5, alpha = 0.3), border = NA)
-
-        lines(did_not_identify_density, col = "darkgray", lwd = 2)
-        polygon(c(did_not_identify_density$x, rev(did_not_identify_density$x)),
-                c(rep(0, length(did_not_identify_density$x)),
-                  rev(did_not_identify_density$y)),
-                col = rgb(0.5, 0.5, 0.5, alpha = 0.3), border = NA)
-
-        legend("topright", legend = c("Females", "Males", "Did not identify"),
-               col = c("steelblue4", "darkblue", "darkgray"), lwd = 2)
+        # Add legend
+        legend("topright", legend = levels(labeled_gender_data),
+               col = colors, lwd = 2)
       } else {
-        boxplot(wages_vector ~ data[[sex_col]],
+        # Fallback: Create a boxplot if densities cannot be computed
+        boxplot(wages_vector ~ labeled_gender_data, data = data,
                 main = "Exit Wages by Gender",
-                names = c("Females", "Males", "Did not identify"),
                 xlab = "Gender",
                 ylab = "Exit Wages ($ per Hour)",
-                col = "steelblue")
+                col = c("steelblue", "darkblue", "darkgreen", "darkgray"))
       }
+
       dev.off()
     }
   )
+
 
 
 
@@ -3184,39 +3404,112 @@ server <- function(input, output, session) {
   )
 
 
+  # output$meta_employ_plot4 <- renderPlot({
+  #   req(selected_data())
+  #   data <- selected_data()
+  #
+  #   # the name for the gender/sex column could be varied, so we need to
+  #   #   account for this possibility
+  #   sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
+  #                   value = TRUE, perl = TRUE)
+  #
+  #
+  #   # Create a contingency table of Final_Employment by Gender
+  #   employment_gender_table <- table(data$Final_Employment,
+  #                                    data[[sex_col]])
+  #
+  #   rownames(employment_gender_table) <- c("Non-competitive Employment",
+  #                                          "Competitive Employment")
+  #
+  #   colnames(employment_gender_table) <- c("Male",
+  #                                          "Female",
+  #                                          "Other",
+  #                                          "Did not identify")
+  #
+  #
+  #   # Create a bar plot with bars broken up by gender
+  #   barplot(employment_gender_table, beside = TRUE,
+  #           col = c("lightsteelblue", "steelblue"),
+  #           legend.text = c("Non-competitive", "Competitive"),
+  #           args.legend = list(x = "topleft", bty = "n",
+  #                              title = "Employment Type"),
+  #           xlab = "Gender", ylab = "Count",
+  #           main = "Exit Employment by Gender")
+  #
+  # })
+
   output$meta_employ_plot4 <- renderPlot({
     req(selected_data())
     data <- selected_data()
 
-    # the name for the gender/sex column could be varied, so we need to
-    #   account for this possibility
+    # Identify the gender/sex column dynamically
     sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
                     value = TRUE, perl = TRUE)
 
+    if (length(sex_col) == 0) {
+      stop("No gender/sex column found in the dataset.")
+    }
+
+    # Define the mapping of numeric values to labels
+    gender_labels <- c(
+      "1" = "Male",
+      "2" = "Female",
+      "3" = "Other",
+      "9" = "Did not identify"
+    )
+
+    # Replace numeric values with labels
+    labeled_gender_data <- factor(data[[sex_col]], levels = names(gender_labels),
+                                  labels = gender_labels)
 
     # Create a contingency table of Final_Employment by Gender
-    employment_gender_table <- table(data$Final_Employment,
-                                     data[[sex_col]])
+    employment_gender_table <- table(data$Final_Employment, labeled_gender_data)
 
+    # Assign row names for employment types
     rownames(employment_gender_table) <- c("Non-competitive Employment",
                                            "Competitive Employment")
-
-    colnames(employment_gender_table) <- c("Male",
-                                           "Female",
-                                           "Other",
-                                           "Did not identify")
-
 
     # Create a bar plot with bars broken up by gender
     barplot(employment_gender_table, beside = TRUE,
             col = c("lightsteelblue", "steelblue"),
             legend.text = c("Non-competitive", "Competitive"),
-            args.legend = list(x = "topleft", bty = "n",
+            args.legend = list(x = "topright", bty = "n",
                                title = "Employment Type"),
             xlab = "Gender", ylab = "Count",
             main = "Exit Employment by Gender")
-
   })
+
+
+  # output$download_meta_employ_plot4 <- downloadHandler(
+  #   filename = function() { "exit_employment_by_gender_plot.png" },
+  #   content = function(file) {
+  #     png(file)
+  #     data <- selected_data()
+  #
+  #     sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
+  #                     value = TRUE, perl = TRUE)
+  #
+  #     employment_gender_table <- table(data$Final_Employment,
+  #                                      data[[sex_col]])
+  #
+  #     rownames(employment_gender_table) <- c("Non-competitive Employment",
+  #                                            "Competitive Employment")
+  #
+  #     colnames(employment_gender_table) <- c("Male",
+  #                                            "Female",
+  #                                            "Other",
+  #                                            "Did not identify")
+  #
+  #     barplot(employment_gender_table, beside = TRUE,
+  #             col = c("lightsteelblue", "steelblue"),
+  #             legend.text = c("Non-competitive", "Competitive"),
+  #             args.legend = list(x = "topleft", bty = "n",
+  #                                title = "Employment Type"),
+  #             xlab = "Gender", ylab = "Count",
+  #             main = "Exit Employment by Gender")
+  #     dev.off()
+  #   }
+  # )
 
   output$download_meta_employ_plot4 <- downloadHandler(
     filename = function() { "exit_employment_by_gender_plot.png" },
@@ -3224,31 +3517,45 @@ server <- function(input, output, session) {
       png(file)
       data <- selected_data()
 
+      # Identify the gender/sex column dynamically
       sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
                       value = TRUE, perl = TRUE)
 
-      employment_gender_table <- table(data$Final_Employment,
-                                       data[[sex_col]])
+      if (length(sex_col) == 0) {
+        stop("No gender/sex column found in the dataset.")
+      }
 
+      # Define the mapping of numeric values to labels
+      gender_labels <- c(
+        "1" = "Male",
+        "2" = "Female",
+        "3" = "Other",
+        "9" = "Did not identify"
+      )
+
+      # Replace numeric values with labels
+      labeled_gender_data <- factor(data[[sex_col]], levels = names(gender_labels),
+                                    labels = gender_labels)
+
+      # Create a contingency table of Final_Employment by Gender
+      employment_gender_table <- table(data$Final_Employment, labeled_gender_data)
+
+      # Assign row names for employment types
       rownames(employment_gender_table) <- c("Non-competitive Employment",
                                              "Competitive Employment")
 
-      colnames(employment_gender_table) <- c("Male",
-                                             "Female",
-                                             "Other",
-                                             "Did not identify")
-
+      # Create a bar plot with bars broken up by gender
       barplot(employment_gender_table, beside = TRUE,
               col = c("lightsteelblue", "steelblue"),
               legend.text = c("Non-competitive", "Competitive"),
-              args.legend = list(x = "topleft", bty = "n",
+              args.legend = list(x = "topright", bty = "n",
                                  title = "Employment Type"),
               xlab = "Gender", ylab = "Count",
               main = "Exit Employment by Gender")
+
       dev.off()
     }
   )
-
 
   output$meta_employ_plot5 <- renderPlot({
     req(selected_data())
@@ -4282,7 +4589,7 @@ server <- function(input, output, session) {
   output$binned_explanation <- renderUI({
     req(model_metadata())
     if (input$response == "Predict Employment Outcome") {
-      tags$p(HTML("<b>Binned Residuals Plot Explanation:</b> This plot divides the data into bins based on fitted values, showing the average residual versus the average fitted value for each bin. It helps assess how well the model fits in different ranges of the predictor variable."))
+      tags$p(HTML("<b>Binned Residuals Plot Explanation:</b> This plot divides the data into bins based on fitted values, showing the average residual versus the average fitted value for each bin. It helps assess how well the model fits in different ranges of the predictor variable. For a reasonable model, we hope to see the residuals scattered randomly around 0 with no discernible pattern. This indicates that the model's assumptions are valid and the errors are randomly distributed. If the residuals display a systematic trend (e.g., a curve or increasing/decreasing spread), it may suggest issues such as non-linearity, heteroscedasticity, or a missing predictor variable."))
     }
   })
 
