@@ -4,6 +4,8 @@ data <- fread("data-raw/full_data.csv", stringsAsFactors = FALSE)
 data2 <- fread("data-raw/rsa_full_1_21_25.csv", stringsAsFactors = FALSE)
 
 scores <- fread("data-raw/trt_utah_4_8_2024.csv", stringsAsFactors = FALSE)
+scores <- fread("data-raw/trt_utah_6_3_2024_4pm.csv", stringsAsFactors = FALSE)
+
 
 scores_NEW <- fread("data-raw/TRT Export 1.13.2025.csv",
                     stringsAsFactors = FALSE)
