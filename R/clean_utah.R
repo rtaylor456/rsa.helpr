@@ -11,9 +11,6 @@ library(data.table)
 #' @param unidentified_to_O TRUE or FALSE. Defaults to TRUE, when TRUE,
 #'   variables where unidentified is represented by 9,
 #'   values are converted to 0.
-#' @param convert_sex TRUE or FALSE. Defaults to TRUE, when TRUE, the
-#'   traditional sex/gender variable value of 2 is converted to a more standard
-#'   binary value of 0.
 #' @param clean_specials TRUE or FALSE. Defaults to FALSE, when TRUE, variables
 #'   containing special characters are cleaned and separated into new variables.
 #' @param remove_desc TRUE or FALSE. Defaults to TRUE, when TRUE, description
@@ -30,11 +27,11 @@ library(data.table)
 clean_utah <- function(data,
                        aggregate = TRUE,
                        unidentified_to_0 = TRUE,
-                       convert_sex = TRUE,
+                       # convert_sex = TRUE,
                        # convert_employ = TRUE,
                        clean_specials = FALSE,
                        remove_desc = TRUE,
-                       remove_strictly_na = TRUE){
+                       remove_strictly_na = TRUE) {
   # remove redundancies in ids
   # add in a new variable that counts redundancies
 
