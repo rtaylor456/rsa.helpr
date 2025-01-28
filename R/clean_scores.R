@@ -13,7 +13,7 @@
 #' @export
 #' @import data.table
 
-clean_scores <- function(data, aggregate = TRUE) {
+clean_scores2 <- function(data, state_filter = NULL, aggregate = TRUE) {
 
   # Convert to data.table format
   setDT(data)
@@ -21,6 +21,19 @@ clean_scores <- function(data, aggregate = TRUE) {
   # do some necessary renaming of variables
   participant <- grep("(?i)^(?=.*participant)|(?=.*\\bid\\b)(?!.*\\bid\\B)",
                       names(data), value = TRUE, perl = TRUE)
+  # order by participant
+  data <- data[order(get(participant))]
+  # base R version:
+  # data <- data[order(data[[participant]]), ]
+
+  # filter by state
+  state <- grep("(?i)^(?=.*state)|(?=.*\\bst\\b)(?!.*\\bst\\B)",
+                      names(data), value = TRUE, perl = TRUE)
+
+  # Apply state filter, if provided by user
+  if (!is.null(state_filter)) {
+    data <- data[get(state) %in% state_filter]
+  }
 
   pre_post <- grep("(?i)^(?=.*pre)(?=.*post)",
                    names(data), value = TRUE, perl = TRUE)
@@ -30,9 +43,13 @@ clean_scores <- function(data, aggregate = TRUE) {
 
   # remove any unnecessary info from Provider
   provider <- grep("(?i)provider", names(data), value = TRUE, perl = TRUE)
+
   # remove stuff in parentheses
   data[, (provider) := lapply(.SD, function(x) sub("\\s*\\([^\\)]+\\)", "", x)),
        .SDcols = provider]
+  # COME BACK HERE
+  # add code to abbreviate the names systematically--unless they are already
+  #  abbreviated
 
   # Remove "(MST)" and convert 'Completed' to POSIXct
   # data[, Completed := mdy_hms(gsub(" \\(MST\\)", "", Completed))]
@@ -82,12 +99,16 @@ clean_scores <- function(data, aggregate = TRUE) {
   pre_selected <- pre_data[, .(Participant_ID,
                                Service,
                                Provider,
+                               State,
+                               Mode,
                                Time_Passed_Days,
                                Pre_Score = Score)]
 
   post_selected <- post_data[, .(Participant_ID,
                                  Service,
                                  Provider,
+                                 State,
+                                 Mode,
                                  Time_Passed_Days,
                                  Post_Score = Score,
                                  Difference)]
@@ -140,7 +161,7 @@ clean_scores <- function(data, aggregate = TRUE) {
   # Reshape the data from long to wide format
   scores_final <- dcast(
     final_data,
-    Participant_ID + Provider ~ Service,
+    Participant_ID + Provider + State + Mode ~ Service,
     value.var = c("Pre_Score", "Post_Score", "Difference", "Time_Passed_Days",
                   "Has_Multiple_Scores"),
     sep = "_"
