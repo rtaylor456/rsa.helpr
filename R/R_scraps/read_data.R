@@ -1,7 +1,7 @@
 data <- fread("data-raw/data_full_new.csv", stringsAsFactors = FALSE)
 data <- fread("data-raw/full_data.csv", stringsAsFactors = FALSE)
 
-data_NEW <- fread("data-raw/rsa_full_1_21_25.csv", stringsAsFactors = FALSE)
+data_NEW <- fread("data-raw/rsa_full_1_29_25.csv", stringsAsFactors = FALSE)
 
 
 scores <- fread("data-raw/trt_utah_4_8_2024.csv", stringsAsFactors = FALSE)
@@ -9,6 +9,9 @@ scores <- fread("data-raw/trt_utah_6_3_2024_4pm.csv", stringsAsFactors = FALSE)
 
 
 scores_NEW <- fread("data-raw/TRT Export 1.13.2025.csv",
+                    stringsAsFactors = FALSE)
+
+scores_NEW <- fread("data-raw/TRT Data_1.28.2025 at 12_00pm.csv",
                     stringsAsFactors = FALSE)
 
 scores_NEW_filter <- scores_NEW |> dplyr::filter(State == "Utah") |>
