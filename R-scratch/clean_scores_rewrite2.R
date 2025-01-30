@@ -13,36 +13,40 @@
 #' @export
 #' @import data.table
 
-clean_scores <- function(data, state_filter = NULL, aggregate = TRUE) {
+clean_scores3 <- function(data, state_filter = NULL, aggregate = TRUE) {
 
   # Convert to data.table format
   setDT(data)
 
-  # do some necessary renaming of variables
+  # Identify dynamic column names
   participant <- grep("(?i)^(?=.*participant)|(?=.*\\bid\\b)(?!.*\\bid\\B)",
                       names(data), value = TRUE, perl = TRUE)
-  # order by participant
-  data <- data[order(get(participant))]
-  # base R version:
-  # data <- data[order(data[[participant]]), ]
-
-  # filter by state
   state <- grep("(?i)^(?=.*state)|(?=.*\\bst\\b)(?!.*\\bst\\B)",
-                      names(data), value = TRUE, perl = TRUE)
+                names(data), value = TRUE, perl = TRUE)
+  provider <- grep("(?i)provider", names(data), value = TRUE, perl = TRUE)
+  mode <- grep("(?i)mode", names(data), value = TRUE, perl = TRUE)
+  pre_post <- grep("(?i)^(?=.*pre)(?=.*post)",
+                   names(data), value = TRUE, perl = TRUE)
+  completed <- grep("(?i)^(?=.*complete)|(?=.*date)",
+                    names(data), value = TRUE, perl = TRUE)
+
+  # ADD TO THIS
+
+  # Rename columns for consistency
+  names(data)[names(data) %in% participant] <- "Participant_ID"
+  names(data)[names(data) %in% state] <- "State"
+  names(data)[names(data) %in% provider] <- "Provider"
+  names(data)[names(data) %in% mode] <- "Mode"
+  names(data)[names(data) %in% pre_post] <- "Pre_Post"
+  names(data)[names(data) %in% completed] <- "Completed"
 
   # Apply state filter, if provided by user
   if (!is.null(state_filter)) {
-    data <- data[get(state) %in% state_filter]
+    data <- data[State %in% state_filter]
   }
 
-  pre_post <- grep("(?i)^(?=.*pre)(?=.*post)",
-                   names(data), value = TRUE, perl = TRUE)
-
-  names(data)[names(data) %in% participant] <- "Participant_ID"
-  names(data)[names(data) %in% pre_post] <- "Pre_Post"
-
-  # remove any unnecessary info from Provider
-  provider <- grep("(?i)provider", names(data), value = TRUE, perl = TRUE)
+  # Order data by participant
+  data <- data[order(Participant_ID)]
 
   # remove stuff in parentheses
   data[, (provider) := lapply(.SD, function(x) sub("\\s*\\([^\\)]+\\)", "", x)),
@@ -51,9 +55,34 @@ clean_scores <- function(data, state_filter = NULL, aggregate = TRUE) {
   # add code to abbreviate the names systematically--unless they are already
   #  abbreviated
 
-  # Remove "(MST)" and convert 'Completed' to POSIXct
-  # data[, Completed := mdy_hms(gsub(" \\(MST\\)", "", Completed))]
+  # Create a new variable Provider_summary that contains the most common
+  #   provider per participant
+  data[, Provider_summary := names(sort(table(Provider), decreasing = TRUE))[1],
+       by = Participant_ID]
 
+  # do the same thing for Mode
+
+  # data[, Mode_summary := names(sort(table(Mode), decreasing = TRUE))[1],
+  #      by = Participant_ID]
+  data[, Mode_summary := {
+    mode_table <- table(Mode)  # Create a frequency table for 'Mode'
+    sorted_modes <- sort(mode_table, decreasing = TRUE)  # Sort in decreasing order
+    most_common <- names(sorted_modes)[1]  # Most common value
+
+    # Check if the most common value is NA
+    if (most_common %in% c("NA", " ", "", NULL) ) {
+      second_most_common <- names(sorted_modes)[2]  # Get the second most common value
+      second_most_common  # Assign it to Mode_summary
+    } else {
+      most_common  # Assign the most common value to Mode_summary
+    }
+  }, by = Participant_ID]
+
+  # Clean and convert Mode
+  # Ordinal: no help > observer > with help, NULL
+
+
+  # Remove "(MST)" and convert 'Completed' to POSIXct
   data[, Completed := as.POSIXct(gsub(" \\(MST\\)", "", Completed),
                                  format = "%m/%d/%Y %H:%M:%S", tz = "UTC")]
 
@@ -74,6 +103,7 @@ clean_scores <- function(data, state_filter = NULL, aggregate = TRUE) {
   # Convert certain variables to factors
   data[, c("Participant_ID", "Service", "Provider") := lapply(.SD, as.factor),
        .SDcols = c("Participant_ID", "Service", "Provider")]
+  ## ADD to this
 
   # Calculate Time_Passed_Days
   data[, Time_Passed_Days := as.numeric(difftime(max(Completed),
@@ -98,17 +128,17 @@ clean_scores <- function(data, state_filter = NULL, aggregate = TRUE) {
   # Select and rename columns
   pre_selected <- pre_data[, .(Participant_ID,
                                Service,
-                               Provider,
+                               Provider_summary,
                                State,
-                               Mode,
+                               Mode_summary,
                                Time_Passed_Days,
                                Pre_Score = Score)]
 
   post_selected <- post_data[, .(Participant_ID,
                                  Service,
-                                 Provider,
+                                 Provider_summary,
                                  State,
-                                 Mode,
+                                 Mode_summary,
                                  Time_Passed_Days,
                                  Post_Score = Score,
                                  Difference)]
@@ -116,15 +146,35 @@ clean_scores <- function(data, state_filter = NULL, aggregate = TRUE) {
 
   # Merge the pre and post data
   merged_data <- merge(pre_selected, post_selected,
-                       by = c("Participant_ID", "Service", "Provider",
+                       by = c("Participant_ID", "Service", "Provider_summary",
+                              "Mode_summary",
                               "Time_Passed_Days"),
                        all = TRUE)
+
+  # Combine State and Mode columns
+  merged_data[, State := fifelse(!is.na(State.x), State.x, State.y)]
+
+  # merged_data[, Mode := fifelse(!is.na(Mode.x), Mode.x, Mode.y)]
+
+  # Drop unnecessary columns
+  # merged_data[, c("State.x", "State.y", "Mode.x", "Mode.y") := NULL]
+  merged_data[, c("State.x", "State.y") := NULL]
 
   ## This is the new code to try to prevent an error in merge ##
   # Convert Participant_ID to factor in both data.tables to ensure the
   #.  final_data merge works
   merged_data[, Participant_ID := as.factor(Participant_ID)]
   overall_scores[, Participant_ID := as.factor(Participant_ID)]
+
+  # # Condense data by converting all Provider values to the most common Provider
+  # #   per Participant_ID
+  # merged_data[, Provider := names(sort(table(Provider), decreasing = TRUE))[1],
+  #             by = Participant_ID]
+  #
+  # # Optionally, you can do the same for Mode if needed
+  # merged_data[, Mode := names(sort(table(Mode), decreasing = TRUE))[1],
+  #             by = Participant_ID]
+
 
   # Merge with overall_scores to get correct Has_Multiple_Scores
   final_data <- merge(merged_data, overall_scores, by = "Participant_ID",
@@ -133,11 +183,24 @@ clean_scores <- function(data, state_filter = NULL, aggregate = TRUE) {
   # Reshape the data from long to wide format
   scores_final <- dcast(
     final_data,
-    Participant_ID + Provider + State + Mode ~ Service,
+    Participant_ID + Provider_summary + State + Mode_summary ~ Service,
     value.var = c("Pre_Score", "Post_Score", "Difference", "Time_Passed_Days",
                   "Has_Multiple_Scores"),
+    fun.aggregate = median,
     sep = "_"
   )
+
+  # # Try casting a simpler version to debug
+  # scores_final_simple <- dcast(
+  #   final_data,
+  #   Participant_ID + Provider_summary + State + Mode_summary ~ Service,
+  #   value.var = "Pre_Score",  # Simplify to just one variable to debug
+  #   fun.aggregate = median,
+  #   sep = "_"
+  # )
+  #
+  # str(scores_final_simple)  # Examine the structure of the reshaped data
+
 
 
   # Aggregating provider-related variables to retain only one value per
@@ -186,8 +249,8 @@ clean_scores <- function(data, state_filter = NULL, aggregate = TRUE) {
     data[, Median_Time_Passed_Days := NA_real_]
   }
 
+
   # return(scores_final)
   return(data)
 }
-
 

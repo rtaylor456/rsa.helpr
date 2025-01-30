@@ -14,6 +14,8 @@ scores_NEW <- fread("data-raw/TRT Export 1.13.2025.csv",
 scores_NEW_filter <- scores_NEW |> dplyr::filter(State == "Utah") |>
   dplyr::arrange(`Participant ID`)
 
+write.csv(scores_NEW_filter, "data-raw/TRT_NEW_utah.csv")
+
 data_cleaned <- clean_utah(data, aggregate = TRUE)
 nrow(data_cleaned) # 251215 # aggregated: 203427
 length(unique(data_cleaned$Participant_ID)) # 38582 # aggregated: 32694
