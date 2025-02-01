@@ -1,3 +1,5 @@
+library(data.table)
+
 data <- fread("data-raw/data_full_new.csv", stringsAsFactors = FALSE)
 data <- fread("data-raw/full_data.csv", stringsAsFactors = FALSE)
 
