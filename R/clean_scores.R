@@ -4,8 +4,15 @@
 #'   structure.
 #'
 #' @param data The scores dataset.
+#' @param state_filter A character vector identifying the state(s) of interest.
+#'   Defaults to NULL.
+#' @param clean_id TRUE or FALSE. Defaults to TRUE, when TRUE, rows where
+#'   participant ID is missing are removed.
 #' @param aggregate TRUE or FALSE. Defaults to TRUE, when TRUE, rows are
 #'   aggregated to include only unique participants are kept.
+#' @param ID_col Differing variable naming structure for participant ID.
+#'   (Eg. "X", or another name not similar to "participant" or "ID".)
+#'   Defaults to NULL.
 #'
 #' @returns A cleaned data frame, restructured to a wide format, to help with
 #'   merging process.
@@ -13,7 +20,7 @@
 #' @export
 #' @import data.table
 
-clean_scores2 <- function(data, state_filter = NULL, clean_id = TRUE,
+clean_scores <- function(data, state_filter = NULL, clean_id = TRUE,
                           aggregate = TRUE, ID_col = NULL) {
 
   # Convert to data.table format
@@ -112,12 +119,7 @@ clean_scores2 <- function(data, state_filter = NULL, clean_id = TRUE,
 
 
   # Remove "(MST)" and convert 'Completed' to POSIXct
-  # data[, Completed := mdy_hms(gsub(" \\(MST\\)", "", Completed))]
-
-  # data[, Completed := as.POSIXct(gsub(" \\(MST\\)", "", Completed),
-  #                                format = "%m/%d/%Y %H:%M:%S", tz = "UTC")]
-
-  # Maintain correct MST time zone
+  # and maintain correct MST time zone
   data[, Completed := as.POSIXct(gsub(" \\(MST\\)", "", Completed),
                                  format = "%m/%d/%Y %H:%M:%S",
                                  tz = "America/Denver")]
@@ -143,29 +145,7 @@ clean_scores2 <- function(data, state_filter = NULL, clean_id = TRUE,
   factor_cols <- c("Participant_ID", "Provider", "Service",
                    "Has_Multiple_Scores")
 
-  # data[, c("Participant_ID", "Provider", "Service") := lapply(.SD, as.factor),
-  #      .SDcols = c("Participant_ID", "Provider", "Service")]
-
   data[, (factor_cols) := lapply(.SD, as.factor), .SDcols = factor_cols]
-
-  # Calculate Time_Passed_Days
-  # data[, Time_Passed_Days := as.numeric(difftime(max(Completed),
-  #                                                min(Completed),
-  #                                                units = "days")),
-  #      by = .(Participant_ID, Service)]
-  #
-  # data[, Time_Passed_Days := round(Time_Passed_Days)]
-
-  # data[,
-  #      Time_Passed_Days := as.numeric(difftime(
-  #        max(Completed[Pre_Post == "Post"]),
-  #        min(Completed[Pre_Post == "Pre"]),
-  #        units = "days")),
-  #      by = .(Participant_ID, Service)]
-  #
-  # # Round the result to the nearest whole number
-  # data[Time_Passed_Days == -Inf, Time_Passed_Days := NA]
-  # data[, Time_Passed_Days := round(Time_Passed_Days)]
 
 
   # Filter Pre and Post data
@@ -243,11 +223,6 @@ clean_scores2 <- function(data, state_filter = NULL, clean_id = TRUE,
       #  is weird in data.table
 
   # Merge the pre and post data
-  # merged_data <- merge(pre_selected, post_selected,
-  #                      by = c("Participant_ID", "Service", "Provider",
-  #                             "Time_Passed_Days"),
-  #                      all = TRUE)
-
 
   # Merge using a full outer join (It ensures that all rows from both
   #   pre_selected and post_selected will be included in the merged result,
@@ -275,7 +250,9 @@ clean_scores2 <- function(data, state_filter = NULL, clean_id = TRUE,
   # merged_data[, c("Provider.x", "Provider.y") := NULL]
 
 
-  # Identify the most common non-NA provider for each participant
+  # Identify the most common non-NA provider for each participant -- this
+  #. should result in a dataframe with two columns, Participant_ID and
+  #  Most_Common_Provider, with just one row per unique participant
   mode_provider <- merged_data[!is.na(Provider.x) | !is.na(Provider.y),
                                .(Most_Common_Provider =
                                    names(sort(table(c(Provider.x, Provider.y)),
@@ -289,36 +266,22 @@ clean_scores2 <- function(data, state_filter = NULL, clean_id = TRUE,
 
   # Ensure Most_Common_Provider is character type
   # And replace NA Provider values with the most common provider
-  merged_data[, Provider := fifelse(
-    is.na(Provider.x) & is.na(Provider.y),
-    as.character(Most_Common_Provider),  # Cast to character to match Provider.x/y
-    ifelse(!is.na(Provider.x), as.character(Provider.x),
-           as.character(Provider.y))  # Cast to character
-  )]
+  # merged_data[, Provider := fifelse(
+  #   is.na(Provider.x) & is.na(Provider.y),
+  #   as.character(Most_Common_Provider),  # Cast to character to match Provider.x/y
+  #   ifelse(!is.na(Provider.x), as.character(Provider.x),
+  #          as.character(Provider.y))  # Cast to character
+  # )]
 
   # Remove the temporary 'Most_Common_Provider' column
-  merged_data[, Most_Common_Provider := NULL]
+  # merged_data[, Most_Common_Provider := NULL]
 
   # Remove redundant columns if necessary
   merged_data[, c("Provider.x", "Provider.y") := NULL]
 
-  # if (aggregate = TRUE){
-  #   # Aggregate to get one row per participant-service combination
-  #   # merged_data <- merged_data[, .(Provider),
-  #   #                            by = .(Participant_ID, Service)]
-  #
-  #   merged_data <- merged_data[,
-  #                              .(Provider = first(Provider),
-  #                                Pre_Date = first(Pre_Date),
-  #                                Pre_Score = first(Pre_Score),
-  #                                Post_Date = first(Post_Date),
-  #                                Post_Score = first(Post_Score),
-  #                                Difference = first(Difference)),
-  #                                # Time_Passed_Days = first(Time_Passed_Days),
-  #                                # Has_Multiple_Scores = first(Has_Multiple_Scores)),
-  #                              by = .(Participant_ID, Service)]
-  #
-  # }
+  # Rename the 'Most_Common_Provider' as new Provider column
+  setnames(merged_data, "Most_Common_Provider", "Provider")
+
 
   ## This is the new code to try to prevent an error in merge ##
   # Convert Participant_ID to factor in both data.tables to ensure the
@@ -330,17 +293,33 @@ clean_scores2 <- function(data, state_filter = NULL, clean_id = TRUE,
   final_data <- merge(merged_data, overall_scores, by = "Participant_ID",
                       all.x = TRUE)
 
-  # Move Time_Passed_Days calculation to down here:
+
+  # We should now only have 1 row per unique combination of Participant_ID and
+  #   Service
+
+
+  # Calculate Time_Passed_Days, the number of days between the Pre_Date and
+  #   Post_Date for each participant's tests.
   final_data[, Time_Passed_Days := as.numeric(difftime(Post_Date,
                                                  Pre_Date,
                                                  units = "days")),
        by = .(Participant_ID, Service)]
-
+  # round to the nearest day
   final_data[, Time_Passed_Days := round(Time_Passed_Days)]
 
+  # Examine our negative values--data seem to be cleaned correctly, just some
+  #   weird values....
+  # check <- final_data[final_data$Time_Passed_Days < 0, ]
+  # check_ids <- check$Participant_ID
+  # check_scores <- scores[scores$`Participant ID` %in% check_ids, ]
+  # check_scores <- check_scores[order(`Participant ID`)]
+
+  ## RESHAPE
+  # First, identify columns to keep long, instead of wide.
+  cols_to_include <- c("Participant_ID", "Provider", "Has_Multiple_Scores")
 
   # Check if 'State' and 'Mode' columns exist in the dataset
-  cols_to_include <- c("Participant_ID", "Provider")
+  cols_to_include <- c("Participant_ID", "Provider", "Has_Multiple_Scores")
 
   # Conditionally add 'State' and 'Mode' if they exist in the dataset
   if ("State" %in% names(final_data)) {
@@ -354,70 +333,62 @@ clean_scores2 <- function(data, state_filter = NULL, clean_id = TRUE,
   scores_final <- dcast(
     final_data,
     formula = paste(paste(cols_to_include, collapse = " + "), "~ Service"),
-    value.var = c("Pre_Score", "Post_Score", "Difference", "Time_Passed_Days",
-                  "Has_Multiple_Scores"),
+    value.var = c("Pre_Score", "Post_Score", "Difference", "Time_Passed_Days"),
     sep = "_"
   )
 
+  # Now, we should finally have ONE row per participant.
 
-  # # Reshape the data from long to wide format
-  # scores_final <- dcast(
-  #   final_data,
-  #   Participant_ID + Provider + State + Mode ~ Service,
-  #   value.var = c("Pre_Score", "Post_Score", "Difference", "Time_Passed_Days",
-  #                 "Has_Multiple_Scores"),
-  #   sep = "_"
-  # )
+  pre_score_cols <- grep("^Pre_Score", names(scores_final), value = TRUE)
+  post_score_cols <- grep("^Post_Score", names(scores_final), value = TRUE)
+  difference_cols <- grep("^Difference_", names(scores_final), value = TRUE)
+  time_cols <- grep("^Time_Passed_Days", names(scores_final), value = TRUE)
 
-
-  # Aggregating provider-related variables to retain only one value per
-  #    participant
-  # data[, `:=`(Proctor = first("Proctor"),
-  #             Caseload = first("Caseload"),
-  #             Group_Frequency = first("Group_Frequency"),
-  #             Online_Frequency = first("Online_Frequency"),
-  #             Rural_Frequency = first("Rural_Frequency")),
-  #      by = Participant_ID]
-
-  # Reshape the data from long to wide format
-  # scores_final <- dcast(
-  #   final_data,
-  #   Participant_ID + Provider ~ Service,
-  #   value.var = c("Pre_Score", "Post_Score", "Difference", "Time_Passed_Days",
-  #                 "Has_Multiple_Scores", "Proctor", "Caseload",
-  #                 "Group_Frequency", "Online_Frequency", "Rural_Frequency"),
-  #         # Include provider-related variables here
-  #   sep = "_"
-  # )
-
-
-  data <- scores_final
-
-  difference_cols <- grep("^Difference_", names(data), value = TRUE)
-  time_cols <- grep("^Time_Passed_Days", names(data), value = TRUE)
-
-  # Calculate Differences_Available
-  data[, Differences_Available := rowSums(!is.na(.SD)),
+  # Calculate Differences_Available -- the count of difference scores available
+  #   per participant
+  scores_final[, Differences_Available := rowSums(!is.na(.SD)),
        .SDcols = difference_cols, by = Participant_ID]
 
-  # Calculate Median_Difference_Score
-  if (length(difference_cols) > 0) {
-    data[, Median_Difference_Score := median(unlist(.SD), na.rm = TRUE),
-         .SDcols = difference_cols, by = Participant_ID]
+  # Calculate Median columns:
+
+  # Median_Pre_Score -- the median per participant across all of their pre
+  #   scores
+  if (length(pre_score_cols) > 0) {
+    scores_final[, Median_Pre_Score := median(unlist(.SD), na.rm = TRUE),
+         .SDcols = pre_score_cols, by = Participant_ID]
   } else {
-    data[, Median_Difference_Score := NA_real_]
+    scores_final[, Median_Pre_Score := NA_real_]
   }
 
-  # Calculate Median_Time_Passed_Days
+  # Median_Post_Score -- the median per participant across all of their post
+  #   scores
+  if (length(post_score_cols) > 0) {
+    scores_final[, Median_Post_Score := median(unlist(.SD), na.rm = TRUE),
+         .SDcols = post_score_cols, by = Participant_ID]
+  } else {
+    scores_final[, Median_Post_Score := NA_real_]
+  }
+
+  # Median_Difference_Score -- the median per participant across all of their
+  #   difference values.
+  if (length(difference_cols) > 0) {
+    scores_final[, Median_Difference_Score := median(unlist(.SD), na.rm = TRUE),
+         .SDcols = difference_cols, by = Participant_ID]
+  } else {
+    scores_final[, Median_Difference_Score := NA_real_]
+  }
+
+  # Median_Time_Passed_Days -- the median per participant across all of their
+  #   time passed values.
   if (length(time_cols) > 0) {
-    data[, Median_Time_Passed_Days := median(unlist(.SD), na.rm = TRUE),
+    scores_final[, Median_Time_Passed_Days := median(unlist(.SD), na.rm = TRUE),
          .SDcols = time_cols, by = Participant_ID]
   } else {
-    data[, Median_Time_Passed_Days := NA_real_]
+    scores_final[, Median_Time_Passed_Days := NA_real_]
   }
 
   # return(scores_final)
-  return(data)
+  return(scores_final)
 }
 
 

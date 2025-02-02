@@ -40,7 +40,9 @@ load_data <- function(directory, files = NULL, download_csv = FALSE) {
       # Ensure file is a valid Excel file
       if (grepl("\\.xlsx$", file_list[i])) {
         message("Reading: ", file_list[i])
-        data <- readxl::read_excel(file_list[i], col_names = TRUE)
+        # data <- readxl::read_excel(file_list[i], col_names = TRUE)
+        data <- suppressWarnings(readxl::read_excel(file_list[i],
+                                                    col_names = TRUE))
         data_list[[i]] <- data
       } else {
         message("Skipping non-Excel file: ", file_list[i])
