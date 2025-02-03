@@ -13,7 +13,8 @@
 #'    to the working directory.
 #'
 #' @export
-#' @import data.table, readxl
+#' @import data.table
+#' @import readxl
 
 load_data <- function(directory, files = NULL, download_csv = FALSE) {
   # Define the pattern to match the files
