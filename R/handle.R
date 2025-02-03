@@ -251,32 +251,32 @@ handle_splits <- function(var, var_name, sep = ";") {
 #'   cleaned, separated values without special characters.
 #' @export
 #'
-# apply_handle_splits <- function(data, special_cols, sep = ";") {
-#   for (col in special_cols) {
-#     if (col %in% names(data)) {
-#       split_results <- handle_splits(data[[col]], col, sep)
-#       data <- cbind(data, as.data.frame(split_results, stringsAsFactors = FALSE))
-#       data[[col]] <- NULL  # Remove the original column
-#     }
-#   }
-#   return(data)
-# }
-
 apply_handle_splits <- function(data, special_cols, sep = ";") {
-  # Filter columns that exist in the data
-  existing_cols <- intersect(special_cols, names(data))
-
-  # Apply handle_splits2 function to each column in existing_cols using map
-  split_results <- map(existing_cols, ~ handle_splits2(data[[.]], .x, sep))
-
-  # Combine the results with the original data
-  data <- bind_cols(data, as.data.frame(split_results, stringsAsFactors = FALSE))
-
-  # Remove the original columns
-  data <- select(data, -one_of(existing_cols))
-
+  for (col in special_cols) {
+    if (col %in% names(data)) {
+      split_results <- handle_splits(data[[col]], col, sep)
+      data <- cbind(data, as.data.frame(split_results, stringsAsFactors = FALSE))
+      data[[col]] <- NULL  # Remove the original column
+    }
+  }
   return(data)
 }
+
+# apply_handle_splits <- function(data, special_cols, sep = ";") {
+#   # Filter columns that exist in the data
+#   existing_cols <- intersect(special_cols, names(data))
+#
+#   # Apply handle_splits2 function to each column in existing_cols using map
+#   split_results <- map(existing_cols, ~ handle_splits2(data[[.]], .x, sep))
+#
+#   # Combine the results with the original data
+#   data <- bind_cols(data, as.data.frame(split_results, stringsAsFactors = FALSE))
+#
+#   # Remove the original columns
+#   data <- select(data, -one_of(existing_cols))
+#
+#   return(data)
+# }
 
 
 #' Clean primary and secondary disability variables in RSA-911 dataset.
