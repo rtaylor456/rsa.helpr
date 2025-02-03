@@ -20,7 +20,7 @@ devtools::install_github("rtaylor456/rsa.helpr")
 # LOAD #
 ########
 
-# You can load rsa.helpr package and take a look at the functions
+# If you want to take a look at the function documentations
 library(rsa.helpr)
 ?clean_utah
 ?clean_scores
@@ -71,13 +71,19 @@ quarterly_clean <- suppressWarnings(rsa.helpr::clean_utah(quarterly))
 
 scores_clean <- rsa.helpr::clean_scores(scores, state_filter = "Utah")
 
-provider_data <- rsa.helpr::clean_provider(scores)
+
+# for separate provider variable analysis
+provider_data <- rsa.helpr::clean_provider(scores, state_filter = "Utah",
+                                           condense = TRUE)
+      # condense = TRUE results in one row per unique combination of Provider,
+      #   Service, and Pre_Post
+
 
 
 #########
 # MERGE #
 #########
-# Merge the quarterly and TRT scores data based on matching participant IDs.
+# Merge the cleaned quarterly and TRT scores data based on matching participant IDs.
 merged_data <- rsa.helpr::merge_scores(quarterly_clean, scores_clean)
 
 

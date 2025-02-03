@@ -10,12 +10,16 @@
 #' @param unidentified_to_O TRUE or FALSE. Defaults to TRUE, when TRUE,
 #'   variables where unidentified is represented by 9,
 #'   values are converted to 0.
-#' @param clean_specials TRUE or FALSE. Defaults to FALSE, when TRUE, variables
-#'   containing special characters are cleaned and separated into new variables.
 #' @param remove_desc TRUE or FALSE. Defaults to TRUE, when TRUE, description
 #'   variables are removed to minimize redundancy.
 #' @param remove_strictly_na TRUE or FALSE. Defaults to TRUE, when TRUE,
 #'   variables that contain only NA values are removed.
+#' @param clean_specials A character vector of name(s) of variables with special
+#'   characters to be cleaned. New, separate variables for each value space will
+#'   be appended to end of dataset with the the following naming convention:
+#'   original_variable_name_Place1, original_variable_name_Place2, etc.
+#'   Defaults to NULL. Note that if many are listed, cleaning process will be
+#'   very slow.
 #'
 #' @returns A cleaned data frame, with incorrect, blank, messy values replaced,
 #'   additional, helpful variables created, and unnecessary variables removed.
@@ -28,9 +32,9 @@ clean_utah <- function(data,
                        unidentified_to_0 = TRUE,
                        # convert_sex = TRUE,
                        # convert_employ = TRUE,
-                       clean_specials = FALSE,
                        remove_desc = TRUE,
-                       remove_strictly_na = TRUE) {
+                       remove_strictly_na = TRUE,
+                       clean_specials = NULL) {
   # remove redundancies in ids
   # add in a new variable that counts redundancies
 
@@ -290,7 +294,7 @@ clean_utah <- function(data,
 
 
   # GRADE LEVEL - based on age
-  data[, Grade_Level := fifelse(Age_At_Application < 5, "<5",
+  data[, Age_Group := fifelse(Age_At_Application < 5, "<5",
                           fifelse((Age_At_Application >= 5 &
                                      Age_At_Application < 8), "5-7",
                           fifelse((Age_At_Application >= 8 &
@@ -312,8 +316,8 @@ clean_utah <- function(data,
                           fifelse(Age_At_Application > 50, "40+",
                                   NA_character_)))))))))))]
 
-  # Convert Grade_Level to an ordered factor
-  data[, Grade_Level := factor(Grade_Level,
+  # Convert Age_Group to an ordered factor
+  data[, Age_Group := factor(Age_Group,
                                    levels = c("<5", "5-7", "8-10", "11-13",
                                               "14-16", "17-19", "20-22",
                                               "23-25", "26-30", "31-50",
@@ -339,22 +343,24 @@ clean_utah <- function(data,
   comp_cols <- comp_cols[!grepl("provide|amt|date", comp_cols,
                                 ignore.case = TRUE)]
 
-  # DISABILITY columns
-  disability_cols <- grep("(?i)(primary|secondary).*disability(?!.*(?i)_desc)",
-                          names(data), value = TRUE, perl = TRUE)
-
-  all_special_cols <- c(special_cols, comp_cols, disability_cols)
+  all_special_cols <- c(special_cols, comp_cols)
 
   # uncomment this once I've got the function to stop crashing the computer
   # data <- handle_splits(data, all_special_cols)
 
-  if (clean_specials == TRUE){
-    # data <- handle_splits(data, all_special_cols)
-    data <- separate_disability(data)
+  # this is too slow!
+  # if (clean_specials == TRUE){
+  #   data <- apply_handle_splits(data, all_special_cols, sep = ";")
+  # }
+
+  if (!is.null(clean_specials) & length(all_special_cols) > 0) {
+    data <- apply_handle_splits(data, clean_specials, sep = ";")
   }
 
 
   # DISABILITY columns
+  disability_cols <- grep("(?i)(primary|secondary).*disability(?!.*(?i)_desc)",
+                          names(data), value = TRUE, perl = TRUE)
   data <- separate_disability(data)
 
   impairment_vars <- c("Primary_Impairment", "Secondary_Impairment")

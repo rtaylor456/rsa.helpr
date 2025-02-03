@@ -51,7 +51,7 @@ create_metadata <- function(data, includes_scores = TRUE) {
                                   "5-10",
                           "11+"))]
 
-  # Convert Grade_Level to an ordered factor
+  # Convert Age_Group to an ordered factor
   data[, Enroll_Length_Grp := factor(Enroll_Length_Grp,
                                levels = c("<5", "5-10", "11+"),
                                ordered = TRUE)]

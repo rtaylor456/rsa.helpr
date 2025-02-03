@@ -159,47 +159,121 @@ handle_values <- function(x, values, blank_value = NA){
 #   return(data)
 # }
 
+
 #' Clean variables in RSA-911 dataset with special characters.
 #'
 #' This function cleans variables with special characters by splitting values
 #'   into separate variables that are separated by special characters.
 #'
-#' @param data An RSA-911 dataset to be cleaned.
-#' @param var_names A vector of names for variables that contain special
-#'   characters.
+#' @param var An RSA-911 special character variable to be cleaned.
+#' @param var_name A character vector of the name of the variable to be cleaned.
+#' @param sep The special character that is separating values within the
+#'   variable.
+#' @returns The new variables derived from the inputted variable. They contain
+#'   the cleaned, separated values without special characters.
+#' @export
+#'
+# handle_splits <- function(data, var_names){
+#   for(var_name in var_names) {
+#     # split up the values by the ";"
+#     split_list <- strsplit(data[[var_name]], ";")
+#     # now, find out the max_length of elements after splitting
+#     max_length <- max(sapply(split_list, length))
+#     # now, add blanks to each element that doesn't have the same length as the
+#     #    max
+#     split_list <- lapply(split_list, function(x) {
+#       length(x) <- max_length; x[is.na(x)] <- ""; x
+#     })
+#     # create a matrix of these values
+#     split_matrix <- do.call(rbind, split_list)
+#
+#     # Create the names for the new variables
+#     var_names_new <- paste0(sub("_911$", "", var_name), "_var",
+#                             seq_len(max_length),
+#                             "_911")
+#
+#     # Create the new variable list with setNames
+#     new_var_list <- setNames(as.list(as.data.frame(split_matrix,
+#                                                    stringsAsFactors = FALSE)),
+#                              var_names_new)
+#     # Append the new variables to the data
+#     data <- cbind(data, new_var_list)
+#   }
+#
+#   # Remove the original variables
+#   data <- subset(data, select = -which(names(data) %in% var_names))
+#
+#   return(data)
+# }
+
+handle_splits <- function(var, var_name, sep = ";") {
+  # Split the vector into a list
+  split_values <- strsplit(as.character(var), split = sep, perl = TRUE)
+
+  # Replace "NULL" strings and blanks with NA
+  split_values <- lapply(split_values, function(x) ifelse(x %in% c("NULL", ""),
+                                                          NA, x))
+
+  # Determine the max number of splits
+  max_splits <- max(lengths(split_values))
+
+  # Generate new vector names
+  new_var_names <- paste0(var_name, "_Place", seq_len(max_splits))
+
+  # Create a matrix with values or NAs
+  result_matrix <- t(sapply(split_values, function(x) {
+    length(x) <- max_splits  # Ensure uniform length with NA padding
+    x
+  }))
+
+  # Convert matrix to named list of vectors
+  result_list <- setNames(as.list(as.data.frame(result_matrix,
+                                                stringsAsFactors = FALSE)),
+                          new_var_names)
+
+  return(result_list)
+}
+
+
+
+#' Apply handle_splits() to RSA-911 dataset.
+#'
+#' This function cleans variables with special characters by splitting values
+#'   into separate variables that are separated by special characters by
+#'   applying the function within a dataset.
+#'
+#' @param data An RSA-911 dataset.
+#' @param special_cols A character vector of the names of variables with special
+#'   character values in the dataset.
+#' @param sep The special character that is separating values within the
+#'   variable.
 #' @returns The cleaned RSA-911 dataset, with new variables that contain the
 #'   cleaned, separated values without special characters.
 #' @export
-# var_names is a character vector of variable names (place in quotes)
-handle_splits <- function(data, var_names){
-  for(var_name in var_names) {
-    # split up the values by the ";"
-    split_list <- strsplit(data[[var_name]], ";")
-    # now, find out the max_length of elements after splitting
-    max_length <- max(sapply(split_list, length))
-    # now, add blanks to each element that doesn't have the same length as the
-    #    max
-    split_list <- lapply(split_list, function(x) {
-      length(x) <- max_length; x[is.na(x)] <- ""; x
-    })
-    # create a matrix of these values
-    split_matrix <- do.call(rbind, split_list)
+#'
+# apply_handle_splits <- function(data, special_cols, sep = ";") {
+#   for (col in special_cols) {
+#     if (col %in% names(data)) {
+#       split_results <- handle_splits(data[[col]], col, sep)
+#       data <- cbind(data, as.data.frame(split_results, stringsAsFactors = FALSE))
+#       data[[col]] <- NULL  # Remove the original column
+#     }
+#   }
+#   return(data)
+# }
 
-    # Create the names for the new variables
-    var_names_new <- paste0(sub("_911$", "", var_name), "_var",
-                            seq_len(max_length),
-                            "_911")
+apply_handle_splits <- function(data, special_cols, sep = ";") {
+  # Filter columns that exist in the data
+  existing_cols <- intersect(special_cols, names(data))
 
-    # Create the new variable list with setNames
-    new_var_list <- setNames(as.list(as.data.frame(split_matrix,
-                                                   stringsAsFactors = FALSE)),
-                             var_names_new)
-    # Append the new variables to the data
-    data <- cbind(data, new_var_list)
-  }
+  # Apply handle_splits2 function to each column in existing_cols using map
+  split_results <- map(existing_cols, ~ handle_splits2(data[[.]], .x, sep))
 
-  # Remove the original variables
-  data <- subset(data, select = -which(names(data) %in% var_names))
+  # Combine the results with the original data
+  data <- bind_cols(data, as.data.frame(split_results, stringsAsFactors = FALSE))
+
+  # Remove the original columns
+  data <- select(data, -one_of(existing_cols))
 
   return(data)
 }

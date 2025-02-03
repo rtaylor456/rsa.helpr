@@ -4,17 +4,19 @@
 \alias{handle_splits}
 \title{Clean variables in RSA-911 dataset with special characters.}
 \usage{
-handle_splits(data, var_names)
+handle_splits(var, var_name, sep = ";")
 }
 \arguments{
-\item{data}{An RSA-911 dataset to be cleaned.}
+\item{var}{An RSA-911 special character variable to be cleaned.}
 
-\item{var_names}{A vector of names for variables that contain special
-characters.}
+\item{var_name}{A character vector of the name of the variable to be cleaned.}
+
+\item{sep}{The special character that is separating values within the
+variable.}
 }
 \value{
-The cleaned RSA-911 dataset, with new variables that contain the
-cleaned, separated values without special characters.
+The new variables derived from the inputted variable. They contain
+the cleaned, separated values without special characters.
 }
 \description{
 This function cleans variables with special characters by splitting values

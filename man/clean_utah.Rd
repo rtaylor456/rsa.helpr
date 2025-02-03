@@ -8,9 +8,9 @@ clean_utah(
   data,
   aggregate = TRUE,
   unidentified_to_0 = TRUE,
-  clean_specials = FALSE,
   remove_desc = TRUE,
-  remove_strictly_na = TRUE
+  remove_strictly_na = TRUE,
+  clean_specials = NULL
 )
 }
 \arguments{
@@ -20,14 +20,18 @@ clean_utah(
 aggregated to include only unique combinations of participants, year,
 and quarter.}
 
-\item{clean_specials}{TRUE or FALSE. Defaults to FALSE, when TRUE, variables
-containing special characters are cleaned and separated into new variables.}
-
 \item{remove_desc}{TRUE or FALSE. Defaults to TRUE, when TRUE, description
 variables are removed to minimize redundancy.}
 
 \item{remove_strictly_na}{TRUE or FALSE. Defaults to TRUE, when TRUE,
 variables that contain only NA values are removed.}
+
+\item{clean_specials}{A character vector of name(s) of variables with special
+characters to be cleaned. New, separate variables for each value space will
+be appended to end of dataset with the the following naming convention:
+original_variable_name_Place1, original_variable_name_Place2, etc.
+Defaults to NULL. Note that if many are listed, cleaning process will be
+very slow.}
 
 \item{unidentified_to_O}{TRUE or FALSE. Defaults to TRUE, when TRUE,
 variables where unidentified is represented by 9,
