@@ -8,7 +8,6 @@ clean_utah(
   data,
   aggregate = TRUE,
   unidentified_to_0 = TRUE,
-  convert_sex = TRUE,
   clean_specials = FALSE,
   remove_desc = TRUE,
   remove_strictly_na = TRUE
@@ -20,10 +19,6 @@ clean_utah(
 \item{aggregate}{TRUE or FALSE. Defaults to TRUE, when TRUE, rows are
 aggregated to include only unique combinations of participants, year,
 and quarter.}
-
-\item{convert_sex}{TRUE or FALSE. Defaults to TRUE, when TRUE, the
-traditional sex/gender variable value of 2 is converted to a more standard
-binary value of 0.}
 
 \item{clean_specials}{TRUE or FALSE. Defaults to FALSE, when TRUE, variables
 containing special characters are cleaned and separated into new variables.}

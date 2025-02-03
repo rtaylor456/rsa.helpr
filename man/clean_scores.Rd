@@ -4,13 +4,29 @@
 \alias{clean_scores}
 \title{Clean Scores Data}
 \usage{
-clean_scores(data, aggregate = TRUE)
+clean_scores(
+  data,
+  state_filter = NULL,
+  clean_id = TRUE,
+  aggregate = TRUE,
+  ID_col = NULL
+)
 }
 \arguments{
 \item{data}{The scores dataset.}
 
+\item{state_filter}{A character vector identifying the state(s) of interest.
+Defaults to NULL.}
+
+\item{clean_id}{TRUE or FALSE. Defaults to TRUE, when TRUE, rows where
+participant ID is missing are removed.}
+
 \item{aggregate}{TRUE or FALSE. Defaults to TRUE, when TRUE, rows are
 aggregated to include only unique participants are kept.}
+
+\item{ID_col}{Differing variable naming structure for participant ID.
+(Eg. "X", or another name not similar to "participant" or "ID".)
+Defaults to NULL.}
 }
 \value{
 A cleaned data frame, restructured to a wide format, to help with
