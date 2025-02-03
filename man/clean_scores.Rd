@@ -2,7 +2,7 @@
 % Please edit documentation in R/clean_scores.R
 \name{clean_scores}
 \alias{clean_scores}
-\title{Clean Scores Data}
+\title{Clean TRT Scores Data}
 \usage{
 clean_scores(
   data,
@@ -13,7 +13,7 @@ clean_scores(
 )
 }
 \arguments{
-\item{data}{The scores dataset.}
+\item{data}{The TRT scores dataset.}
 
 \item{state_filter}{A character vector identifying the state(s) of interest.
 Defaults to NULL.}
@@ -33,6 +33,6 @@ A cleaned data frame, restructured to a wide format, to help with
 merging process.
 }
 \description{
-This function cleans a scores dataset, based on the standard data
+This function cleans a TRT scores dataset, based on the standard data
 structure.
 }

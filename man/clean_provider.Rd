@@ -2,15 +2,35 @@
 % Please edit documentation in R/clean_provider.R
 \name{clean_provider}
 \alias{clean_provider}
-\title{Clean Scores Data, with Provider Variables Focus}
+\title{Clean TRT Scores Data, with Provider Variables Focus}
 \usage{
-clean_provider(data, condense = FALSE)
+clean_provider(
+  data,
+  state_filter = NULL,
+  ID_col = NULL,
+  remove_questions = TRUE,
+  condense = FALSE,
+  clean_id = TRUE
+)
 }
 \arguments{
-\item{data}{The scores dataset.}
+\item{data}{The TRT scores dataset.}
+
+\item{state_filter}{A character vector identifying the state(s) of interest.
+Defaults to NULL.}
+
+\item{ID_col}{Differing variable naming structure for participant ID.
+(Eg. "X", or another name not similar to "participant" or "ID".)
+Defaults to NULL.}
+
+\item{remove_questions}{Defaults to TRUE. When TRUE, removes question item
+variables.}
 
 \item{condense}{Defaults to FALSE. When true, take medians across
 participants.}
+
+\item{clean_id}{TRUE or FALSE. Defaults to TRUE, when TRUE, rows where
+participant ID is missing are removed.}
 }
 \value{
 A cleaned data frame, including only provider-relevant variables,
