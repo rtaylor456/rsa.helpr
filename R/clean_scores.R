@@ -1,9 +1,9 @@
-#' Clean Scores Data
+#' Clean TRT Scores Data
 #'
-#' This function cleans a scores dataset, based on the standard data
+#' This function cleans a TRT scores dataset, based on the standard data
 #'   structure.
 #'
-#' @param data The scores dataset.
+#' @param data The TRT scores dataset.
 #' @param state_filter A character vector identifying the state(s) of interest.
 #'   Defaults to NULL.
 #' @param clean_id TRUE or FALSE. Defaults to TRUE, when TRUE, rows where
@@ -25,6 +25,25 @@ clean_scores <- function(data, state_filter = NULL, clean_id = TRUE,
 
   # Convert to data.table format
   setDT(data)
+
+  # look for a state variable in the data
+  state <- grep("(?i)^(?=.*state)|(?=.*\\bst\\b)(?!.*\\bst\\B)",
+                names(data), value = TRUE, perl = TRUE)
+
+  if (length(state) > 0){
+    names(data)[names(data) %in% state] <- "State"
+  }
+
+  # If user provides state_filter and there is a state variable in data,
+  if (!is.null(state_filter) & length(state) > 0){
+    # then filter by state(s) provided by user
+    data <- data[get(state) %in% state_filter]
+    # Else if user identifies states to filter by but there is no state variable,
+  } else if (!is.null(state_filter) & length(state) < 1){
+    # then return a warning, but continue with cleaning process
+    warning("There is no state-identifying variable in this dataset. Cleaning process will continue on.")
+  } # Else carry on (without warning message)
+
 
   if (!is.null(ID_col)){
     participant <- ID_col
@@ -66,23 +85,23 @@ clean_scores <- function(data, state_filter = NULL, clean_id = TRUE,
   # Next, order by participant
   data <- data[order(get(participant))]
 
-  # look for a state variable in the data
-  state <- grep("(?i)^(?=.*state)|(?=.*\\bst\\b)(?!.*\\bst\\B)",
-                names(data), value = TRUE, perl = TRUE)
-
-  if (length(state) > 0){
-    names(data)[names(data) %in% state] <- "State"
-  }
-
-  # If user provides state_filter and there is a state variable in data,
-  if (!is.null(state_filter) & length(state) > 0){
-    # then filter by state(s) provided by user
-    data <- data[get(state) %in% state_filter]
-    # Else if user identifies states to filter by but there is no state variable,
-  } else if (!is.null(state_filter) & length(state) < 1){
-    # then return a warning, but continue with cleaning process
-    warning("There is no state-identifying variable in this dataset. Cleaning process will continue on.")
-  } # Else carry on (without warning message)
+  # # look for a state variable in the data
+  # state <- grep("(?i)^(?=.*state)|(?=.*\\bst\\b)(?!.*\\bst\\B)",
+  #               names(data), value = TRUE, perl = TRUE)
+  #
+  # if (length(state) > 0){
+  #   names(data)[names(data) %in% state] <- "State"
+  # }
+  #
+  # # If user provides state_filter and there is a state variable in data,
+  # if (!is.null(state_filter) & length(state) > 0){
+  #   # then filter by state(s) provided by user
+  #   data <- data[get(state) %in% state_filter]
+  #   # Else if user identifies states to filter by but there is no state variable,
+  # } else if (!is.null(state_filter) & length(state) < 1){
+  #   # then return a warning, but continue with cleaning process
+  #   warning("There is no state-identifying variable in this dataset. Cleaning process will continue on.")
+  # } # Else carry on (without warning message)
 
   # Identify variables in the dataset
   pre_post <- grep("(?i)^(?=.*pre)(?=.*post)",

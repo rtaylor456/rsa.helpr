@@ -1,4 +1,3 @@
-library(data.table)
 #' Clean Utah RSA-911 Data
 #'
 #' This function cleans a Utah RSA-911 dataset, based on the standard data
