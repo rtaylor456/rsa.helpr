@@ -165,7 +165,7 @@ handle_values <- function(x, values, blank_value = NA){
 #' This function cleans variables with special characters by splitting values
 #'   into separate variables that are separated by special characters.
 #'
-#' @param var An RSA-911 special character variable to be cleaned.
+#' @param var An RSA-911 special character variable (vector) to be cleaned.
 #' @param var_name A character vector of the name of the variable to be cleaned.
 #' @param sep The special character that is separating values within the
 #'   variable.

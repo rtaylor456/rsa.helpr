@@ -7,7 +7,7 @@
 handle_splits(var, var_name, sep = ";")
 }
 \arguments{
-\item{var}{An RSA-911 special character variable to be cleaned.}
+\item{var}{An RSA-911 special character variable (vector) to be cleaned.}
 
 \item{var_name}{A character vector of the name of the variable to be cleaned.}
 
