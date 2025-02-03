@@ -43,6 +43,7 @@ library(rsa.helpr)
 ## Access quarterly data, compile, and download full dataset.
 
 # store the directory where quarterly data can be found
+# (replace my filepath with your own if you use this method)
 directory <- c("/Users/RuthTaylor/Library/CloudStorage/Box-Box/911 Data and Related Projects/911 Data/Utah Quarterly Data/USU Data Request")
 
 # use our function to grab all the correct data files and combine them uniformly
@@ -65,6 +66,7 @@ quarterly <- data.table::fread("file name", stringsAsFactors = FALSE)
 #################
 ## Access new scores data
 # This directory can be a Box directory or other--it's just a simple fread()
+# (Again, replace my filepath with your own if you use this method)
 directory <- c("/Users/RuthTaylor/Library/CloudStorage/Box-Box/911 Data and Related Projects/911 Data/TRT Data_1.28.2025 at 12:00pm.csv")
 scores <- data.table::fread(directory, stringsAsFactors = FALSE)
 
