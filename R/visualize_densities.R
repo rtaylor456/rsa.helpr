@@ -29,7 +29,7 @@ visualize_densities <- function(cat_var, num_var,
                                 colors = NULL) {
 
   # check that there are at least two factor levels in the variable
-  if (length(unique(cat_var)) < 1
+  if (length(levels(cat_var)) < 1
   ) {
     stop("There must be at least one populated level of the categorical variable.")
   }
@@ -46,35 +46,72 @@ visualize_densities <- function(cat_var, num_var,
   # insufficient_data <- any(sapply(split(num_var, cat_var),
   #                                 function(x) sum(!is.na(x)) < 2))
 
-  insufficient_data <- any(sapply(split(num_var, cat_var),
-                                  function(x) length(unique(x[!is.na(x)])) < 2))
+  # insufficient_data <- any(sapply(split(num_var, cat_var),
+  #                                 function(x) length(unique(x[!is.na(x)])) < 2))
 
-  if (insufficient_data) {
-    warning("Not enough observations for density plot. Displaying boxplots instead.")
+  # find out the counts per level--mark FALSE for levels with >= 2 observations
+  #   and TRUE for sparse levels, where there are < 2 observations.
+  data_counts <- sapply(split(num_var, cat_var),
+                                  function(x) length(unique(x[!is.na(x)])) < 2)
+
+  # find out how many levels have enough data for density plots (ie. the sum of
+  #   levels where data_counts != TRUE)
+  valid_levels <- sum(!data_counts)
+
+  # if fewer than 2 levels have sufficient data, produce density plot with
+  #   warning
+  if (valid_levels < 2) {
+    warning("Not enough observations per level for density plots. Displaying boxplots instead.")
 
     # Plot side-by-side boxplots
-    if (is.null(level_labels)) level_labels <- unique(na.omit(cat_var))
+    # if (is.null(level_labels)) level_labels <- unique(na.omit(cat_var))
+    if (is.null(level_labels)) level_labels <- levels(cat_var)
     if (is.null(xlab)) xlab <- cat_var_name
-    if (is.null(main)) main <- paste("Boxplot of", num_var_name, "by", cat_var_name)
+    if (is.null(main)) main <- paste("Boxplot of", num_var_name, "by",
+                                     cat_var_name)
 
-    boxplot(num_var ~ cat_var, col = colors, main = main, xlab = xlab, ylab = num_var_name,
+    boxplot(num_var ~ cat_var, col = colors, main = main, xlab = xlab,
+            ylab = num_var_name,
             names = level_labels)
     return()
   }
   # if we meet these conditions, run the visualization code
   else {
 
-    levels <- unique(cat_var)
+    invalid_level_labels <- names(data_counts)[data_counts]
+
+    if (valid_levels != length(levels(cat_var))) {
+      warning(paste0("The following level(s) have inadequate data (< 2 obs.) for density plots: ",
+                    "'", invalid_level_labels, "'",". ",
+                    "These levels will not be plotted."))
+    }
+
+    # find out what labels are associated with data_counts = FALSE--meaning,
+    #.   find out what labels are associated with enough data in a level
+    valid_level_labels <- names(data_counts)[!data_counts]
+
+    # levels <- unique(cat_var)
+    # levels <- levels(cat_var)
+    # levels <- valid_level_labels
 
     # Set default values for plotting labels if not provided
     if (is.null(xlab)) xlab <- num_var_name
     if (is.null(main)) main <- paste("Density Plot of", num_var_name, "by",
                                      cat_var_name)
-    if (is.null(level_labels)) level_labels <- levels
-
+    # if the user did not provide labels for the categorical variable levels, or
+    #.  if they did, but the labels do not match the
+    if (is.null(level_labels) ||
+        (length(level_labels) != length(valid_level_labels))) {
+      warning("Level labels will be automated based on the valid/populated levels of the categorical variable.")
+      level_labels <- valid_level_labels
+      }
 
     # Create densities for each group, skipping NA values in num_var
-    densities <- lapply(levels, function(level) {
+    # densities <- lapply(levels, function(level) {
+    #   density(num_var[cat_var == level], na.rm = TRUE)
+    # })
+
+    densities <- lapply(valid_level_labels, function(level) {
       density(num_var[cat_var == level], na.rm = TRUE)
     })
 
@@ -84,9 +121,14 @@ visualize_densities <- function(cat_var, num_var,
                              na.rm = TRUE)
 
     # Assign colors if not provided
-    if (is.null(colors) || length(colors) < length(levels)) {
+    # if (is.null(colors) || length(colors) < length(levels)) {
+    #   # Default to rainbow colors if not enough colors provided
+    #   colors <- rainbow(length(levels))
+    # }
+
+    if (is.null(colors) || length(colors) < length(valid_level_labels)) {
       # Default to rainbow colors if not enough colors provided
-      colors <- rainbow(length(levels))
+      colors <- rainbow(length(valid_level_labels))
     }
 
     # Initialize the plot with dynamic x and y limits

@@ -5,13 +5,13 @@
 ## First, install rsa.helpr package
 
 # Install devtools package first if not installed already.
-install.packages(devtools)
+install.packages("devtools")
 
 # Install data.table--the package on which rsa.helpr relies
 # (when trying to install rsa.helpr, it should automatically prompt you to
 #   install these packages if not already installed)
-install.packages(data.table)
-install.packages(readxl)
+install.packages("data.table")
+install.packages("readxl")
 
 # now, we can install my public rsa.helpr package, accessed through Github
 devtools::install_github("rtaylor456/rsa.helpr")
