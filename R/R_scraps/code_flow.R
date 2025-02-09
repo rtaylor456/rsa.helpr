@@ -4,6 +4,9 @@ data <- data.table::fread("data-raw/rsa_full_1_29_25.csv",
 scores <- data.table::fread("data-raw/TRT Data_1.28.2025 at 12_00pm.csv",
                             stringsAsFactors = FALSE)
 
+
+devtools::install_github("rtaylor456/rsa.helpr")
+
 data_clean <- rsa.helpr::clean_utah(data)
 View(data_clean)
 
