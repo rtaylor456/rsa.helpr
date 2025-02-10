@@ -25,6 +25,7 @@ visualize_metadata <- function(data, option = c("general_demo",
                                one_window = FALSE) {
 
   option <- match.arg(option)
+
   if (option == "general_demo") {
 
     if (one_window == TRUE) {par(mfrow = c(3, 3))}
@@ -48,8 +49,8 @@ visualize_metadata <- function(data, option = c("general_demo",
     barplot(table(data[[sex_col]]),
             main = "Distribution of Genders",
             xlab = "Gender",
-            names = c("Females", "Males", "Did not identify"),
-            col = c("lightsteelblue", "steelblue", "darkblue"))
+            names = c("Males", "Females", "Other", "Did not identify"),
+            col = c("lightsteelblue", "steelblue", "darkblue", "gray"))
 
     ## PLOT 4
     race_cols <- grep("(?i)(_indian|_asian|_black|_hawaiian|_islander|_white|hispanic)(?!.*(?i)_desc)",
@@ -154,8 +155,8 @@ visualize_metadata <- function(data, option = c("general_demo",
                         num_var = data$Median_Difference_Score,
                         cat_var_name = "Gender",
                         num_var_name = "Median Difference Scores",
-                        level_labels = c("Did not identify", "Females",
-                                         "Males"),
+                        level_labels = c("Males", "Females",
+                                         "Other", "Did not identify"),
                         main = "Difference Scores by Gender",
                         colors = c("steelblue4", "darkblue", "gray"))
 
@@ -207,12 +208,12 @@ visualize_metadata <- function(data, option = c("general_demo",
                          names(data), value = TRUE, perl = TRUE)
 
     # use our function to visualize densities
-    # visualize_densities(cat_var = data[[severity_col]],
-    #                     num_var = data$Median_Difference_Score,
-    #                     cat_var_name = "Disability Severity",
-    #                     num_var_name = "Median Difference Scores",
-    #                     main = "Difference Scores by Disability Severity",
-    #                     colors = c("steelblue4", "darkblue", "gray"))
+    visualize_densities(cat_var = data[[severity_col]],
+                        num_var = data$Median_Difference_Score,
+                        cat_var_name = "Disability Severity",
+                        num_var_name = "Median Difference Scores",
+                        main = "Difference Scores by Disability Severity",
+                        colors = c("steelblue4", "darkblue", "gray"))
 
 
     ## PLOT 7
@@ -267,10 +268,11 @@ visualize_metadata <- function(data, option = c("general_demo",
                         num_var = wages_vector,
                         cat_var_name = "Gender",
                         num_var_name = "Exit Wages ($ per Hour)",
-                        level_labels = c("Did not identify", "Females",
-                                         "Males"),
+                        level_labels = c("Males", "Females",
+                                         "Other", "Did not identify"),
                         main = "Exit Wages by Gender",
-                        colors = c("steelblue4", "darkblue", "gray"))
+                        colors = c("lightsteelblue", "steelblue", "darkblue",
+                                   "gray"))
 
     ## PLOT 5
     race_cols <- grep("(?i)(_indian|_asian|_black|_hawaiian|_islander|_white|hispanic)(?!.*(?i)_desc)",
@@ -407,15 +409,16 @@ visualize_metadata <- function(data, option = c("general_demo",
     rownames(employment_gender_table) <- c("Non-competitive Employment",
                                            "Competitive Employment")
 
-    colnames(employment_gender_table) <- c("Female",
-                                           "Male",
+    colnames(employment_gender_table) <- c("Male",
+                                           "Female",
+                                           "Other",
                                            "Did not identify")
 
     # Create a bar plot with bars broken up by gender
     barplot(employment_gender_table, beside = TRUE,
             col = c("lightsteelblue", "steelblue"),
             legend.text = c("Non-competitive", "Competitive"),
-            args.legend = list(x = "topleft", bty = "n",
+            args.legend = list(x = "topright", bty = "n",
                                title = "Employment Type"),
             xlab = "Gender", ylab = "Count",
             main = "Exit Employment by Gender")

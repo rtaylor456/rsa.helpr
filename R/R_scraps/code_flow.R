@@ -5,7 +5,7 @@ scores <- data.table::fread("data-raw/TRT Data_1.28.2025 at 12_00pm.csv",
                             stringsAsFactors = FALSE)
 
 
-devtools::install_github("rtaylor456/rsa.helpr")
+# devtools::install_github("rtaylor456/rsa.helpr")
 
 data_clean <- rsa.helpr::clean_utah(data)
 View(data_clean)
@@ -28,7 +28,7 @@ rsa.helpr::visualize_densities(metadata$E9_Gender_911,
                                metadata$Median_Difference_Score)
 
 
-rsa.helpr::visualize_metadata(metadata, option = "gen_demo",
+rsa.helpr::visualize_metadata(metadata, option = "general_demo",
                               one_window = TRUE)
 
 rsa.helpr::visualize_metadata(metadata, option = "investigate_scores",
