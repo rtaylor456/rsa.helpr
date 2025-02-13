@@ -2,7 +2,7 @@
 % Please edit documentation in R/handle.R
 \name{handle_values}
 \alias{handle_values}
-\title{Cleaning incorrect values.}
+\title{Clean incorrect values.}
 \usage{
 handle_values(x, values, blank_value = NA)
 }

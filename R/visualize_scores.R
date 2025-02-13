@@ -16,133 +16,241 @@
 #'
 #' @export
 #'
-
 visualize_scores <- function(data, option = c("overview", "across_service",
                                   "across_provider"), one_window = FALSE) {
-  option <- match.arg(option)
+
+  option <- match.arg(option) # this produces an automatic check
 
   if (option == "overview") {
 
+    # Check if the required columns are found
+
+    # Find the column for Median_Difference_Score
+    median_diff_col <- grep("(?i)(med|median).*?(diff|difference)",
+                            names(data), value = TRUE, perl = TRUE)
+
+    # Find the column for Median_Time_Passed_Days
+    median_time_col <- grep("(?i)(med|median).*?(time|days)", names(data),
+                            value = TRUE, perl = TRUE)
+
+    # Find the column for Differences_Available
+    diff_available_col <- grep("(?i)(diff|difference).*?(available)",
+                               names(data), value = TRUE, perl = TRUE)
+
+    # Check if the required columns are found
+    if (length(median_diff_col) == 0 || length(median_time_col) == 0 ||
+        length(diff_available_col) == 0) {
+      stop("Missing required columns for 'overview' visualization.")
+    }
+
+    # Proceed with visualization using the identified columns
+    message("Columns identified: ", paste(median_diff_col, collapse = ", "),
+            "; ",
+            paste(median_time_col, collapse = ", "), "; ",
+            paste(diff_available_col, collapse = ", "))
+
+    # Set adjusted plotting window if necessary
     if (one_window == TRUE) { par(mfrow = c(3, 1)) }
 
     ## PLOT 1
-    hist(data$Median_Difference_Score,
+    hist(data[[median_diff_col]],
          col = "lightsteelblue",
          main = "Distribution of Median Difference Scores",
          xlab = "Median Difference Scores")
 
     ## PLOT 2
-    hist(data$Median_Time_Passed_Days,
+    hist(data[[median_time_col]],
          col = "lightsteelblue",
          main = "Distribution of Time in Programs",
          xlab = "Median Time in Program (per individual)")
 
     ## PLOT 3
-    hist(data$Differences_Available,
+    hist(data[[diff_available_col]],
          col = "lightsteelblue",
          main = "Distribution of Counts of Difference Scores",
          xlab = "Number of Program Difference Scores per Individual")
 
+    # Reset plotting window
     if (one_window == TRUE) { par(mfrow = c(1, 1)) }
   }
   else if (option == "across_service") {
 
-    if (one_window == TRUE) { par(mfrow = c(3, 1)) }
+    # Check if the required columns are found
 
-    ## PLOT 1
+    ## DIFFERENCE SCORES
     difference_cols <- grep("(?i)difference", names(data),
                             value = TRUE, perl = TRUE)
-    # differences <- data[, .SD, .SDcols = difference_cols]
-
     # Exclude columns that contain "med" or "avail"
     exclude_patterns <- "(?i)med|avail"
     filtered_columns <- difference_cols[!grepl(exclude_patterns,
                                                difference_cols,
                                                perl = TRUE)]
 
-    differences <- data[, .SD, .SDcols = filtered_columns]
+    ## PRE SCORES
+    pre_cols <- grep("(?i)pre", names(data),
+                     value = TRUE, perl = TRUE)
+    # Exclude columns with "median" (can't get it to work in one step)
+    pre_cols <- pre_cols[!grepl("(?i)median", pre_cols)]
 
-    # Find the overall median for all differences scores
+    ## POST SCORES
+    post_cols <- grep("(?i)post", names(data),
+                      value = TRUE, perl = TRUE)
+    # Exclude columns with "median" (can't get it to work in one step)
+    post_cols <- post_cols[!grepl("(?i)median", post_cols)]
+
+
+    if (length(filtered_columns) == 0 || length(pre_cols) == 0 ||
+        length(post_cols) == 0) {
+      stop("Missing required columns for 'across_services' visualization.")
+    }
+
+    # Proceed with visualization using the identified columns
+    message("Columns identified: ", paste(filtered_columns, collapse = ", "),
+            "; ",
+            paste(pre_cols, collapse = ", "), "; ",
+            paste(post_cols, collapse = ", "))
+
+
+    # Set adjusted plotting window if necessary
+    if (one_window == TRUE) { par(mfrow = c(3, 1)) }
+
+    ## PLOT 1
+
+    # Find the overall median for all median difference scores -- to plot as
+    #   horizontal reference line
+    differences <- data[, .SD, .SDcols = filtered_columns]
     differences_scores_vector <- as.vector(unlist(differences))
     differences_median <- median(differences_scores_vector, na.rm = TRUE)
 
-    par(las = 2)
+    par(mar = c(3, 4, 4, 2) + 0.1)  # Increase bottom margin for labels
     boxplot(differences,
-            names = sub("Difference_", "", names(differences)),
+            names = NA,  # Suppress default labels
             main = "Distributions of Difference Scores Across Services",
             ylab = "Difference Scores",
-            xlab = "Service Test Category",
-            cex.axis = 0.7,
-            col = "lightsteelblue")
-    abline(h = differences_median, lty = 1, lwd = 3, col = "steelblue")
-    par(las = 1)
+            col = "lightsteelblue",
+            xaxt = "n")  # Suppress x-axis labels
+
+    # Get shortened labels
+    short_labels <- abbreviate(sub(".*Difference_", "",
+                                   names(differences)), minlength = 6)
+
+    # Add rotated labels manually
+    axis(1,
+         at = 1:length(short_labels),
+         labels = FALSE, # Prevent overlapping
+         tck = 0)
+    text(x = 1:length(short_labels),
+         y = par("usr")[3] - 10,  # Adjust y position
+         labels = short_labels,
+         srt = 45,  # Rotate labels
+         adj = 1,
+         xpd = TRUE)  # Allow text outside plot bounds
+
 
     ## PLOT 2
-    pre_cols <- grep("(?i)pre", names(data),
-                     value = TRUE, perl = TRUE)
+    # Find the overall median for all median pre scores -- to plot as
+    #   horizontal reference line
     pre_scores <- data[, .SD, .SDcols = pre_cols]
-
-    # Find the overall median for all differences scores
     pre_scores_vector <- as.vector(unlist(pre_scores))
     pre_scores_median <- median(pre_scores_vector, na.rm = TRUE)
 
-    par(las = 2)
+    par(mar = c(3, 4, 4, 2) + 0.1)  # Increase bottom margin for labels
     boxplot(pre_scores,
-            names = sub("Pre_Score_", "", names(pre_scores)),
+            names = NA,  # Suppress default labels
             main = "Distributions of Pre Scores Across Services",
             ylab = "Pre Scores",
-            xlab = "Service Test Category",
-            cex.axis = 0.7,
-            col = "lightsteelblue")
-    abline(h = pre_scores_median, lty = 2, lwd = 3, col = "steelblue")
-    par(las = 1)
+            col = "lightsteelblue",
+            xaxt = "n")  # Suppress x-axis labels
+
+    # Get shortened labels
+    short_labels <- sub("Pre_Score_", "", pre_cols)
+
+    # Add rotated labels manually
+    axis(1,
+         at = 1:length(short_labels),
+         labels = FALSE, # Prevent overlapping
+         tck = 0)
+    text(x = 1:length(short_labels),
+         y = par("usr")[3] - 10,  # Adjust y position
+         labels = short_labels,
+         srt = 45,  # Rotate labels
+         adj = 1,
+         xpd = TRUE)  # Allow text outside plot bounds
+
 
     ## PLOT 3
-    post_cols <- grep("(?i)post", names(data),
-                      value = TRUE, perl = TRUE)
+    # Find the overall median for all median post scores -- to plot as
+    #   horizontal reference line
     post_scores <- data[, .SD, .SDcols = post_cols]
-
-    # Find the overall median for all differences scores
     post_scores_vector <- as.vector(unlist(post_scores))
     post_scores_median <- median(post_scores_vector, na.rm = TRUE)
 
-    ########## need this for second line that shows pre_score_median too
-    pre_cols <- grep("(?i)pre", names(data),
-                     value = TRUE, perl = TRUE)
-    pre_scores <- data[, .SD, .SDcols = pre_cols]
-
-    # Find the overall median for all differences scores
-    pre_scores_vector <- as.vector(unlist(pre_scores))
-    pre_scores_median <- median(pre_scores_vector, na.rm = TRUE)
-    ##########
-
-    par(las = 2)
+    par(mar = c(3, 4, 4, 2) + 0.1)  # Increase bottom margin for labels
     boxplot(post_scores,
-            names = sub("Post_Score_", "", names(post_scores)),
+            names = NA,  # Suppress default labels
             main = "Distributions of Post Scores Across Services",
             ylab = "Post Scores",
-            xlab = "Service Test Category",
-            cex.axis = 0.7,
-            col = "lightsteelblue")
-    abline(h = pre_scores_median, lty = 2, lwd = 3, col = "steelblue")
-    abline(h = post_scores_median, lty = 3, lwd = 3, col = "steelblue")
-    par(las = 1)
+            col = "lightsteelblue",
+            xaxt = "n")  # Suppress x-axis labels
 
+    # Get shortened labels
+    short_labels <- sub("Post_Score_", "", post_cols)
+
+    # Add rotated labels manually
+    axis(1,
+         at = 1:length(short_labels),
+         labels = FALSE, # Prevent overlapping
+         tck = 0)
+    text(x = 1:length(short_labels),
+         y = par("usr")[3] - 10,  # Adjust y position
+         labels = short_labels,
+         srt = 45,  # Rotate labels
+         adj = 1,
+         xpd = TRUE)  # Allow text outside plot bounds
+
+
+    # Return plotting window to normal
     if (one_window == TRUE) { par(mfrow = c(1, 1)) }
   }
   else if (option == "across_provider") {
 
+    # Check if the required columns are found
+
+    # Median_Difference_Score column
+    median_diff_col <- grep("(?i)(med|median).*?(diff|difference)",
+                            names(data), value = TRUE, perl = TRUE)
+
+    # Provider column
+    provider_col <- grep("(?i)provider", names(data),
+                         value = TRUE, perl = TRUE)
+
+
+    if (length(median_diff_col) == 0 || length(provider_col) == 0) {
+      stop("Missing required columns for 'across_services' visualization.")
+    }
+
+    # Proceed with visualization using the identified columns
+    message("Columns identified: ", paste(median_diff_col, collapse = ", "),
+            "; ",
+            paste(provider_col, collapse = ", "))
+
+    # Alter this if I add in more plots
+    if (one_window == TRUE) { par(mfrow = c(1, 1)) }
+
     ## PLOT
-    median_diff_col <- "Median_Difference_Score"
 
+    # Find the overall median for all median differences scores -- to plot as
+    #   horizontal reference line
     median_diff_scores <- data[, .SD, .SDcols = median_diff_col]
-
-    # Find the overall median for all median differences scores
     median_diff_scores_vector <- as.vector(unlist(median_diff_scores))
     overall_median <- median(median_diff_scores_vector, na.rm = TRUE)
 
+    # Apply cleaning function to get abbreviated Provider names (will work even
+    #   if the values are already abbreviated)
+    provider_col_clean <- handle_provider(data[[provider_col]])
+
     par(las = 2)
-    boxplot(Median_Difference_Score ~ Provider,
+    boxplot(data[[median_diff_col]] ~ provider_col_clean,
             data = data,
             main = "Median Difference Scores Across Providers",
             ylab = "Median Difference Score",
@@ -150,6 +258,10 @@ visualize_scores <- function(data, option = c("overview", "across_service",
             col = "lightsteelblue")
     abline(h = overall_median, lty = 1, lwd = 3, col = "steelblue")
     par(las = 1)
+
+
+    # Return plotting window to normal -- not necessary for this option yet
+    if (one_window == TRUE) { par(mfrow = c(1, 1)) }
 
   }
 
