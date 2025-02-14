@@ -18,7 +18,7 @@
 #' @export
 #'
 
-visualize_metadata2 <- function(data, option = c("general_demo",
+visualize_metadata <- function(data, option = c("general_demo",
                                                 "investigate_scores",
                                                 "investigate_wage",
                                                 "investigate_employment"),
