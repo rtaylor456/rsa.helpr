@@ -198,6 +198,10 @@ visualize_metadata <- function(data, option = c("general_demo",
 
     # Check if the required columns are found
 
+    # Find the column for Median_Difference_Score
+    median_diff_col <- grep("(?i)(med|median).*?(diff|difference)",
+                            names(data), value = TRUE, perl = TRUE)
+
     # Find the column for Median_Time_Passed_Days
     median_time_col <- grep("(?i)(med|median).*?(time|days)(?!.*(?i)_desc)",
                             names(data),
@@ -238,7 +242,8 @@ visualize_metadata <- function(data, option = c("general_demo",
 
 
     # Check if the required columns are found
-    if (length(median_time_col) == 0 || length(enroll_len_col) == 0 ||
+    if (length(median_diff_col) == 0 || length(median_time_col) == 0 ||
+        length(enroll_len_col) == 0 ||
         length(sex_col) == 0 || length(race_cols) == 0 ||
         length(final_employ_col) == 0 || length(severity_col) == 0 ||
         length(prim_impair_grp_col) == 0 ||
@@ -247,8 +252,9 @@ visualize_metadata <- function(data, option = c("general_demo",
     }
 
     # Proceed with visualization using the identified columns
-    message("Columns identified: ", paste(median_time_col, collapse = ", "),
-            "; ",
+    message("Columns identified: ",
+            paste(median_diff_col, collapse = ", "), "; ",
+            paste(median_time_col, collapse = ", "), "; ",
             paste(enroll_len_col, collapse = ", "), "; ",
             paste(sex_col, collapse = ", "), "; ",
             paste(race_cols, collapse = ", "), "; ",
@@ -442,7 +448,7 @@ visualize_metadata <- function(data, option = c("general_demo",
 
     ## PLOT 2
     plot(data[[median_time_col]],
-         wages_vector,
+         data[[wage_col]],
          main = "Exit Wages Across Days in Program",
          ylab = "Exit Wages ($ per hour)",
          xlab = "Median Days Spent in Programs (per individual)",
