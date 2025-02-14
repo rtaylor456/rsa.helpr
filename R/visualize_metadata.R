@@ -18,7 +18,7 @@
 #' @export
 #'
 
-visualize_metadata <- function(data, option = c("general_demo",
+visualize_metadata2 <- function(data, option = c("general_demo",
                                                 "investigate_scores",
                                                 "investigate_wage",
                                                 "investigate_employment"),
@@ -192,11 +192,11 @@ visualize_metadata <- function(data, option = c("general_demo",
          cex = 0.8)  # Adjust the size of the labels
 
     # Reset the plot window
-    if (one_window == TRUE) { par(mfrow = c(1, 1)) }
+    par(mfrow = c(1, 1))
 
   } else if (option == "investigate_scores") {
 
-     # Check if the required columns are found
+    # Check if the required columns are found
 
     # Find the column for Median_Time_Passed_Days
     median_time_col <- grep("(?i)(med|median).*?(time|days)(?!.*(?i)_desc)",
@@ -243,7 +243,7 @@ visualize_metadata <- function(data, option = c("general_demo",
         length(final_employ_col) == 0 || length(severity_col) == 0 ||
         length(prim_impair_grp_col) == 0 ||
         length(second_impair_grp_col) == 0) {
-      stop("Missing required columns for 'general demo' visualization.")
+      stop("Missing required columns for 'investigate scores' visualization.")
     }
 
     # Proceed with visualization using the identified columns
@@ -308,9 +308,6 @@ visualize_metadata <- function(data, option = c("general_demo",
     # Filter rows where Has_Race is 1
     filtered_data <- long_data[Has_Race == 1]
 
-    # Adjust the outer margins, so that the bottom doesn't get cut off
-    par(oma = c(0, 0, 0, 0) + 0.6)
-
     boxplot(Median_Difference_Score ~ Race, data = filtered_data,
             # names = gsub("^E[0-9]+_|_911$", "", race_cols),
             col = "steelblue",
@@ -360,26 +357,91 @@ visualize_metadata <- function(data, option = c("general_demo",
             ylab = "Median Difference Scores",
             col = "steelblue")
 
-    if (one_window == TRUE) {par(mfrow = c(1, 1))}
+    # Reset the plotting window
+    par(mfrow = c(1, 1))
 
   } else if (option == "investigate_wage") {
 
+
+    # Check if the required columns are found
+
+    # Find the column for Median_Time_Passed_Days
+    median_time_col <- grep("(?i)(med|median).*?(time|days)(?!.*(?i)_desc)",
+                            names(data),
+                            value = TRUE, perl = TRUE)
+
+    # Find the column for enrollment length
+    enroll_len_col <- grep("(?i)(enroll|enrollment).*?(length|len)(?!.*(?i)_grp)",
+                           names(data), value = TRUE, perl = TRUE)
+
+    # Find the column for enrollment length group
+    enroll_len_grp_col <- grep("(?i)(enroll|enrollment).*?(length|len)*?(_grp)",
+                               names(data), value = TRUE, perl = TRUE)
+
+    # Find the column for sex/gender
+    sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
+                    value = TRUE, perl = TRUE)
+
+    # Find the columns for race
+    race_cols <- grep("(?i)(_indian|_asian|_black|_hawaiian|_islander|_white|hispanic)(?!.*(?i)_desc)",
+                      names(data),
+                      value = TRUE, perl = TRUE)
+
+    # Find the column for final employment status
+    final_employ_col <- grep("(?i)(final).*?(employ)(?!.*(?i)_desc)",
+                             names(data), value = TRUE, perl = TRUE)
+
+    # Find the column for disability severity
+    severity_col <- grep("((?i)_priority|(?i)_severity)(?!.*(?i)_desc|_age)",
+                         names(data), value = TRUE, perl = TRUE)
+
+    # Find the column for primary impairment group
+    prim_impair_grp_col <- grep("(?i)(prim|primary).*?(impair|disability).*?(grp|group)(?!.*(?i)_desc)",
+                                names(data), value = TRUE, perl = TRUE)
+
+    # Find the column for secondary impairment group
+    second_impair_grp_col <- grep("(?i)(sec|second).*?(impair|disability).*?(grp|group)(?!.*(?i)_desc)",
+                                  names(data), value = TRUE, perl = TRUE)
+
+    # Find the column for exit wage
     wage_col <- grep("(?i)^(?=.*wage)(?=.*exit)(?!.*(desc))", names(data),
                      value = TRUE, perl = TRUE)
-    wages <- data[, .SD, .SDcols = wage_col]
-    wages_vector <- as.vector(unlist(wages))
 
+    # Check if the required columns are found
+    if (length(median_time_col) == 0 || length(enroll_len_col) == 0 ||
+        length(sex_col) == 0 || length(race_cols) == 0 ||
+        length(final_employ_col) == 0 || length(severity_col) == 0 ||
+        length(prim_impair_grp_col) == 0 ||
+        length(second_impair_grp_col) == 0 || length(wage_col) == 0) {
+      stop("Missing required columns for 'investigate wage' visualization.")
+    }
+
+    # Proceed with visualization using the identified columns
+    message("Columns identified: ", paste(median_time_col, collapse = ", "),
+            "; ",
+            paste(enroll_len_col, collapse = ", "), "; ",
+            paste(sex_col, collapse = ", "), "; ",
+            paste(race_cols, collapse = ", "), "; ",
+            paste(final_employ_col, collapse = ", "), "; ",
+            paste(severity_col, collapse = ", "), "; ",
+            paste(prim_impair_grp_col, collapse = ", "), "; ",
+            paste(second_impair_grp_col, collapse = ", "), ";",
+            paste(wage_col, collapse = ", "))
+
+
+    # Set adjusted plotting window if necessary
     if (one_window == TRUE) {par(mfrow = c(3, 3))}
+
+
     ## PLOT 1
-    hist(wages_vector,
+
+    hist(data[[wage_col]],
          col = "steelblue",
          main = "Distribution of Exit Wages",
          xlab = "Exit Wage ($ per hour)")
 
     ## PLOT 2
-    # these variables have been created in the data cleaning process,
-    #   so we can use the exact names
-    plot(data$Median_Time_Passed_Days,
+    plot(data[[median_time_col]],
          wages_vector,
          main = "Exit Wages Across Days in Program",
          ylab = "Exit Wages ($ per hour)",
@@ -388,19 +450,15 @@ visualize_metadata <- function(data, option = c("general_demo",
          pch = 3)
 
     ## PLOT 3
-    boxplot(wages_vector ~ data[["Enroll_Length_Grp"]],
+    boxplot(data[[wage_col]] ~ data[[enroll_len_grp_col]],
             main = "Exit Wages Across Quarters Enrolled",
             xlab = "Enrollment Length (total quarters)",
             ylab = "Exit Wages ($ per Hour)",
             col = "steelblue")
 
     # PLOT 4
-    # Identify the column for gender/sex
-    sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
-                    value = TRUE, perl = TRUE)
-
     visualize_densities(cat_var = data[[sex_col]],
-                        num_var = wages_vector,
+                        num_var = data[[wage_col]],
                         cat_var_name = "Gender",
                         num_var_name = "Exit Wages ($ per Hour)",
                         level_labels = c("Males", "Females",
@@ -410,10 +468,6 @@ visualize_metadata <- function(data, option = c("general_demo",
                                    "gray"))
 
     ## PLOT 5
-    race_cols <- grep("(?i)(_indian|_asian|_black|_hawaiian|_islander|_white|hispanic)(?!.*(?i)_desc)",
-                      names(data),
-                      value = TRUE, perl = TRUE)
-
     data_subset <- data[, .SD, .SDcols = c(wage_col,
                                            race_cols)]
 
@@ -433,10 +487,13 @@ visualize_metadata <- function(data, option = c("general_demo",
     }
 
     # Extract the wage column name
-    wage_col_name <- wage_col[1]
+    # wage_col_name <- wage_col[1]
+
 
     # Create a formula for the boxplot
-    boxplot_formula <- as.formula(paste(wage_col_name, "~ Race"))
+    # boxplot_formula <- as.formula(paste(wage_col_name, "~ Race"))
+    boxplot_formula <- as.formula(paste(wage_col, "~ Race"))
+
 
     # Plot using the dynamic formula
     # par(oma = c(0, 0, 0, 0) + 0.6)
@@ -460,11 +517,8 @@ visualize_metadata <- function(data, option = c("general_demo",
          adj = 1)
 
     ## PLOT 6
-    severity_col <- grep("((?i)_priority|(?i)_severity)(?!.*(?i)_desc|_age)",
-                         names(data), value = TRUE, perl = TRUE)
-
     visualize_densities(cat_var = data[[severity_col]],
-                        num_var = wages_vector,
+                        num_var = data[[wage_col]],
                         cat_var_name = "Disability Severity",
                         num_var_name = "Exit Wages ($ per Hour)",
                         level_labels = c("Non significant", "Significant",
@@ -474,24 +528,101 @@ visualize_metadata <- function(data, option = c("general_demo",
 
 
     ## PLOT 7
-    boxplot(wages_vector ~ Primary_Impairment_Group,
-            data = data,
+    boxplot(data[[wage_col]] ~ data[[prim_impair_grp_col]],
             main = "Exit Wages by Primary Impairment Type",
             xlab = "Primary Impairment",
             ylab = "Exit Wages ($ per Hour)",
             col = "steelblue")
 
-    if (one_window == TRUE) { par(mfrow = c(1, 1)) }
+    ## PLOT 8
+    boxplot(data[[wage_col]] ~ data[[second_impair_grp_col]],
+            main = "Exit Wages by Secondary Impairment Type",
+            xlab = "Secondary Impairment",
+            ylab = "Exit Wages ($ per Hour)",
+            col = "steelblue")
+
+    # Reset plotting window
+    par(mfrow = c(1, 1))
 
   } else if (option == "investigate_employment") {
 
+    # Check if the required columns are found
+
+    # Find the column for Median_Time_Passed_Days
+    median_time_col <- grep("(?i)(med|median).*?(time|days)(?!.*(?i)_desc)",
+                            names(data),
+                            value = TRUE, perl = TRUE)
+
+    # Find the column for enrollment length
+    enroll_len_col <- grep("(?i)(enroll|enrollment).*?(length|len)(?!.*(?i)_grp)",
+                           names(data), value = TRUE, perl = TRUE)
+
+    # Find the column for enrollment length group
+    enroll_len_grp_col <- grep("(?i)(enroll|enrollment).*?(length|len)*?(_grp)",
+                               names(data), value = TRUE, perl = TRUE)
+
+    # Find the column for sex/gender
+    sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
+                    value = TRUE, perl = TRUE)
+
+    # Find the columns for race
+    race_cols <- grep("(?i)(_indian|_asian|_black|_hawaiian|_islander|_white|hispanic)(?!.*(?i)_desc)",
+                      names(data),
+                      value = TRUE, perl = TRUE)
+
+    # Find the column for final employment status
+    final_employ_col <- grep("(?i)(final).*?(employ)(?!.*(?i)_desc)",
+                             names(data), value = TRUE, perl = TRUE)
+
+    # Find the column for disability severity
+    severity_col <- grep("((?i)_priority|(?i)_severity)(?!.*(?i)_desc|_age)",
+                         names(data), value = TRUE, perl = TRUE)
+
+    # Find the column for primary impairment group
+    prim_impair_grp_col <- grep("(?i)(prim|primary).*?(impair|disability).*?(grp|group)(?!.*(?i)_desc)",
+                                names(data), value = TRUE, perl = TRUE)
+
+    # Find the column for secondary impairment group
+    second_impair_grp_col <- grep("(?i)(sec|second).*?(impair|disability).*?(grp|group)(?!.*(?i)_desc)",
+                                  names(data), value = TRUE, perl = TRUE)
+
+    # Find the column for exit wage
+    wage_col <- grep("(?i)^(?=.*wage)(?=.*exit)(?!.*(desc))", names(data),
+                     value = TRUE, perl = TRUE)
+
+    # Find the column for work status
     exit_work_col <- grep("(?i)_exit*(?i)_work(?!.*(?i)_amt)(?!.*(?i)_desc)",
                           names(data), value = TRUE, perl = TRUE)
 
+
+    # Check if the required columns are found
+    if (length(median_time_col) == 0 || length(enroll_len_col) == 0 ||
+        length(sex_col) == 0 || length(race_cols) == 0 ||
+        length(final_employ_col) == 0 || length(severity_col) == 0 ||
+        length(prim_impair_grp_col) == 0 ||
+        length(second_impair_grp_col) == 0 || length(wage_col) == 0 ||
+        length(exit_work_col) == 0) {
+      stop("Missing required columns for 'investigate employment' visualization.")
+    }
+
+    # Proceed with visualization using the identified columns
+    message("Columns identified: ", paste(median_time_col, collapse = ", "),
+            "; ",
+            paste(enroll_len_col, collapse = ", "), "; ",
+            paste(sex_col, collapse = ", "), "; ",
+            paste(race_cols, collapse = ", "), "; ",
+            paste(final_employ_col, collapse = ", "), "; ",
+            paste(severity_col, collapse = ", "), "; ",
+            paste(prim_impair_grp_col, collapse = ", "), "; ",
+            paste(second_impair_grp_col, collapse = ", "), ";",
+            paste(wage_col, collapse = ", "))
+
+
+    # Set adjusted plotting window if necessary
     if (one_window == TRUE) {par(mfrow = c(3, 3))}
 
     ## PLOT 1
-    barplot(table(data$Final_Employment),
+    barplot(table(data[[final_employ_col]]),
             main = "Distribution of Exit Employment",
             names = c("Non-competitive", "Competitive"),
             xlab = "Exit Employment Status",
@@ -499,10 +630,8 @@ visualize_metadata <- function(data, option = c("general_demo",
 
 
     ## PLOT 2
-    # these variables have been created in the data cleaning process,
-    #   so we can use the exact names
-    plot(data$Median_Time_Passed_Days,
-         as.character(data$Final_Employment),
+    plot(data[[median_time_col]],
+         as.character(data[[final_employ_col]]),
          main = "Exit Employment Across Time in Program",
          ylab = "Exit Employment",
          xlab = "Median Days Spent in Programs (per individual)",
@@ -511,8 +640,8 @@ visualize_metadata <- function(data, option = c("general_demo",
 
     ## PLOT 3
     # Create a contingency table of Final_Employment by Gender
-    employment_enroll_table <- table(data$Final_Employment,
-                                     data[["Enroll_Length_Grp"]])
+    employment_enroll_table <- table(data[[final_employ_col]],
+                                     data[[enroll_len_grp_col]])
 
     rownames(employment_enroll_table) <- c("Non-competitive Employment",
                                            "Competitive Employment")
@@ -531,14 +660,8 @@ visualize_metadata <- function(data, option = c("general_demo",
 
 
     ## PLOT 4
-    # the name for the gender/sex column could be varied, so we need to
-    #   account for this possibility
-    sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
-                    value = TRUE, perl = TRUE)
-
-
     # Create a contingency table of Final_Employment by Gender
-    employment_gender_table <- table(data$Final_Employment,
+    employment_gender_table <- table(data[[final_employ_col]],
                                      data[[sex_col]])
 
     rownames(employment_gender_table) <- c("Non-competitive Employment",
@@ -560,16 +683,12 @@ visualize_metadata <- function(data, option = c("general_demo",
 
 
     ## PLOT 5
-    race_cols <- grep("(?i)(_indian|_asian|_black|_hawaiian|_islander|_white|hispanic)(?!.*(?i)_desc)",
-                      names(data),
-                      value = TRUE, perl = TRUE)
-
-    data_subset <- data[, .SD, .SDcols = c("Final_Employment",
+    data_subset <- data[, .SD, .SDcols = c(final_employ_col,
                                            race_cols)]
 
     # Create a long-format data.table
     long_data <- melt(data_subset,
-                      id.vars = "Final_Employment",
+                      id.vars = final_employ_col,
                       measure.vars = race_cols,
                       variable.name = "Race",
                       value.name = "Has_Race")
@@ -578,21 +697,9 @@ visualize_metadata <- function(data, option = c("general_demo",
 
 
     # Create a contingency table of Final_Employment by Gender
-    employment_race_table <- table(filtered_data$Final_Employment,
+    employment_race_table <- table(filtered_data[[final_employ_col]],
                                    filtered_data$Race)
 
-    # Create the bar plot based on the contingency table
-    # par(oma = c(0, 0, 0, 0) + 0.6)
-    # barplot(employment_race_table, beside = TRUE,
-    #         col = c("lightsteelblue", "steelblue"),
-    #         legend.text = c("Non-competitive", "Competitive"),
-    #         args.legend = list(x = "topleft", bty = "n",
-    #                            title = "Employment Type"),
-    #         ylab = "Count",
-    #         xaxt = "n",
-    #         yaxt = "n",
-    #         xlab = "",
-    #         main = "Final Employment by Race", las = 2)
 
     bar_midpoints <- barplot(employment_race_table, beside = TRUE,
                              col = c("lightsteelblue", "steelblue"),
@@ -620,11 +727,8 @@ visualize_metadata <- function(data, option = c("general_demo",
 
 
     ## PLOT 6
-    severity_col <- grep("((?i)_priority|(?i)_severity)(?!.*(?i)_desc|_age)",
-                         names(data), value = TRUE, perl = TRUE)
-
     # Create a contingency table of Final_Employment by Gender
-    employment_severity_table <- table(data$Final_Employment,
+    employment_severity_table <- table(data[[final_employ_col]],
                                        data[[severity_col]])
 
     rownames(employment_severity_table) <- c("Non-competitive Employment",
@@ -646,8 +750,8 @@ visualize_metadata <- function(data, option = c("general_demo",
 
 
     ## PLOT 7
-    employment_prim_dis_table <- table(data$Final_Employment,
-                                       data$Primary_Impairment_Group)
+    employment_prim_dis_table <- table(data[[final_employ_col]],
+                                       data[[prim_impair_grp_col]])
 
     rownames(employment_prim_dis_table) <- c("Non-competitive Employment",
                                              "Competitive Employment")
@@ -663,7 +767,8 @@ visualize_metadata <- function(data, option = c("general_demo",
             main = "Exit Employment by Primary Impairment",
     )
 
-    if (one_window == TRUE) {par(mfrow = c(1, 1))}
+    # Reset the plotting window
+    par(mfrow = c(1, 1))
 
   }
 
