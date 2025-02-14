@@ -30,13 +30,9 @@
 clean_utah <- function(data,
                        aggregate = TRUE,
                        unidentified_to_0 = TRUE,
-                       # convert_sex = TRUE,
-                       # convert_employ = TRUE,
                        remove_desc = TRUE,
                        remove_strictly_na = TRUE,
                        clean_specials = NULL) {
-  # remove redundancies in ids
-  # add in a new variable that counts redundancies
 
   # Ensure data is a data.table
   setDT(data)
@@ -53,24 +49,22 @@ clean_utah <- function(data,
   }
 
   # ADMIN columns
-  # remove the extra administrative columns
-  extra_cols <- grep("(?i)_data_(?!.*(?i)_desc)", names(data),
+  # remove the extra administrative columns, not needed for analysis
+  extra_cols <- grep("(?i)_data_|(?i)VR_Case_Type_Flag(?!.*(?i)_desc)",
+                     names(data),
                      value = TRUE, perl = TRUE)
   data[, (extra_cols) := NULL]
 
-
-  # EXTRA columns that occurs when writing to csv in R--who knows why
-  # Remove column X or x if it exists
-  # if ("X" %in% names(data)) {
-  #   data[, X := NULL]
-  # }
-  # if ("x" %in% names(data)) {
-  #   data[, x := NULL]
-  # }
-
-  # add additional miscellaneous columns to add
+  # Additional miscellaneous columns to remove
   columns_to_remove <- c("X", "x", "V1")
-  data[, (columns_to_remove) := NULL, with = FALSE]
+
+  # Check if the columns exist in the data before removing them
+  existing_columns <- columns_to_remove[columns_to_remove %in% names(data)]
+
+  # Remove only the columns that exist
+  if (length(existing_columns) > 0) {
+    data[, (existing_columns) := NULL]
+  }
 
 
   ######################
@@ -87,12 +81,10 @@ clean_utah <- function(data,
                        value = TRUE, perl = TRUE)
 
   # AGE column
-  # Rename the column
-  # age_cols <- grep("(?i)age.*app|app.*age(?!.*(?i)_desc)", names(data),
-  #                  value = TRUE, perl = TRUE)
   age_cols <- grep("(?i)^(?=.*age)(?=.*app)(?!.*(desc|amt))", names(data),
                    value = TRUE, perl = TRUE)
 
+  # Rename
   names(data)[names(data) %in% age_cols] <- "Age_At_Application"
 
 
@@ -109,28 +101,10 @@ clean_utah <- function(data,
   numeric_cols <- c(year_col, quarter_col, "Age_At_Application",
                     amt_cols, hours_cols)
 
-
-
-  data[, (numeric_cols) := lapply(.SD, as.numeric),
-       .SDcols = numeric_cols]
-
-
-  ## CREATE NEW VARIABLES
-  # Create enrollment length variable
-  # data[, Overall_Quarter := ((E1_Year_911 - 2020) * 4 + E2_Quarter_911)]
-  #
-  # data[, `:=`(Min_Overall_Quarter = min(Overall_Quarter),
-  #             Max_Overall_Quarter = max(Overall_Quarter)),
-  #      by = Participant_ID]
-  #
-  # # Compute Enroll Length
-  # data[, Enroll_Length := Max_Overall_Quarter - Min_Overall_Quarter + 1]
-  #
-  #
-  # # Create variables that count the number of years and quarters
-  # data[, `:=`(Total_Years = uniqueN(E1_Year_911),
-  #             Total_Quarters = uniqueN(E2_Quarter_911)),
-  #      by = Participant_ID]
+  # Convert to numeric, ignoring warnings about NAs--this is what we want.
+  data[, (names(data)) :=
+         lapply(.SD, function(x) suppressWarnings(as.numeric(x))),
+       .SDcols = names(data)]
 
 
   ######################
@@ -171,25 +145,59 @@ clean_utah <- function(data,
                           names(data), value = TRUE, perl = TRUE)
 
   # DEMOGRAPHIC columns - 0, 1, 9
-  # e10-e16, e42, e49, e54-e60, e62-e73,
-  demographic_cols <- grep("^(E1[0-6]_|(E42|E49|E5[4-9]|E6[2-7]|E7[0-3])_)(?!.*(?i)_desc)",
+  race_cols <- grep("(?i)(_indian|_asian|_black|_hawaiian|_islander|_white|hispanic)(?!.*(?i)_desc)",
+                    names(data),
+                    value = TRUE, perl = TRUE)
+  # [1] "E10_Indian_Alaskan_911"            "E11_Asian_911"
+  # [3] "E12_Black_African_911"             "E13_Hawaiian_Pacific_Islander_911"
+  # [5] "E14_White_911"                     "E15_Hispanic_Latino_911"
+
+  veteran_col <- grep("(?i)veteran(?!.*(_desc|description|_amt|amount|amnt|vendor|title|comp))",
+                       names(data), value = TRUE, perl = TRUE)
+  # [1] "E16_Veteran_Status_911"
+
+  has_disability_col <- grep("(?i)(has_disability)(?!.*(_desc|description|_amt|amount|amnt|vendor|title|comp|hours|date|ext|wage))",
+                          names(data), value = TRUE, perl = TRUE)
+  # [1] "E42_Has_Disability_911"
+
+  q1_q1_employ_col <- grep("(?i)(employer_match|q1_q2_match|q1_q2_employ)(?!.*(_desc|description|_amt|amount|amnt|vendor|title|comp|hours|date|ext|wage))",
                            names(data), value = TRUE, perl = TRUE)
+  # [1] "E392_Q2_Q4_Employer_Match_911"
 
-  other_binary_cols <- grep("^(E60_|E68_|E69_|E392_|E400_|VR_Case_Type_Flag)(?!.*(?i)_desc)",
-                            names(data), value = TRUE, perl = TRUE)
+  adult_cols <- grep("(?i)adult(?!.*(_desc|description|_amt|amount|amnt|vendor|title|comp|hours|date|ext|wage))",
+                     names(data), value = TRUE, perl = TRUE)
+  # [1] "E54_Adult_911"           "E55_Adult_Education_911"
 
-  binary_cols <- c(prov_purch_cols, demographic_cols, other_binary_cols)
+  service_work_cols <- grep("(?i)(dislocated_worker|job_corps|voc_rehab|wagner_peyser|youth|equivalent|se_goal)(?!.*(_desc|description|_amt|amount|amnt|vendor|title|comp|hours|date|ext|wage))",
+                         names(data), value = TRUE, perl = TRUE)
+  # [1] "E56_Dislocated_Worker_911"                "E57_Job_Corps_911"
+  # [3] "E58_Voc_Rehab_911"                        "E59_Wagner_Peyser_911"
+  # [5] "E60_Youth_911"                            "E61_YouthBuild_911"
+  # [7] "E400_Secondary_Equivalent_Enrollment_911"
 
-  data[, (binary_cols) := lapply(.SD, function(x) handle_nines(x, unidentified_to_0)),
+  plan_cols <- grep("(?i)plan_(?!.*(_desc|description|_amt|amount|amnt|vendor|title|comp|hours|date|ext|wage|status|occ|grade|farm))",
+                    names(data), value = TRUE, perl = TRUE)
+  # [1] "E62_Plan_Long_Term_Unemployment_911" "E63_Plan_Exhaust_TANF_911"
+  # [3] "E64_Plan_Foster_Care_911"            "E65_Plan_Homeless_911"
+  # [5] "E66_Plan_Offender_911"               "E67_Plan_Low_Income_911"
+  # [7] "E68_Plan_English_Learner_911"        "E69_Plan_Skills_Deficient_911"
+  # [9] "E70_Plan_Cultural_Barriers_911"      "E71_Plan_Single_Parent_911"
+  # [11] "E72_Plan_Displaced_Homemaker_911"
+
+  demographic_cols <- c(race_cols, veteran_col, has_disability_col,
+                        q1_q1_employ_col, adult_cols, service_work_cols,
+                        plan_cols)
+
+  binary_cols <- c(prov_purch_cols, demographic_cols)
+
+  data[, (binary_cols) :=
+         lapply(.SD, function(x) handle_nines(x, unidentified_to_0)),
        .SDcols = binary_cols]
 
 
   # SEX column
   sex_cols <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
                    value = TRUE, perl = TRUE)
-
-  # data[, (sex_cols) := lapply(.SD, function(x) handle_sex(x, convert_sex)),
-  #      .SDcols = sex_cols]
 
   data[, (sex_cols) := lapply(.SD, function(x) {
     handle_values(x, c(1, 2, 3, 9), blank_value = 9)
@@ -279,15 +287,7 @@ clean_utah <- function(data,
   .SDcols = exit_work_col]
 
 
-  # if (convert_employ == TRUE){
-  #   data[, (employ_cols) := lapply(.SD, function(x) ifelse(x == 4, 1, 0)),
-  #        .SDcols = employ_cols]
-  #
-  #   data[, (exit_work_col) := lapply(.SD, function(x) ifelse(x == 1, 1, 0)),
-  #        .SDcols = exit_work_col]
-  # }
-
-  # create a new variable for employment status with a name that's easier to
+  # Create a new variable for employment status with a name that's easier to
   #    reference
   data[, Final_Employment := lapply(.SD, function(x) ifelse(x == 1, 1, 0)),
        .SDcols = exit_work_col]
@@ -345,14 +345,8 @@ clean_utah <- function(data,
 
   all_special_cols <- c(special_cols, comp_cols)
 
-  # uncomment this once I've got the function to stop crashing the computer
-  # data <- handle_splits(data, all_special_cols)
-
-  # this is too slow!
-  # if (clean_specials == TRUE){
-  #   data <- apply_handle_splits(data, all_special_cols, sep = ";")
-  # }
-
+  # There are too many special character variables, so it's best to let the
+  #   user decide which variables they want to clean
   if (!is.null(clean_specials) & length(all_special_cols) > 0) {
     data <- apply_handle_splits(data, clean_specials, sep = ";")
   }
@@ -372,15 +366,15 @@ clean_utah <- function(data,
                                                          "Visual",
                                                  fifelse(x %in% c(3, 4, 5, 6, 7,
                                                                   9),
-                                                         "Auditory/Commun.",
+                                                         "Aud./Comm.",
                                                  fifelse(x %in% c(10, 11, 12,
                                                                   13, 14, 15,
                                                                   16),
                                                          "Physical",
                                                  fifelse(x == 17,
-                                                         "Intellectual/Learn.",
+                                                         "Intell./Learn.",
                                                  fifelse(x %in% c(18, 19),
-                                                         "Psychological",
+                                                         "Psych.",
                                                          NA_character_))))))),
        .SDcols = impairment_vars]
 
@@ -388,38 +382,11 @@ clean_utah <- function(data,
   data[, (group_vars) := lapply(.SD, factor,
                                 levels = c("None",
                                            "Visual",
-                                           "Auditory/Commun.",
+                                           "Aud./Comm.",
                                            "Physical",
-                                           "Intellectual/Learn.",
-                                           "Psychological")),
+                                           "Intell./Learn.",
+                                           "Psych.")),
        .SDcols = group_vars]
-
-
-  # # Primary_Impairment
-  # data[, Primary_Impairment_Group := fifelse(Primary_Impairment == 0,
-  #                                            "None",
-  #                               fifelse(Primary_Impairment %in% c(1, 2, 8),
-  #                                       "Visual",
-  #                               fifelse(Primary_Impairment %in%
-  #                                         c(3, 4, 5, 6, 7, 9),
-  #                                       "Auditory/Commun.",
-  #                               fifelse(Primary_Impairment %in%
-  #                                         c(10, 11, 12, 13, 14, 15, 16),
-  #                                       "Physical",
-  #                               fifelse(Primary_Impairment == 17,
-  #                                       "Intellectual/Learn.",
-  #                               fifelse(Primary_Impairment %in% c(18, 19),
-  #                                       "Psychological", NA_character_))))))]
-  #
-  # data[, Primary_Impairment_Group := factor(Primary_Impairment_Group,
-  #                                           levels = c("None", "Visual",
-  #                                                    "Auditory/Commun.",
-  #                                                    "Physical",
-  #                                                    "Intellectual/Learn.",
-  #                                                    "Psychological"))]
-  #
-
-
 
 
   ##############################################################################
@@ -435,19 +402,66 @@ clean_utah <- function(data,
 
   # DATA AGGREGATION
   if (aggregate) {
-    data <- data[!is.na(E7_Application_Date_911)]
-    # Order the data by Participant_ID, E1_Year_911, E2_Quarter_911,
-    #    and E7_Application_Date_911
-    setorder(data, Participant_ID, E1_Year_911, E2_Quarter_911,
-             -E7_Application_Date_911)
+
+    ## Initial checks
+    # Make sure we have necessary columns for cleaning processes
+
+    participant_col <- grep("(?i)^(?=.*participant)|(?=.*\\bid\\b)(?!.*\\bid\\B)",
+                        names(data), value = TRUE, perl = TRUE)
+
+    year_col <- grep("(?i)_year|(?i)_yr_(?!.*(?i)_desc)", names(data),
+                     value = TRUE, perl = TRUE)
+
+    quarter_col <- grep("(?i)_quarter|(?i)_qt_(?!.*(?i)_desc)", names(data),
+                        value = TRUE, perl = TRUE)
+
+    app_date_col <- grep("(?i)_app.*?(date)(?!.*(?i)_desc)", names(data),
+                         value = TRUE, perl = TRUE)
+
+    required_cols <- c(participant_col, year_col, quarter_col, app_date_col)
+
+
+    missing_cols <- setdiff(required_cols, names(data))
+
+    if (length(missing_cols) > 0) {
+      stop("Missing required columns: ", paste(missing_cols, collapse = ", "))
+    }
+
+    # Check if essential columns have only NA values
+    empty_cols <- sapply(data[, required_cols, with = FALSE],
+                         function(x) all(is.na(x)))
+
+    if (any(empty_cols)) {
+      stop("Some required columns have no data: ",
+           paste(names(empty_cols[empty_cols]), collapse = ", "))
+    }
+
+
+    names(data)[names(data) %in% participant_col] <- "Participant_ID"
+    names(data)[names(data) %in% year_col] <- "Year"
+    names(data)[names(data) %in% quarter_col] <- "Quarter"
+    names(data)[names(data) %in% app_date_col] <- "Application_Date"
+
+    # Remove rows where application date is missing --these are typically fully
+    #   missing data rows anyway.
+    data <- data[!is.na(Application_Date)]
+
+    # Order the data by Participant_ID, year, quarter, and reverse order
+    #   application date
+    setorder(data, Participant_ID, Year, Quarter, -Application_Date)
+
 
     # Create a helper column to identify the first occurrence within each group
-    data[, Occurrences_Per_Quarter := .N, by = .(Participant_ID, E1_Year_911,
-                                                 E2_Quarter_911)]
-    data <- data[, .SD[1], by = .(Participant_ID, E1_Year_911, E2_Quarter_911)]
+    data[, Occurrences_Per_Quarter := .N, by = .(Participant_ID,
+                                                 Year,
+                                                 Quarter)]
+    # Save only the first occurrence
+    data <- data[, .SD[1], by = .(Participant_ID,
+                                  Year,
+                                  Quarter)]
 
     # Sort by year and quarter
-    setorder(data, E1_Year_911, E2_Quarter_911)
+    setorder(data, Year, Quarter)
   }
 
   # REMOVE COLUMNS WITH ONLY NAs

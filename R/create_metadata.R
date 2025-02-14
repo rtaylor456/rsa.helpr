@@ -1,5 +1,3 @@
-library(data.table)
-
 #' Create Metadata
 #'
 #' This function aggregates a merged or RSA-911 dataset to contain only one row
