@@ -33,21 +33,6 @@ visualize_densities <- function(cat_var, num_var,
   ) {
     stop("There must be at least one populated level of the categorical variable.")
   }
-  # check that there are enough obs of the num var per level of cat var
-  # else if (all(sapply(split(num_var, cat_var), function(x) {
-  #   sum(!is.na(x)) >= 2} )) == FALSE
-  #            )
-  #   {
-  #   stop("There must be at least two observations of the numeric variable per level of the categorical variable.")
-  # }
-  #
-
-
-  # insufficient_data <- any(sapply(split(num_var, cat_var),
-  #                                 function(x) sum(!is.na(x)) < 2))
-
-  # insufficient_data <- any(sapply(split(num_var, cat_var),
-  #                                 function(x) length(unique(x[!is.na(x)])) < 2))
 
   # find out the counts per level--mark FALSE for levels with >= 2 observations
   #   and TRUE for sparse levels, where there are < 2 observations.
@@ -99,17 +84,13 @@ visualize_densities <- function(cat_var, num_var,
     if (is.null(main)) main <- paste("Density Plot of", num_var_name, "by",
                                      cat_var_name)
     # if the user did not provide labels for the categorical variable levels, or
-    #.  if they did, but the labels do not match the
+    #.  if they did, but the labels do not match the number of valid levels
     if (is.null(level_labels) ||
         (length(level_labels) != length(valid_level_labels))) {
       warning("Level labels will be automated based on the valid/populated levels of the categorical variable.")
       level_labels <- valid_level_labels
       }
 
-    # Create densities for each group, skipping NA values in num_var
-    # densities <- lapply(levels, function(level) {
-    #   density(num_var[cat_var == level], na.rm = TRUE)
-    # })
 
     densities <- lapply(valid_level_labels, function(level) {
       density(num_var[cat_var == level], na.rm = TRUE)
@@ -121,11 +102,6 @@ visualize_densities <- function(cat_var, num_var,
                              na.rm = TRUE)
 
     # Assign colors if not provided
-    # if (is.null(colors) || length(colors) < length(levels)) {
-    #   # Default to rainbow colors if not enough colors provided
-    #   colors <- rainbow(length(levels))
-    # }
-
     if (is.null(colors) || length(colors) < length(valid_level_labels)) {
       # Default to rainbow colors if not enough colors provided
       colors <- rainbow(length(valid_level_labels))

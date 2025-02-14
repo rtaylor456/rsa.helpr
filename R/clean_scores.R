@@ -35,17 +35,26 @@ clean_scores <- function(data, state_filter = NULL, clean_id = TRUE,
   }
 
   # If user provides state_filter and there is a state variable in data,
-  if (!is.null(state_filter) & length(state) > 0){
+  if (!is.null(state_filter) & length(state) > 0) {
     # then filter by state(s) provided by user
     data <- data[get(state) %in% state_filter]
     # Else if user identifies states to filter by but there is no state variable,
-  } else if (!is.null(state_filter) & length(state) < 1){
+  } else if (!is.null(state_filter) & length(state) < 1) {
     # then return a warning, but continue with cleaning process
     warning("There is no state-identifying variable in this dataset. Cleaning process will continue on.")
-  } # Else carry on (without warning message)
+  } else if (is.null(state_filter) & length(state) > 0) {
+    unique_states <- unique(na.omit(data[[state]]))
+    if (length(unique_states) > 1) {
+      warning("There are multiple states with overlapping Participant IDs. State abbreviations will be appended to Participant ID")
+    }
+    # Save the rest for AFTER we clean Participant ID. I don't want to put
+    #   the cleaning of ID before this code, because if the user chooses to
+    #   filter out by state, it will save time to filter by state first.
+  }
 
 
-  if (!is.null(ID_col)){
+  # Clean and check Participant ID
+  if (!is.null(ID_col)) {
     participant <- ID_col
   } else {
     # do some necessary renaming of variables
@@ -74,7 +83,8 @@ clean_scores <- function(data, state_filter = NULL, clean_id = TRUE,
     )
   )]
 
-  # Now, we can convert participant to numeric, in order to sort
+  # Now, we can convert participant to numeric, in order to sort -- perhaps
+  #   unnecessary
   data[, (participant) := as.numeric(get(participant))]
 
   # Remove rows where participant ID is NA if clean_id = TRUE
@@ -82,26 +92,33 @@ clean_scores <- function(data, state_filter = NULL, clean_id = TRUE,
     data <- data[!is.na(get(participant))]
   }
 
-  # Next, order by participant
-  data <- data[order(get(participant))]
+  # # Next, order by participant
+  # data <- data[order(get(participant))]
 
-  # # look for a state variable in the data
-  # state <- grep("(?i)^(?=.*state)|(?=.*\\bst\\b)(?!.*\\bst\\B)",
-  #               names(data), value = TRUE, perl = TRUE)
-  #
-  # if (length(state) > 0){
-  #   names(data)[names(data) %in% state] <- "State"
-  # }
-  #
-  # # If user provides state_filter and there is a state variable in data,
-  # if (!is.null(state_filter) & length(state) > 0){
-  #   # then filter by state(s) provided by user
-  #   data <- data[get(state) %in% state_filter]
-  #   # Else if user identifies states to filter by but there is no state variable,
-  # } else if (!is.null(state_filter) & length(state) < 1){
-  #   # then return a warning, but continue with cleaning process
-  #   warning("There is no state-identifying variable in this dataset. Cleaning process will continue on.")
-  # } # Else carry on (without warning message)
+  # Rename variable for easier referencing
+  names(data)[names(data) %in% participant] <- "Participant_ID"
+
+  # If we found unique_states > 0, now is when we will append the state abbrev.
+  #   to the IDs.
+  if (is.null(state_filter) & length(state) > 0) {
+    unique_states <- unique(na.omit(data[[state]]))
+    if (length(unique_states) > 1) {
+      state_abbrevs <- setNames(state.abb, state.name)
+      # Function to get state abbreviation or use the first two letters if
+      #    missing
+      abbreviate_state <- function(state) {
+        ifelse(state %in% names(state_abbrevs), state_abbrevs[state],
+               substr(state, 1, 4))
+      }
+      # Apply the abbreviation function and prepend it to Participant_ID
+      data[, State_Abbrev := abbreviate_state(State)]
+      data[, Participant_ID := paste0(State_Abbrev, "_", Participant_ID)]
+      data[, State_Abbrev := NULL]  # Remove temporary abbreviation column
+    }
+  }
+
+  # sort by Participant ID
+  data[order(Participant_ID)]
 
   # Identify variables in the dataset
   pre_post <- grep("(?i)^(?=.*pre)(?=.*post)",
@@ -115,30 +132,27 @@ clean_scores <- function(data, state_filter = NULL, clean_id = TRUE,
   difference <- grep("(?i)^difference$|^difference_score$|^diff_score$",
                      names(data), value = TRUE, perl = TRUE)
 
-  # new variable
+  # newly accessible variable
   mode <- grep("(?i)mode", names(data), value = TRUE, perl = TRUE)
 
-  # Rename variables as desired:
-  names(data)[names(data) %in% participant] <- "Participant_ID"
+  # Rename other variables as desired:
+  # names(data)[names(data) %in% participant] <- "Participant_ID"
   names(data)[names(data) %in% pre_post] <- "Pre_Post"
   names(data)[names(data) %in% provider] <- "Provider"
   names(data)[names(data) %in% service] <- "Service"
   names(data)[names(data) %in% completed] <- "Completed"
   names(data)[names(data) %in% score] <- "Score"
   names(data)[names(data) %in% difference] <- "Difference"
-  # new variables
+  # other variables
   names(data)[names(data) %in% state] <- "State"
   names(data)[names(data) %in% mode] <- "Mode"
 
-  # Clean Provider names
-  data[, Provider := sub("\\s*\\([^\\)]+\\)", "", Provider)]
-  # COME BACK HERE
-  # add code to abbreviate the names systematically--unless they are already
-  #  abbreviated
-
+  # Clean Provider names--
+  #   (Remove special characters, abbreviate unless already abbreviated)
+  data[, Provider := handle_abbrev(Provider)]
 
   # Remove "(MST)" and convert 'Completed' to POSIXct
-  # and maintain correct MST time zone
+  #   (and maintain correct MST time zone)
   data[, Completed := as.POSIXct(gsub(" \\(MST\\)", "", Completed),
                                  format = "%m/%d/%Y %H:%M:%S",
                                  tz = "America/Denver")]
@@ -181,9 +195,6 @@ clean_scores <- function(data, state_filter = NULL, clean_id = TRUE,
 
   if (aggregate) {
     # Aggregate Pre and Post data
-
-    # pre_data <- pre_data[order(Completed), .SD[1],
-    #                      by = .(Participant_ID, Provider, Service)]
     pre_data <- pre_data[order(Pre_Date), .SD[1],
                          by = .(Participant_ID, Service)]
 
@@ -193,16 +204,12 @@ clean_scores <- function(data, state_filter = NULL, clean_id = TRUE,
                            by = .(Participant_ID, Service)]
   }
 
-
-
   # Specify the required columns
   required_cols_pre <- c("Participant_ID", "Service", "Pre_Date", "Provider",
                      "Pre_Score")
 
   required_cols_post <- c("Participant_ID", "Service", "Post_Date", "Provider",
                          "Post_Score")
-
-  # selected_cols <- intersect(required_cols, names(pre_data))
 
   # Add "State" and "Mode" if they exist in the dataset
   if ("State" %in% names(pre_data) & "State" %in% names(post_data)) {
@@ -214,32 +221,16 @@ clean_scores <- function(data, state_filter = NULL, clean_id = TRUE,
     required_cols_post <- c(required_cols_post, "Mode")
   }
 
-  # Select and rename columns
-  # pre_selected <- pre_data[, .(Participant_ID,
-  #                              Service,
-  #                              Provider,
-  #                              State,
-  #                              Mode,
-  #                              # Time_Passed_Days,
-  #                              Pre_Score = Score)]
-
+  # Extract needed columns from pre_data
   pre_selected <- pre_data[, ..required_cols_pre]
   # (Difference has no values for pre-score rows, so we don't include it here)
 
-
-  # post_selected <- post_data[, .(Participant_ID,
-  #                                Service,
-  #                                Provider,
-  #                                State,
-  #                                Mode,
-  #                                # Time_Passed_Days,
-  #                                Post_Score = Score,
-  #                                Difference)]
-
+  # Extract needed columns from post_data
   post_selected <- post_data[, c(required_cols_post, "Difference"),
                              with = FALSE]
       # with=FALSE handles the format of the function argument for columns that
       #  is weird in data.table
+
 
   # Merge the pre and post data
 
@@ -253,21 +244,6 @@ clean_scores <- function(data, state_filter = NULL, clean_id = TRUE,
   #   we only care about one provider per unique combo of participant and
   #   service. This merge creates two columns, Provider.x and Provider.y (one
   #   from pre_selected and one from post_selected)
-  # Keep Provider.x
-  # merged_data[, Provider := Provider.x]
-  # # Remove the redundant columns
-  # merged_data[, c("Provider.x", "Provider.y") := NULL]
-
-  # Keep the first non-missing value
-  # merged_data[, Provider := fifelse(
-  #   Provider.x == Provider.y,
-  #   Provider.x,
-  #   fifelse(!is.na(Provider.x), Provider.x, Provider.y)
-  # )]
-  #
-  # # Remove the redundant columns
-  # merged_data[, c("Provider.x", "Provider.y") := NULL]
-
 
   # Identify the most common non-NA provider for each participant -- this
   #. should result in a dataframe with two columns, Participant_ID and
@@ -282,18 +258,6 @@ clean_scores <- function(data, state_filter = NULL, clean_id = TRUE,
   # Merge back the most common provider into the dataset
   merged_data <- merge(merged_data, mode_provider, by = "Participant_ID",
                        all.x = TRUE)
-
-  # Ensure Most_Common_Provider is character type
-  # And replace NA Provider values with the most common provider
-  # merged_data[, Provider := fifelse(
-  #   is.na(Provider.x) & is.na(Provider.y),
-  #   as.character(Most_Common_Provider),  # Cast to character to match Provider.x/y
-  #   ifelse(!is.na(Provider.x), as.character(Provider.x),
-  #          as.character(Provider.y))  # Cast to character
-  # )]
-
-  # Remove the temporary 'Most_Common_Provider' column
-  # merged_data[, Most_Common_Provider := NULL]
 
   # Remove redundant columns if necessary
   merged_data[, c("Provider.x", "Provider.y") := NULL]
@@ -326,12 +290,8 @@ clean_scores <- function(data, state_filter = NULL, clean_id = TRUE,
   # round to the nearest day
   final_data[, Time_Passed_Days := round(Time_Passed_Days)]
 
-  # Examine our negative values--data seem to be cleaned correctly, just some
-  #   weird values....
-  # check <- final_data[final_data$Time_Passed_Days < 0, ]
-  # check_ids <- check$Participant_ID
-  # check_scores <- scores[scores$`Participant ID` %in% check_ids, ]
-  # check_scores <- check_scores[order(`Participant ID`)]
+  # (Note that some Time_Passed_Days values are negative--this is an issue with
+  #   collected data, not with cleaning process.)
 
   ## RESHAPE
   # First, identify columns to keep long, instead of wide.
@@ -406,7 +366,6 @@ clean_scores <- function(data, state_filter = NULL, clean_id = TRUE,
     scores_final[, Median_Time_Passed_Days := NA_real_]
   }
 
-  # return(scores_final)
   return(scores_final)
 }
 
