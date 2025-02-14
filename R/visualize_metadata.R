@@ -773,6 +773,24 @@ visualize_metadata <- function(data, option = c("general_demo",
             main = "Exit Employment by Primary Impairment",
     )
 
+    ## PLOT 8
+    employment_second_dis_table <- table(data[[final_employ_col]],
+                                       data[[second_impair_grp_col]])
+
+    rownames(employment_second_dis_table) <- c("Non-competitive Employment",
+                                             "Competitive Employment")
+
+
+    # Create a bar plot with bars broken up by gender
+    barplot(employment_second_dis_table, beside = TRUE,
+            col = c("lightsteelblue", "steelblue"),
+            legend.text = c("Non-competitive", "Competitive"),
+            args.legend = list(x = "topleft", bty = "n",
+                               title = "Employment Type"),
+            xlab = "Secondary Impairment", ylab = "Count",
+            main = "Exit Employment by Primary Impairment",
+    )
+
     # Reset the plotting window
     par(mfrow = c(1, 1))
 
