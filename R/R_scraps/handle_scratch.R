@@ -1,3 +1,40 @@
+#' Suppress unhelpful NAs warning.
+#'
+#' This function suppresses a warning only when the warning is "NAs introduced
+#'   by coercion". This warning is not helpful within our rsa.helpr functions.
+
+# suppress_na_warning <- function(func) {
+#   suppressWarnings(tryCatch(
+#     func,
+#     warning = function(w) {
+#       if (grepl("NAs introduced by coercion", w$message)) {
+#         invokeRestart("muffleWarning")  # Suppress only this warning
+#       } else {
+#         warning(w)  # Show other warnings
+#       }
+#     }
+#   ))
+# }
+
+# suppress_na_warning <- function(func) {
+#   suppressWarnings({
+#     tryCatch(
+#       func,
+#       warning = function(w) {
+#         if (grepl("NAs introduced by coercion", w$message)) {
+#           # Return NA without printing the warning
+#           return(NA)
+#         } else {
+#           # Rethrow the warning if it's not related to coercion
+#           warning(w)
+#         }
+#       }
+#     )
+#   })
+# }
+
+
+
 # handle_splits <- function(data, var_name){
 #   # split up the values by the ";"
 #   split_list <- strsplit(data[[var_name]], ";")
