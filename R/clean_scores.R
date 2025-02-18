@@ -6,7 +6,7 @@
 #' @param data The TRT scores dataset.
 #' @param state_filter A character vector identifying the state(s) of interest.
 #'   Defaults to NULL.
-#' @param clean_id TRUE or FALSE. Defaults to TRUE, when TRUE, rows where
+#' @param clean_ID TRUE or FALSE. Defaults to TRUE, when TRUE, rows where
 #'   participant ID is missing are removed.
 #' @param aggregate TRUE or FALSE. Defaults to TRUE, when TRUE, rows are
 #'   aggregated to include only unique participants are kept.
@@ -20,7 +20,7 @@
 #' @export
 #' @import data.table
 
-clean_scores <- function(data, state_filter = NULL, clean_id = TRUE,
+clean_scores <- function(data, state_filter = NULL, clean_ID = TRUE,
                           aggregate = TRUE, ID_col = NULL) {
 
   # Convert to data.table format
@@ -87,8 +87,8 @@ clean_scores <- function(data, state_filter = NULL, clean_id = TRUE,
   #   unnecessary
   data[, (participant) := as.numeric(get(participant))]
 
-  # Remove rows where participant ID is NA if clean_id = TRUE
-  if (clean_id) {
+  # Remove rows where participant ID is NA if clean_ID = TRUE
+  if (clean_ID) {
     data <- data[!is.na(get(participant))]
   }
 

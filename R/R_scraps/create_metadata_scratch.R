@@ -1,21 +1,3 @@
-#' Create Metadata
-#'
-#' This function aggregates a merged or RSA-911 dataset to contain only one row
-#'   per unique participant, to make analysis and modeling more intuitive. The
-#'   aggregation process includes condensing rows by taking medians for numeric
-#'   variables, keeping most common values for character and factor variables,
-#'   and keeping most recent values for date-related variables.
-#'
-#' @param data The merged or RSA-911 dataset.
-#' @param includes_scores TRUE or FALSE. Defaults to TRUE, when TRUE, metadata
-#'   creation includes process for scores data variables--inputted data frame is
-#'   treated as a merged dataset. When FALSE, metadata process only includes
-#'   steps relevant for an RSA-911 dataset.
-#'
-#' @returns A data frame with one row per participant.
-#'
-#' @export
-#' @import data.table
 
 create_metadata <- function(data, includes_scores = TRUE) {
   # Convert data to data.table if it's not already
@@ -45,14 +27,14 @@ create_metadata <- function(data, includes_scores = TRUE) {
 
   # group enrollment length
   data[, Enroll_Length_Grp := fifelse(Enroll_Length < 5, "<5",
-                          fifelse(Enroll_Length >= 5 & Enroll_Length < 11,
-                                  "5-10",
-                          "11+"))]
+                                      fifelse(Enroll_Length >= 5 & Enroll_Length < 11,
+                                              "5-10",
+                                              "11+"))]
 
   # Convert Age_Group to an ordered factor
   data[, Enroll_Length_Grp := factor(Enroll_Length_Grp,
-                               levels = c("<5", "5-10", "11+"),
-                               ordered = TRUE)]
+                                     levels = c("<5", "5-10", "11+"),
+                                     ordered = TRUE)]
 
 
   # Create variables that count the number of years and quarters
@@ -79,7 +61,7 @@ create_metadata <- function(data, includes_scores = TRUE) {
 
   # to handle different types of numeric variables
   data[, (integer_cols) := lapply(.SD, function(x) as.integer(median(x,
-                                                           na.rm = TRUE))),
+                                                                     na.rm = TRUE))),
        .SDcols = integer_cols, by = Participant_ID]
 
   data[, (double_cols) := lapply(.SD, function(x) median(x, na.rm = TRUE)),
@@ -94,7 +76,7 @@ create_metadata <- function(data, includes_scores = TRUE) {
   data[, (date_cols) := lapply(.SD,
                                function(x) as.Date(ifelse(all(is.na(unique(x))),
                                                           NA,
-                                                        max(x, na.rm = TRUE)))),
+                                                          max(x, na.rm = TRUE)))),
        .SDcols = date_cols,
        by = Participant_ID]
 
@@ -137,6 +119,32 @@ create_metadata <- function(data, includes_scores = TRUE) {
     }
 
   }
+
+  # ## CREATE NEW VARIABLES--new MEDIANS and DIFFERENCES
+  # # Calculate differences and medians
+  # difference_cols <- grep("^Difference_", names(data), value = TRUE)
+  # time_cols <- grep("^Time_Passed_Days", names(data), value = TRUE)
+  #
+  # # Calculate Differences_Available
+  # data[, Differences_Available := rowSums(!is.na(.SD)),
+  #      .SDcols = difference_cols, by = Participant_ID]
+  #
+  # # Calculate Median_Difference_Score
+  # if (length(difference_cols) > 0) {
+  #   data[, Median_Difference_Score := median(unlist(.SD), na.rm = TRUE),
+  #        .SDcols = difference_cols, by = Participant_ID]
+  # } else {
+  #   data[, Median_Difference_Score := NA_real_]
+  # }
+  #
+  # # Calculate Median_Time_Passed_Days
+  # if (length(time_cols) > 0) {
+  #   data[, Median_Time_Passed_Days := median(unlist(.SD), na.rm = TRUE),
+  #        .SDcols = time_cols, by = Participant_ID]
+  # } else {
+  #   data[, Median_Time_Passed_Days := NA_real_]
+  # }
+
 
   ## CONDENSE! CREATE METADATA
   # Summarise to condense rows, keeping one row per participant

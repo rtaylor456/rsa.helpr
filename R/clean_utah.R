@@ -41,10 +41,9 @@ clean_utah <- function(data,
   ## REMOVABLE        ##
   ######################
   # DESCRIPTION columns - unnecessary for analysis
-  if (remove_desc){
+  if (remove_desc) {
     desc_cols <- grep("(?i)_desc", names(data), value = TRUE, perl = TRUE)
 
-    # data_selected <- data[, setdiff(names(data), desc_cols), with = FALSE]
     data[, (desc_cols) := NULL]
   }
 
@@ -73,12 +72,12 @@ clean_utah <- function(data,
 
   # E1_Year_911
   year_col <- grep("(?i)_year|(?i)_yr_(?!.*(?i)_desc)", names(data),
-                    value = TRUE, perl = TRUE)
+                   value = TRUE, perl = TRUE)
 
 
   # E2_Quarter_911
   quarter_col <- grep("(?i)_quarter|(?i)_qt_(?!.*(?i)_desc)", names(data),
-                       value = TRUE, perl = TRUE)
+                      value = TRUE, perl = TRUE)
 
   # AGE column
   age_cols <- grep("(?i)^(?=.*age)(?=.*app)(?!.*(desc|amt))", names(data),
@@ -135,7 +134,7 @@ clean_utah <- function(data,
   vendor_cols <- grep("(?i)_vendor(?!.*(?i)_desc)", names(data),
                       value = TRUE, perl = TRUE)
 
-  data[, (vendor_cols) := lapply(.SD, function(x){
+  data[, (vendor_cols) := lapply(.SD, function(x) {
     handle_values(x, values = c(1, 2, 3, 4))
   }), .SDcols = vendor_cols]
 
@@ -153,11 +152,11 @@ clean_utah <- function(data,
   # [5] "E14_White_911"                     "E15_Hispanic_Latino_911"
 
   veteran_col <- grep("(?i)veteran(?!.*(_desc|description|_amt|amount|amnt|vendor|title|comp))",
-                       names(data), value = TRUE, perl = TRUE)
+                      names(data), value = TRUE, perl = TRUE)
   # [1] "E16_Veteran_Status_911"
 
   has_disability_col <- grep("(?i)(has_disability)(?!.*(_desc|description|_amt|amount|amnt|vendor|title|comp|hours|date|ext|wage))",
-                          names(data), value = TRUE, perl = TRUE)
+                             names(data), value = TRUE, perl = TRUE)
   # [1] "E42_Has_Disability_911"
 
   q1_q1_employ_col <- grep("(?i)(employer_match|q1_q2_match|q1_q2_employ)(?!.*(_desc|description|_amt|amount|amnt|vendor|title|comp|hours|date|ext|wage))",
@@ -169,7 +168,7 @@ clean_utah <- function(data,
   # [1] "E54_Adult_911"           "E55_Adult_Education_911"
 
   service_work_cols <- grep("(?i)(dislocated_worker|job_corps|voc_rehab|wagner_peyser|youth|equivalent|se_goal)(?!.*(_desc|description|_amt|amount|amnt|vendor|title|comp|hours|date|ext|wage))",
-                         names(data), value = TRUE, perl = TRUE)
+                            names(data), value = TRUE, perl = TRUE)
   # [1] "E56_Dislocated_Worker_911"                "E57_Job_Corps_911"
   # [3] "E58_Voc_Rehab_911"                        "E59_Wagner_Peyser_911"
   # [5] "E60_Youth_911"                            "E61_YouthBuild_911"
@@ -212,7 +211,7 @@ clean_utah <- function(data,
                             names(data),
                             value = TRUE, perl = TRUE)
 
-  data[, (other_factor_cols) := lapply(.SD, function(x){
+  data[, (other_factor_cols) := lapply(.SD, function(x) {
     handle_values(x, c(0, 1, 2))
   }),
   .SDcols = other_factor_cols]
@@ -222,7 +221,7 @@ clean_utah <- function(data,
   exit_reason_cols <- grep("(?i)_exit_reason(?!.*(?i)_desc)", names(data),
                            value = TRUE, perl = TRUE)
 
-  data[, (exit_reason_cols) := lapply(.SD, function(x){
+  data[, (exit_reason_cols) := lapply(.SD, function(x) {
     handle_values(x, c(02, 03, 04, 06, 07, 08, 13:22))
   }),
   .SDcols = exit_reason_cols]
@@ -236,7 +235,7 @@ clean_utah <- function(data,
   post_sec_cols <- grep("(?i)_postsecondary_enroll(?!.*(?i)_desc|(?i)_date)",
                         names(data), value = TRUE, perl = TRUE)
 
-  data[, (post_sec_cols) := lapply(.SD, function(x){
+  data[, (post_sec_cols) := lapply(.SD, function(x) {
     handle_values(x, 0:3, blank_value = 0)
   }),
   .SDcols = post_sec_cols]
@@ -246,7 +245,7 @@ clean_utah <- function(data,
   exit_var_cols <- grep("((?i)_exit_type_|(?i)_exit_work_)(?!.*(?i)_desc|(?i)_date)",
                         names(data), value = TRUE, perl = TRUE)
 
-  data[, (exit_var_cols) := lapply(.SD, function(x){
+  data[, (exit_var_cols) := lapply(.SD, function(x) {
     handle_values(x, 0:7, blank_value = 0)
   }),
   .SDcols = exit_var_cols]
@@ -255,7 +254,7 @@ clean_utah <- function(data,
   exit_cred_cols <- grep("(?i)_postexit_credential(?!.*(?i)_desc|(?i)_date)",
                          names(data), value = TRUE, perl = TRUE)
 
-  data[, (exit_cred_cols) := lapply(.SD, function(x){
+  data[, (exit_cred_cols) := lapply(.SD, function(x) {
     handle_values(x, 1:8, blank_value = 0)
   }),
   .SDcols = exit_cred_cols]
@@ -270,18 +269,18 @@ clean_utah <- function(data,
   exit_work_col <- grep("(?i)_exit*(?i)_work(?!.*(?i)_amt)(?!.*(?i)_desc)",
                         names(data), value = TRUE, perl = TRUE)
 
-  data[, (employ_cols) := lapply(.SD, function(x){
+  data[, (employ_cols) := lapply(.SD, function(x) {
     handle_values(x, c(0, 1, 2, 3, 4, 9), blank_value = 0)
   }),
   .SDcols = employ_cols]
 
-  data[, (employ_cols) := lapply(.SD, function(x){
+  data[, (employ_cols) := lapply(.SD, function(x) {
     handle_nines(x, unidentified_to_0)
   }),
   .SDcols = employ_cols]
 
 
-  data[, (exit_work_col) := lapply(.SD, function(x){
+  data[, (exit_work_col) := lapply(.SD, function(x) {
     handle_values(x, c(0:5, 7, 9), blank_value = 0)
   }),
   .SDcols = exit_work_col]
@@ -295,34 +294,34 @@ clean_utah <- function(data,
 
   # GRADE LEVEL - based on age
   data[, Age_Group := fifelse(Age_At_Application < 5, "<5",
-                          fifelse((Age_At_Application >= 5 &
-                                     Age_At_Application < 8), "5-7",
-                          fifelse((Age_At_Application >= 8 &
-                                     Age_At_Application < 11), "8-10",
-                          fifelse((Age_At_Application >= 11 &
-                                     Age_At_Application < 14), "11-13",
-                          fifelse((Age_At_Application >= 14 &
-                                     Age_At_Application < 17), "14-16",
-                          fifelse((Age_At_Application >= 17 &
-                                     Age_At_Application < 20), "17-19",
-                          fifelse((Age_At_Application >= 20 &
-                                     Age_At_Application < 23), "20-22",
-                          fifelse((Age_At_Application >= 23 &
-                                     Age_At_Application < 26), "23-25",
-                          fifelse((Age_At_Application >= 26 &
-                                     Age_At_Application < 31), "26-30",
-                          fifelse((Age_At_Application >= 31 &
-                                     Age_At_Application <= 50), "31-50",
-                          fifelse(Age_At_Application > 50, "40+",
-                                  NA_character_)))))))))))]
+                              fifelse((Age_At_Application >= 5 &
+                                         Age_At_Application < 8), "5-7",
+                              fifelse((Age_At_Application >= 8 &
+                                         Age_At_Application < 11), "8-10",
+                              fifelse((Age_At_Application >= 11 &
+                                         Age_At_Application < 14), "11-13",
+                              fifelse((Age_At_Application >= 14 &
+                                         Age_At_Application < 17), "14-16",
+                              fifelse((Age_At_Application >= 17 &
+                                         Age_At_Application < 20), "17-19",
+                              fifelse((Age_At_Application >= 20 &
+                                         Age_At_Application < 23), "20-22",
+                              fifelse((Age_At_Application >= 23 &
+                                         Age_At_Application < 26), "23-25",
+                              fifelse((Age_At_Application >= 26 &
+                                         Age_At_Application < 31), "26-30",
+                              fifelse((Age_At_Application >= 31 &
+                                         Age_At_Application <= 50), "31-50",
+                              fifelse(Age_At_Application > 50, "40+",
+                                         NA_character_)))))))))))]
 
   # Convert Age_Group to an ordered factor
   data[, Age_Group := factor(Age_Group,
-                                   levels = c("<5", "5-7", "8-10", "11-13",
-                                              "14-16", "17-19", "20-22",
-                                              "23-25", "26-30", "31-50",
-                                              "40+"),
-                                   ordered = TRUE)]
+                             levels = c("<5", "5-7", "8-10", "11-13",
+                                        "14-16", "17-19", "20-22",
+                                        "23-25", "26-30", "31-50",
+                                        "40+"),
+                             ordered = TRUE)]
 
 
   ########################
@@ -347,7 +346,7 @@ clean_utah <- function(data,
 
   # There are too many special character variables, so it's best to let the
   #   user decide which variables they want to clean
-  if (!is.null(clean_specials) & length(all_special_cols) > 0) {
+  if (!is.null(clean_specials) && length(all_special_cols) > 0) {
     data <- apply_handle_splits(data, clean_specials, sep = ";")
   }
 
@@ -361,21 +360,22 @@ clean_utah <- function(data,
   group_vars <- paste0(impairment_vars, "_Group")
 
   # Apply the same logic to both columns at once using lapply
-  data[, (group_vars) := lapply(.SD, function(x) fifelse(x == 0, "None",
-                                                 fifelse(x %in% c(1, 2, 8),
+  data[, (group_vars) := lapply(.SD, function(x) {
+                                                  fifelse(x == 0, "None",
+                                                  fifelse(x %in% c(1, 2, 8),
                                                          "Visual",
-                                                 fifelse(x %in% c(3, 4, 5, 6, 7,
+                                                  fifelse(x %in% c(3, 4, 5, 6, 7,
                                                                   9),
                                                          "Aud./Comm.",
-                                                 fifelse(x %in% c(10, 11, 12,
+                                                  fifelse(x %in% c(10, 11, 12,
                                                                   13, 14, 15,
                                                                   16),
                                                          "Physical",
-                                                 fifelse(x == 17,
+                                                  fifelse(x == 17,
                                                          "Intell./Learn.",
-                                                 fifelse(x %in% c(18, 19),
+                                                  fifelse(x %in% c(18, 19),
                                                          "Psych.",
-                                                         NA_character_))))))),
+                                                         NA_character_)))))) }),
        .SDcols = impairment_vars]
 
   # Set factor levels for both columns
@@ -465,8 +465,8 @@ clean_utah <- function(data,
   }
 
   # REMOVE COLUMNS WITH ONLY NAs
-  if (remove_strictly_na){
-    data <- data[, which(unlist(lapply(data, function(x)!all(is.na(x))))),
+  if (remove_strictly_na) {
+    data <- data[, which(unlist(lapply(data, function(x) !all(is.na(x))))),
                  with = FALSE]
   }
 
@@ -474,4 +474,3 @@ clean_utah <- function(data,
   return(data)
 
 }
-
