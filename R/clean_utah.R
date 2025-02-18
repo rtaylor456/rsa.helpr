@@ -438,30 +438,31 @@ clean_utah <- function(data,
 
 
     names(data)[names(data) %in% participant_col] <- "Participant_ID"
-    names(data)[names(data) %in% year_col] <- "Year"
-    names(data)[names(data) %in% quarter_col] <- "Quarter"
-    names(data)[names(data) %in% app_date_col] <- "Application_Date"
+    names(data)[names(data) %in% year_col] <- "E1_Year_911"
+    names(data)[names(data) %in% quarter_col] <- "E2_Quarter_911"
+    names(data)[names(data) %in% app_date_col] <- "E7_Application_Date_911"
 
     # Remove rows where application date is missing --these are typically fully
     #   missing data rows anyway.
-    data <- data[!is.na(Application_Date)]
+    data <- data[!is.na(E7_Application_Date_911)]
 
     # Order the data by Participant_ID, year, quarter, and reverse order
     #   application date
-    setorder(data, Participant_ID, Year, Quarter, -Application_Date)
+    setorder(data, Participant_ID, E1_Year_911, E2_Quarter_911,
+             -E7_Application_Date_911)
 
 
     # Create a helper column to identify the first occurrence within each group
     data[, Occurrences_Per_Quarter := .N, by = .(Participant_ID,
-                                                 Year,
-                                                 Quarter)]
+                                                 E1_Year_911,
+                                                 E2_Quarter_911)]
     # Save only the first occurrence
     data <- data[, .SD[1], by = .(Participant_ID,
-                                  Year,
-                                  Quarter)]
+                                  E1_Year_911,
+                                  E2_Quarter_911)]
 
     # Sort by year and quarter
-    setorder(data, Year, Quarter)
+    setorder(data, E1_Year_911, E2_Quarter_911)
   }
 
   # REMOVE COLUMNS WITH ONLY NAs

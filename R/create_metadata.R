@@ -19,7 +19,22 @@
 
 create_metadata <- function(data, includes_scores = TRUE) {
   # Convert data to data.table if it's not already
-  data <- as.data.table(data)
+  # data <- as.data.table(data)
+  setDT(data)
+
+  # participant_col <- grep("(?i)^(?=.*participant)|(?=.*\\bid\\b)(?!.*\\bid\\B)",
+  #                         names(data), value = TRUE, perl = TRUE)
+  #
+  # year_col <- grep("(?i)year|(?i)yr_(?!.*(?i)_desc)", names(data),
+  #                  value = TRUE, perl = TRUE)
+  #
+  # quarter_col <- grep("(?i)_quarter|(?i)_qt_(?!.*(?i)_desc)", names(data),
+  #                     value = TRUE, perl = TRUE)
+  #
+  #
+  # names(data)[names(data) %in% participant_col] <- "Participant_ID"
+  # names(data)[names(data) %in% year_col] <- "E1_Year_911"
+  # names(data)[names(data) %in% quarter_col] <- "E2_Quarter_911"
 
   ## INITIAL FACTOR CONVERSION
   data[, lapply(.SD, function(col) {
@@ -30,6 +45,16 @@ create_metadata <- function(data, includes_scores = TRUE) {
       col
     }
   }), .SDcols = names(data)]
+
+  # data[, (names(data)) := lapply(names(data), function(col_name) {
+  #   if (col_name %in% c("Provider", grep("Has_Multiple_Scores",
+  #                                        names(data), value = TRUE))) {
+  #     as.factor(data[[col_name]])
+  #   } else {
+  #     data[[col_name]]
+  #   }
+  # })]
+
 
 
   ## CREATE NEW VARIABLES
