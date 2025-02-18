@@ -101,9 +101,9 @@ clean_utah <- function(data,
                     amt_cols, hours_cols)
 
   # Convert to numeric, ignoring warnings about NAs--this is what we want.
-  data[, (names(data)) :=
+  data[, (numeric_cols) :=
          lapply(.SD, function(x) suppressWarnings(as.numeric(x))),
-       .SDcols = names(data)]
+       .SDcols = numeric_cols]
 
 
   ######################
