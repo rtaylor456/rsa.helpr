@@ -247,7 +247,7 @@ visualize_scores <- function(data, option = c("overview", "across_service",
 
     # Apply cleaning function to get abbreviated Provider names (will work even
     #   if the values are already abbreviated)
-    provider_col_clean <- handle_provider(data[[provider_col]])
+    provider_col_clean <- handle_abbrev(data[[provider_col]])
 
     par(las = 2)
     boxplot(data[[median_diff_col]] ~ provider_col_clean,

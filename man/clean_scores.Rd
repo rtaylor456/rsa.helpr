@@ -7,7 +7,7 @@
 clean_scores(
   data,
   state_filter = NULL,
-  clean_id = TRUE,
+  clean_ID = TRUE,
   aggregate = TRUE,
   ID_col = NULL
 )
@@ -18,7 +18,7 @@ clean_scores(
 \item{state_filter}{A character vector identifying the state(s) of interest.
 Defaults to NULL.}
 
-\item{clean_id}{TRUE or FALSE. Defaults to TRUE, when TRUE, rows where
+\item{clean_ID}{TRUE or FALSE. Defaults to TRUE, when TRUE, rows where
 participant ID is missing are removed.}
 
 \item{aggregate}{TRUE or FALSE. Defaults to TRUE, when TRUE, rows are
