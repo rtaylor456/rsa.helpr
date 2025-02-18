@@ -1,8 +1,6 @@
 library(shiny)
-library(DT)
 library(data.table)
 library(readxl)
-library(ggplot2)
 
 if (!requireNamespace("rsa.helpr", quietly = TRUE)) {
   # devtools::install_github("rtaylor456/rsa.helpr")
@@ -61,10 +59,12 @@ ui <- fluidPage(
                            #        checkboxInput("convert_employ",
                            #                      "Convert Employment",
                            #                      value = TRUE)),
-                           column(12,
-                                  checkboxInput("clean_specials",
-                                                "Clean Specials",
-                                                value = FALSE)),
+                           # column(12,
+                           #        checkboxInput("clean_specials",
+                           #                      "Clean Specials",
+                           #                      value = FALSE)),
+
+
                            column(12,
                                   checkboxInput("remove_desc",
                                                 "Remove Description Columns",
@@ -73,6 +73,12 @@ ui <- fluidPage(
                                   checkboxInput("remove_strictly_na",
                                                 "Remove Strictly NA Columns",
                                                 value = TRUE)),
+
+                           column(12,
+                                  textInput("clean_specials",
+                                            "Clean Specials (Enter variable names separated by commas)",
+                                            placeholder = "e.g., var1, var2, var3")),
+
                            column(12,
                                   downloadButton("download_rsa",
                                               "Download Cleaned RSA-911 Data"))
@@ -92,6 +98,24 @@ ui <- fluidPage(
                                   checkboxInput("aggregate_scores",
                                                 "Aggregate Data",
                                                 value = TRUE)),
+
+                           column(12,
+                                  checkboxInput("clean_ID",
+                                                "Remove rows with missing IDs",
+                                                value = TRUE)),
+
+
+                           column(12,
+                                  textInput("state_filter",
+                                            "State(s) of interest (If multiple states, enter names separated by commas)",
+                                            placeholder = "e.g., Utah. e.g., Utah, Colorado, Idaho")),
+
+                           column(12,
+                                  textInput("ID_col",
+                                            "If the variable naming structure for participant ID, please enter here",
+                                            placeholder = "e.g., X")),
+
+
                            column(12,
                                   downloadButton("download_scores",
                                                 "Download Cleaned Scores Data"))
@@ -289,13 +313,13 @@ server <- function(input, output, session) {
       incProgress(1/3, detail = "Combining data...")
       df_combined <- do.call(rbind, df_list)
 
+      specials_to_clean <- if (nzchar(input$clean_specials)) strsplit(input$clean_specials, ",\\s*")[[1]] else NULL
+
       incProgress(1/3, detail = "Cleaning data...")
       df_cleaned <- clean_utah(df_combined,
                                aggregate = input$aggregate_utah,
                                unidentified_to_0 = input$unidentified_to_0,
-                               # convert_sex = input$convert_sex,
-                               # convert_employ = input$convert_employ,
-                               clean_specials = input$clean_specials,
+                               clean_specials = specials_to_clean,
                                remove_desc = input$remove_desc,
                                remove_strictly_na = input$remove_strictly_na)
 
@@ -330,9 +354,23 @@ server <- function(input, output, session) {
       incProgress(1/3, detail = "Combining data...")
       df_scores_combined <- do.call(rbind, df_scores_list)
 
+
+      # Process state filter input
+      states_of_interest <- if (nzchar(input$state_filter)) strsplit(input$state_filter, ",\\s*")[[1]] else NULL
+
+      # Process ID column input
+      id_col <- if (nzchar(input$ID_col)) input$ID_col else NULL
+
       incProgress(1/3, detail = "Cleaning data...")
-      cleaned_scores <- clean_scores(df_scores_combined,
-                                     aggregate = input$aggregate_scores)
+      # cleaned_scores <- clean_scores(df_scores_combined,
+      #                                aggregate = input$aggregate_scores)
+
+      cleaned_scores <- clean_scores(data = df_scores_combined,
+                                     state_filter = states_of_interest,
+                                     clean_ID = input$clean_ID,
+                                     aggregate = input$aggregate_scores,
+                                     ID_col = id_col)
+
 
       incProgress(1/3, detail = "Finalizing...")
       rv$scores_data_cleaned <- cleaned_scores
@@ -369,144 +407,6 @@ server <- function(input, output, session) {
   })
 
 
-
-  # Function to create metadata from merged data
-  # generate_metadata <- eventReactive(input$generate_metadata, {
-  #   withProgress(message = 'Generating Metadata...', value = 0, {
-  #     if (is.null(merged_data()) | nrow(merged_data()) < 1){
-  #       incProgress(1/2, detail = "Condensing RSA-911 data, merged data not available...")
-  #       metadata <- create_metadata(read_and_clean_rsa_data(),
-  #                                   includes_scores = FALSE)
-  #     } else if (input$meta_source == "merged"){
-  #       incProgress(1/2, detail = "Condensing merged data...")
-  #       metadata <- create_metadata(merged_data(),
-  #                                   includes_scores = TRUE)
-  #     } else {
-  #       incProgress(1/2, detail = "Condensing RSA-911 data...")
-  #       metadata <- create_metadata(read_and_clean_rsa_data(),
-  #                                   includes_scores = FALSE)
-  #     }
-  #
-  #     incProgress(1/2, detail = "Finishing up!...")
-  #     rv$metadata <- metadata
-  #     return(metadata)
-  #   })
-  # })
-
-
-  # generate_metadata <- eventReactive(input$generate_metadata, {
-  #
-  #   # req(input$generate_metadata, merged_data() || read_and_clean_rsa_data())
-  #
-  #   withProgress(message = 'Generating Metadata...', value = 0, {
-  #     req(merged_data())
-  #     # Check the state of merged_data
-  #     cat("Checking merged_data...\n")
-  #
-  #     merged <- merged_data()  # Store the result of merged_data() in a variable for re-use
-  #
-  #     if (is.null(merged)) {
-  #       cat("merged_data is NULL\n")
-  #     } else {
-  #       cat("merged_data has", nrow(merged), "rows\n")
-  #     }
-  #
-  #     # Handling when merged_data is null or empty
-  #     if (is.null(merged) || nrow(merged) < 1) {
-  #       incProgress(1/2, detail = "Condensing RSA-911 data, merged data not available...")
-  #       cat("Using RSA-911 data for metadata creation...\n")
-  #
-  #       rsa_data <- read_and_clean_rsa_data()
-  #       if (is.null(rsa_data) || nrow(rsa_data) == 0) {
-  #         cat("RSA-911 data is empty or not properly loaded.\n")
-  #         return(NULL)
-  #       }
-  #
-  #       metadata <- tryCatch({
-  #         create_metadata(rsa_data, includes_scores = FALSE)
-  #       }, error = function(e) {
-  #         cat("Error in create_metadata with RSA data: ", e$message, "\n")
-  #         return(NULL)
-  #       })
-  #
-  #       if (is.null(metadata)) {
-  #         cat("Metadata generation failed for RSA-911 data.\n")
-  #         return(NULL)
-  #       }
-  #     }
-  #     # Handling when merged_data exists and meta_source is "merged"
-  #     else if (input$meta_source == "merged") {
-  #       incProgress(1/2, detail = "Condensing merged data...")
-  #       cat("Using merged data for metadata creation...\n")
-  #
-  #       metadata <- tryCatch({
-  #         create_metadata(merged, includes_scores = TRUE)
-  #       }, error = function(e) {
-  #         cat("Error in create_metadata with merged data: ", e$message, "\n")
-  #         return(NULL)
-  #       })
-  #
-  #       if (is.null(metadata)) {
-  #         cat("Metadata generation failed for merged data.\n")
-  #         return(NULL)
-  #       }
-  #     }
-  #     # Handling other cases (fall back to RSA-911 data)
-  #     else {
-  #       incProgress(1/2, detail = "Condensing RSA-911 data...")
-  #       cat("Using RSA-911 data (non-merged) for metadata creation...\n")
-  #
-  #       rsa_data <- read_and_clean_rsa_data()
-  #       if (is.null(rsa_data) || nrow(rsa_data) == 0) {
-  #         cat("RSA-911 data is empty or not properly loaded.\n")
-  #         return(NULL)
-  #       }
-  #
-  #       metadata <- tryCatch({
-  #         create_metadata(rsa_data, includes_scores = FALSE)
-  #       }, error = function(e) {
-  #         cat("Error in create_metadata with RSA data: ", e$message, "\n")
-  #         return(NULL)
-  #       })
-  #
-  #       if (is.null(metadata)) {
-  #         cat("Metadata generation failed for RSA-911 data.\n")
-  #         return(NULL)
-  #       }
-  #     }
-  #
-  #     incProgress(1/2, detail = "Finishing up!...")
-  #
-  #     # Store metadata and log completion
-  #     rv$metadata <- metadata
-  #     cat("Metadata generation completed successfully.\n")
-  #     return(metadata)
-  #   })
-  # })
-  #
-
-  # generate_metadata <- eventReactive(input$generate_metadata, {
-  #
-  #   withProgress(message = 'Generating Metadata...', value = 0, {
-  #     data <- NULL
-  #     if (!is.null(merged_data()) && input$meta_source == "merged") {
-  #       incProgress(1/2, detail = "Condensing merged data...")
-  #       data <- merged_data()
-  #       includes_scores <- TRUE
-  #     } else {
-  #       incProgress(1/2, detail = "Condensing RSA-911 data...")
-  #       data <- read_and_clean_rsa_data()
-  #       includes_scores <- FALSE
-  #     }
-  #
-  #     metadata <- create_metadata(data, includes_scores = includes_scores)
-  #
-  #     incProgress(1/2, detail = "Finishing up!")
-  #     rv$metadata <- metadata
-  #     return(metadata)
-  #   })
-  # })
-  #
   generate_metadata <- reactive({
     req(input$generate_metadata)  # Ensure the button was clicked
     req(input$meta_source)         # Ensure a source is selected
@@ -534,12 +434,6 @@ server <- function(input, output, session) {
   })
 
 
-
-
-  # output$metadata_exists <- reactive({
-  #   !is.null(generate_metadata()) && nrow(generate_metadata()) > 0
-  # })
-  #
   output$metadata_exists <- reactive({
     # Store the result of generate_metadata() in a local variable
     metadata <- generate_metadata()
@@ -859,13 +753,6 @@ server <- function(input, output, session) {
       }
 
       else if (dataset_type == "metadata") {
-        # Check for the presence of required variables and absence of excluded variables
-        # demo_patterns <- "(?i)application|(?i)gender|(?i)sex|(?i)plan|(?i)disability"
-        # score_patterns <- "(?i)score"
-        #
-        # demo_variables <- grep(demo_patterns, names(data), value = TRUE, perl = TRUE)
-        # score_variables <- grep(score_patterns, names(data), value = TRUE, perl = TRUE)
-        #
         # Check for the presence of required variables and absence of excluded variables
         demo_patterns <- "(?i)application|(?i)gender|(?i)sex|(?i)plan|(?i)disability"
         score_patterns <- "(?i)score"
