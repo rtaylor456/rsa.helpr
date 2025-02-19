@@ -127,8 +127,9 @@ visualize_scores <- function(data, option = c("overview", "across_service",
             names = NA,  # Suppress default labels
             main = "Distributions of Difference Scores Across Services",
             ylab = "Difference Scores",
+            ylim = range(differences_scores_vector, na.rm = TRUE) * c(0.95, 1.05),
             col = "lightsteelblue",
-            xaxt = "n")  # Suppress x-axis labels
+            xaxt = "n")
 
     # Get shortened labels
     short_labels <- abbreviate(sub(".*Difference_", "",
@@ -145,6 +146,9 @@ visualize_scores <- function(data, option = c("overview", "across_service",
          srt = 45,  # Rotate labels
          adj = 1,
          xpd = TRUE)  # Allow text outside plot bounds
+
+    abline(h = differences_median, lty = 1, lwd = 2, col = "steelblue",
+           xpd = FALSE)
 
 
     ## PLOT 2
@@ -177,6 +181,9 @@ visualize_scores <- function(data, option = c("overview", "across_service",
          adj = 1,
          xpd = TRUE)  # Allow text outside plot bounds
 
+    abline(h = pre_scores_median, lty = 1, lwd = 2, col = "steelblue",
+           xpd = FALSE)
+
 
     ## PLOT 3
     # Find the overall median for all median post scores -- to plot as
@@ -207,6 +214,8 @@ visualize_scores <- function(data, option = c("overview", "across_service",
          srt = 45,  # Rotate labels
          adj = 1,
          xpd = TRUE)  # Allow text outside plot bounds
+    abline(h = post_scores_median, lty = 1, lwd = 2, col = "steelblue",
+           xpd = FALSE)
 
 
     # Return plotting window to normal
@@ -247,18 +256,18 @@ visualize_scores <- function(data, option = c("overview", "across_service",
 
     # Apply cleaning function to get abbreviated Provider names (will work even
     #   if the values are already abbreviated)
-    provider_col_clean <- handle_abbrev(data[[provider_col]])
+    provider_col_clean <- factor(handle_abbrev(data[[provider_col]]))
 
     par(las = 2)
     boxplot(data[[median_diff_col]] ~ provider_col_clean,
-            data = data,
+            # data = data,
             main = "Median Difference Scores Across Providers",
             ylab = "Median Difference Score",
             cex.axis = 0.7,
             col = "lightsteelblue")
-    abline(h = overall_median, lty = 1, lwd = 3, col = "steelblue")
+    abline(h = overall_median, lty = 1, lwd = 2, col = "steelblue",
+           xpd = FALSE)
     par(las = 1)
-
 
     # Return plotting window to normal -- not necessary for this option yet
     if (one_window == TRUE) { par(mfrow = c(1, 1)) }
