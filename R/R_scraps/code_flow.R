@@ -21,6 +21,7 @@ provider_data <- rsa.helpr::clean_provider(scores, state_filter = "Utah")
 merged <- rsa.helpr::merge_scores(data_clean, scores_clean)
 
 metadata <- rsa.helpr::create_metadata(merged)
+View(metadata)
 
 # check visualization functions
 ?visualize_densities

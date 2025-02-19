@@ -785,10 +785,10 @@ visualize_metadata <- function(data, option = c("general_demo",
     barplot(employment_second_dis_table, beside = TRUE,
             col = c("lightsteelblue", "steelblue"),
             legend.text = c("Non-competitive", "Competitive"),
-            args.legend = list(x = "topleft", bty = "n",
+            args.legend = list(x = "topright", bty = "n",
                                title = "Employment Type"),
             xlab = "Secondary Impairment", ylab = "Count",
-            main = "Exit Employment by Primary Impairment",
+            main = "Exit Employment by Secondary Impairment",
     )
 
     # Reset the plotting window
