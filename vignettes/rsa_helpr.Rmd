@@ -17,11 +17,18 @@ knitr::opts_chunk$set(
 ```
 
 ## Motivation
-Since its development in 1973, the U.S. Rehabilitation Services Agency (RSA) has the main goal of improving the employment opportunities for citizens with disabilities. As part of this focus, the RSA works with agencies in each state to provide services for students with disabilities to improve employment readiness, expose them to career and higher education opportunities, and increase their earning potential. Each state collects administrative data on participants' outcomes in a specific structure, called a Case Services Report, which is often abbreviated as “RSA-911” data. These RSA-911 datasets contain information on participant demographics, as well as enrolled services combinations and employment and education outcomes. The RSA-911 datasets capture a wealth of critical information; however, the structure of the data is not in a practical format for classical statistical, machine learning, or visualization techniques. Due to this complicated format, much of the potential for analysis and modeling remains untapped. Currently, most of the existing research is devoted to predicting categorical or binary outcome variables, such as employment status at exit from VR service. More notably, many studies focus investigation on a small, overlapping subset of predictor variables. 
+<!-- Since its development in 1973, the U.S. Rehabilitation Services Agency (RSA) has the main goal of improving the employment opportunities for citizens with disabilities. As part of this focus, the RSA works with agencies in each state to provide services for students with disabilities to improve employment readiness, expose them to career and higher education opportunities, and increase their earning potential. Each state collects administrative data on participants' outcomes in a specific structure, called a Case Services Report, which is often abbreviated as “RSA-911” data. These RSA-911 datasets contain information on participant demographics, as well as enrolled services combinations and employment and education outcomes. The RSA-911 datasets capture a wealth of critical information; however, the structure of the data is not in a practical format for classical statistical, machine learning, or visualization techniques. Due to this complicated format, much of the potential for analysis and modeling remains untapped. Currently, most of the existing research is devoted to predicting categorical or binary outcome variables, such as employment status at exit from VR service. More notably, many studies focus investigation on a small, overlapping subset of predictor variables.  -->
 
-With the existing methods for analysis being limited, and many of the features in the data overlooked in past research, there is a push for more efficient and reproducible data preparation, allowing for new explorations. This motivation has only become more charged by the recent development of an additional success metric. Beginning in 2020, the VR researchers and providers in the state of Utah have started collecting pre and post test scores for evaluating skill improvement in each offered service. The hope is that these new score variables will help VR researchers identify the most effective services and advocate for more strategic funding. The VR researchers leading this effort are ready to start examining the worth of these novel pre-post-difference scores, find appropriate methods for analysis, and explore the relationship of these scores with a wide array of demographic variables. Beyond their own analysis, the researchers desire more accessibility to basic analysis for the collaborating VR providers who collect this data.  
+<!-- With the existing methods for analysis being limited, and many of the features in the data overlooked in past research, there is a push for more efficient and reproducible data preparation, allowing for new explorations. This motivation has only become more charged by the recent development of an additional success metric. Beginning in 2020, the VR researchers and providers in the state of Utah have started collecting pre and post test scores for evaluating skill improvement in each offered service. The hope is that these new score variables will help VR researchers identify the most effective services and advocate for more strategic funding. The VR researchers leading this effort are ready to start examining the worth of these novel pre-post-difference scores, find appropriate methods for analysis, and explore the relationship of these scores with a wide array of demographic variables. Beyond their own analysis, the researchers desire more accessibility to basic analysis for the collaborating VR providers who collect this data.   -->
 
-This project attempts to address the needs presented by the industry. The first task is to alleviate the burden of data preparation, through the development of an R package geared toward specialized cleaning and analysis for any RSA-911 dataset, as well as the recently collected scores data. The second task is the first ever analysis of relationships between RSA-911 demographics and the novel pre-post-difference scores. The final task is developing a user-friendly \texttt{rshiny} interface that provides a VR professional with limited data analysis experience to easily gain insight into the data they work hard to collect. 
+<!-- This project attempts to address the needs presented by the industry. The first task is to alleviate the burden of data preparation, through the development of an R package geared toward specialized cleaning and analysis for any RSA-911 dataset, as well as the recently collected scores data. The second task is the first ever analysis of relationships between RSA-911 demographics and the novel pre-post-difference scores. The final task is developing a user-friendly \texttt{rshiny} interface that provides a VR professional with limited data analysis experience to easily gain insight into the data they work hard to collect.  -->
+
+
+Since 1973, the U.S. Rehabilitation Services Administration (RSA) has partnered with state vocational rehabilitation (VR) agencies to help individuals with disabilities achieve meaningful employment and independence. RSA-911 datasets play a crucial role in this effort by capturing detailed participant data, but their complexity can hinder effective analysis.
+
+To simplify this process, we present the \texttt{rsa.helpr} software package to streamline the cleaning and analysis of RSA-911 and Transition Readiness Toolkit (TRT) data, a new measure of program effectiveness. We also deliver a user-friendly dashboard, empowering both VR researchers and counselors with the opportunity to conduct analyses. Using our developed tools, we explore the relationships between RSA-911 and TRT data, providing insights into the expanding TRT initiative. 
+
+Together, our tools enhance efficiency, accessibility, and reproducibility in VR data analysis. Freely available and compatible with any RSA-911 and TRT dataset, our software provides a flexible framework for VR research, fostering consistency and adaptability while supporting future studies.
 
 
 ## Installation and Loading
@@ -82,11 +89,6 @@ cleaning problems. These functions serve as helper functions for repeated cleani
 
 ```
 
-#### `handle_sex`
-```{r handle_sex}
-
-```
-
 #### `handle_blanks`
 ```{r handle_blanks}
 
@@ -102,10 +104,24 @@ cleaning problems. These functions serve as helper functions for repeated cleani
 
 ```
 
+
+#### `handle_abbrev`
+```{r handle_abbrev}
+
+```
+
+
 #### `handle_splits`
 ```{r handle_splits}
 
 ```
+
+#### `apply_handle_splits`
+```{r apply_handle_splits}
+
+```
+
+
 
 #### `separate_disability`
 ```{r separate_disability}
@@ -136,14 +152,8 @@ and no other arguments, using default settings, as shown below:
 ```
 
 
-###### `convert_sex`
-```{r convert_sex}
-
-```
-
-
-###### `clean_specials`
-```{r clean_specials}
+###### `unidentified_to_0`
+```{r unidentified_to_0}
 
 ```
 
@@ -153,15 +163,14 @@ and no other arguments, using default settings, as shown below:
 
 ```
 
-
 ###### `remove_strictly_na`
 ```{r remove_strictly_na}
 
 ```
 
 
-###### `unidentified_to_0`
-```{r unidentified_to_0}
+###### `clean_specials`
+```{r clean_specials}
 
 ```
 
@@ -174,8 +183,26 @@ and no other arguments, using default settings, as shown below:
 ```
 
 
+###### `state_filter`
+```{r state_filter}
+
+```
+
+
+###### `clean_ID`
+```{r clean_ID}
+
+```
+
+
 ###### `aggregate`
 ```{r aggregate2}
+
+```
+
+
+###### `ID_col`
+```{r ID_col}
 
 ```
 
@@ -209,8 +236,8 @@ metadata using `rsa.helpr` functions:
 # Cleaning an RSA-911 datset using defaults
 data_cleaned <- clean_utah(data)
 
-# Cleaning a scores dataset using defaults
-scores_cleaned <- clean_scores(scores)
+# Cleaning a scores dataset using defaults and extracting only Utah data
+scores_cleaned <- clean_scores(scores, state_filter = "Utah")
 
 # Merge the datasets, keep only relevant participants, using defaults
 merged_data <- merge_scores(data_cleaned, scores_cleaned)
