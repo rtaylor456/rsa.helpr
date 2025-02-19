@@ -52,4 +52,4 @@ rsa.helpr::visualize_scores(scores_clean, option = "across_service",
                             one_window = TRUE)
 
 rsa.helpr::visualize_scores(scores_clean, option = "across_provider",
-                            one_window = TRUE)
+                            one_window = FALSE)

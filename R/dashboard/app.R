@@ -1,6 +1,7 @@
 library(shiny)
 library(data.table)
 library(readxl)
+library(DT)
 
 if (!requireNamespace("rsa.helpr", quietly = TRUE)) {
   # devtools::install_github("rtaylor456/rsa.helpr")
@@ -33,12 +34,10 @@ ui <- fluidPage(
 
                          # RSA-911 Data Upload and Clean Options
                          fluidRow(
-                           # column(12,
-                           #        h4("(Please upload in CSV format)")),
+
                            column(12,
                                   h4("RSA-911 Data Upload and Clean Options")),
-                           # column(12,
-                           #        h4("(Please upload in CSV or xlsx format)")),
+
                            column(12,
                                   fileInput("rsa_data",
                                             "Choose RSA-911 File(s)",
@@ -52,18 +51,6 @@ ui <- fluidPage(
                                   checkboxInput("unidentified_to_0",
                                                 "Convert Unidentified to 0",
                                                 value = TRUE)),
-                           # column(12,
-                           #        checkboxInput("convert_sex", "Convert Sex",
-                           #                      value = TRUE)),
-                           # column(12,
-                           #        checkboxInput("convert_employ",
-                           #                      "Convert Employment",
-                           #                      value = TRUE)),
-                           # column(12,
-                           #        checkboxInput("clean_specials",
-                           #                      "Clean Specials",
-                           #                      value = FALSE)),
-
 
                            column(12,
                                   checkboxInput("remove_desc",
@@ -105,10 +92,19 @@ ui <- fluidPage(
                                                 value = TRUE)),
 
 
+                           # column(12,
+                           #        textInput("state_filter",
+                           #                  "State(s) of interest (If multiple states, enter names separated by commas)",
+                           #                  placeholder = "e.g., Utah. e.g., Utah, Colorado, Idaho")
+                           #        ),
+
                            column(12,
                                   textInput("state_filter",
                                             "State(s) of interest (If multiple states, enter names separated by commas)",
-                                            placeholder = "e.g., Utah. e.g., Utah, Colorado, Idaho")),
+                                            placeholder = "e.g., Utah. e.g., Utah, Colorado, Idaho",
+                                            value = "Utah")
+                           ),
+
 
                            column(12,
                                   textInput("ID_col",
@@ -165,27 +161,6 @@ ui <- fluidPage(
                                                  "Download Cleaned Metadata"))
                          )
                        ),
-
-                       # mainPanel(
-                       #   h3("Quarterly Data"),
-                       #   DTOutput("table_rsa"),
-                       #   verbatimTextOutput("summary_rsa"),
-                       #   br(),
-                       #
-                       #   h3("Scores Data"),
-                       #   DTOutput("table_scores"),
-                       #   verbatimTextOutput("summary_scores"),
-                       #   br(),
-                       #
-                       #   h3("Merged Quarterly and Scores Data"),
-                       #   DTOutput("table_merged"),
-                       #   verbatimTextOutput("summary_merged"),
-                       #   br(),
-                       #
-                       #   h3("Generated Metadata"),
-                       #   DTOutput("table_metadata"),
-                       #   verbatimTextOutput("summary_metadata")
-                       # )
 
                        mainPanel(
                          # Quarterly Data
@@ -257,7 +232,6 @@ ui <- fluidPage(
                          # uiOutput("data_select_check")
                        )
               ),
-              # tabPanel('Visualizations'),
               tabPanel('Visualizations',
                        mainPanel(
                          uiOutput("visuals_ui")
@@ -265,9 +239,6 @@ ui <- fluidPage(
               ),
 
               tabPanel('Modeling',
-                       # mainPanel(
-                       #   uiOutput("models_ui")
-                       # )
                        sidebarPanel(
                          uiOutput("models_sidebar")
                        ),
@@ -362,8 +333,6 @@ server <- function(input, output, session) {
       id_col <- if (nzchar(input$ID_col)) input$ID_col else NULL
 
       incProgress(1/3, detail = "Cleaning data...")
-      # cleaned_scores <- clean_scores(df_scores_combined,
-      #                                aggregate = input$aggregate_scores)
 
       cleaned_scores <- clean_scores(data = df_scores_combined,
                                      state_filter = states_of_interest,
@@ -788,19 +757,7 @@ server <- function(input, output, session) {
     data_choice <- input$data_choice
     dataset_type <- input$dataset_type
 
-    if ((data_choice == "Use Cleaned RSA-911 Data") ||
-        (data_choice == "Upload New Dataset" && dataset_type == "rsa")) {
-      tabsetPanel(
-        tabPanel("Demographics",
-                 plotOutput("demographics_plot1"),
-                 plotOutput("demographics_plot2"),
-                 plotOutput("demographics_plot3"),
-                 plotOutput("demographics_plot4")),
-        tabPanel("Enrollment Length",
-                 plotOutput("enrollment_plot1"), plotOutput("enrollment_plot2"),
-                 plotOutput("enrollment_plot3"))
-      )
-    } else if ((data_choice == "Use Cleaned Scores Data") ||
+    if ((data_choice == "Use Cleaned Scores Data") ||
                (data_choice == "Upload New Dataset" &&
                 dataset_type == "scores")) {
       tabsetPanel(
@@ -942,18 +899,6 @@ server <- function(input, output, session) {
       )
     }
   })
-
-
-  ## RSA-911 plots
-  output$demographics_plot1 <- renderPlot({ plot(rnorm(100)) })
-  output$demographics_plot2 <- renderPlot({ plot(rnorm(100)) })
-  output$demographics_plot3 <- renderPlot({ plot(rnorm(100)) })
-  output$demographics_plot4 <- renderPlot({ plot(rnorm(100)) })
-
-  output$enrollment_plot1 <- renderPlot({ plot(rnorm(100)) })
-  output$enrollment_plot2 <- renderPlot({ plot(rnorm(100)) })
-  output$enrollment_plot3 <- renderPlot({ plot(rnorm(100)) })
-
 
 
 
@@ -1350,21 +1295,6 @@ server <- function(input, output, session) {
 
 
   # Gender
-  # output$meta_gen_demo_plot3 <- renderPlot({
-  #   req(selected_data())
-  #   data <- selected_data()
-  #
-  #   sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
-  #                   value = TRUE, perl = TRUE)
-  #
-  #   barplot(table(data[[sex_col]]),
-  #           main = "Distribution of Genders",
-  #           xlab = "Gender",
-  #           names = c("Females", "Males", "Other", "Did not identify"),
-  #           col = c("lightsteelblue", "steelblue", "darkblue", "gray"))
-  #
-  #   })
-
   output$meta_gen_demo_plot3 <- renderPlot({
     req(selected_data())
     data <- selected_data()
@@ -1395,24 +1325,6 @@ server <- function(input, output, session) {
             col = c("steelblue", "lightsteelblue", "darkblue", "gray"))
   })
 
-
-  # Download handler for Gender Distribution Plot
-
-  # output$download_meta_gen_demo_plot3 <- downloadHandler(
-  #   filename = function() { "gender_distribution_plot.png" },
-  #   content = function(file) {
-  #     png(file)
-  #     sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(selected_data()),
-  #                     value = TRUE, perl = TRUE)
-  #
-  #     barplot(table(selected_data()[[sex_col]]),
-  #             main = "Distribution of Genders",
-  #             xlab = "Gender",
-  #             names = c("Females", "Males", "Did not identify"),
-  #             col = c("lightsteelblue", "steelblue", "darkblue"))
-  #     dev.off()
-  #   }
-  # )
 
   # Download handler for Gender Distribution Plot
   output$download_meta_gen_demo_plot3 <- downloadHandler(
@@ -1674,13 +1586,6 @@ server <- function(input, output, session) {
     req(selected_data())
     data <- selected_data()
 
-    # plot(as.numeric(data$Enroll_Length), data$Median_Difference_Score,
-    #      col = "steelblue",
-    #      main = "Difference Scores Across Quarters Enrolled",
-    #      ylab = "Median Difference Score",
-    #      xlab = "Total Quarters Enrolled",
-    #      pch = 8)
-
     boxplot(Median_Difference_Score ~ data[["Enroll_Length_Grp"]], data = data,
             main = "Difference Scores Across Quarters Enrolled",
             xlab = "Enrollment Length (total quarters)",
@@ -1726,13 +1631,6 @@ server <- function(input, output, session) {
     req(selected_data())
     data <- selected_data()
 
-    # plot(as.numeric(data$Enroll_Length), data$Median_Difference_Score,
-    #      col = "steelblue",
-    #      main = "Difference Scores Across Quarters Enrolled",
-    #      ylab = "Median Difference Score",
-    #      xlab = "Total Quarters Enrolled",
-    #      pch = 8)
-
     boxplot(Median_Difference_Score ~ data[["Enroll_Length_Grp"]], data = data,
             main = "Difference Scores Across Quarters Enrolled",
             xlab = "Enrollment Length (total quarters)",
@@ -1756,82 +1654,6 @@ server <- function(input, output, session) {
     }
   )
 
-
-  # output$meta_diff_plot4 <- renderPlot({
-  #   req(selected_data())
-  #   data <- selected_data()
-  #
-  #   # the name for the gender/sex column could be varied, so we need to
-  #   # account for this possibility
-  #   sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
-  #                   value = TRUE, perl = TRUE)
-  #
-  #
-  #   if (length(unique(data$Median_Difference_Score[
-  #     data[[sex_col]] == 0])) >= 2 &
-  #     length(unique(data$Median_Difference_Score[
-  #       data[[sex_col]] == 1])) >= 2 &
-  #     length(unique(data$Median_Difference_Score[
-  #       data[[sex_col]] == 9])) >= 2
-  #   ) {
-  #     # Create density for each group
-  #     females_density <- density(data$Median_Difference_Score[
-  #       data[[sex_col]] == 0], na.rm = TRUE)
-  #     males_density <- density(data$Median_Difference_Score[
-  #       data[[sex_col]] == 1], na.rm = TRUE)
-  #     did_not_identify_density <- density(data$Median_Difference_Score[
-  #       data[[sex_col]] == 9], na.rm = TRUE)
-  #
-  #     # Determine the maximum y value for setting y limits
-  #     max_density_value <- max(c(max(females_density$y, na.rm = TRUE),
-  #                                max(males_density$y, na.rm = TRUE),
-  #                                max(did_not_identify_density$y, na.rm = TRUE)),
-  #                              na.rm = TRUE)
-  #
-  #     # Initialize the plot with dynamic y-limits
-  #     plot(females_density, col = "steelblue4", lwd = 2,
-  #          main = "Density Plot of Median Difference Scores by Gender",
-  #          xlab = "Median Difference Scores", ylab = "Density",
-  #          xlim = range(c(females_density$x, males_density$x,
-  #                         did_not_identify_density$x)),
-  #          # Add a bit of padding for y-limits
-  #          ylim = c(0, max_density_value * 1.1))
-  #
-  #     # Fill under the females density curve
-  #     polygon(c(females_density$x, rev(females_density$x)),
-  #             c(rep(0, length(females_density$x)), rev(females_density$y)),
-  #             # Light blue fill
-  #             col = rgb(0.2, 0.6, 1, alpha = 0.3), border = NA)
-  #
-  #     # Add the density lines for other groups
-  #     lines(males_density, col = "darkblue", lwd = 2)
-  #     lines(did_not_identify_density, col = "darkgray", lwd = 2)
-  #
-  #     # Fill under the males density curve
-  #     polygon(c(males_density$x, rev(males_density$x)),
-  #             c(rep(0, length(males_density$x)), rev(males_density$y)),
-  #             # Light dark blue fill
-  #             col = rgb(0, 0, 0.5, alpha = 0.3), border = NA)
-  #
-  #     # Fill under the did not identify density curve
-  #     polygon(c(did_not_identify_density$x, rev(did_not_identify_density$x)),
-  #             c(rep(0, length(did_not_identify_density$x)),
-  #               rev(did_not_identify_density$y)),
-  #             # Light gray fill
-  #             col = rgb(0.5, 0.5, 0.5, alpha = 0.3), border = NA)
-  #
-  #     # Add a legend
-  #     legend("topright", legend = c("Females", "Males", "Did not identify"),
-  #            col = c("steelblue4", "darkblue", "gray"), lwd = 2)
-  #   } else{
-  #     boxplot(Median_Difference_Score ~ data[[sex_col]], data = data,
-  #             main = "Difference Scores by Gender",
-  #             names = c("Females", "Males", "Did not identify"),
-  #             xlab = "Gender",
-  #             ylab = "Median Difference Scores",
-  #             col = "steelblue")
-  #   }
-  # })
 
   output$meta_diff_plot4 <- renderPlot({
     req(selected_data())
@@ -1900,68 +1722,6 @@ server <- function(input, output, session) {
   })
 
 
-  # Download handler for meta_diff_plot4
-  # output$download_meta_diff_plot4 <- downloadHandler(
-  #   filename = function() { "difference_scores_by_gender_plot.png" },
-  #   content = function(file) {
-  #     png(file)
-  #     data <- selected_data()
-  #
-  #     # Generate the plot for meta_diff_plot4
-  #     sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
-  #                     value = TRUE, perl = TRUE)
-  #
-  #     if (length(unique(data$Median_Difference_Score[
-  #       data[[sex_col]] == 0])) >= 2 &
-  #       length(unique(data$Median_Difference_Score[
-  #         data[[sex_col]] == 1])) >= 2 &
-  #       length(unique(data$Median_Difference_Score[
-  #         data[[sex_col]] == 9])) >= 2
-  #     ) {
-  #       # Create density plot
-  #       females_density <- density(data$Median_Difference_Score[
-  #         data[[sex_col]] == 0], na.rm = TRUE)
-  #       males_density <- density(data$Median_Difference_Score[
-  #         data[[sex_col]] == 1], na.rm = TRUE)
-  #       did_not_identify_density <- density(data$Median_Difference_Score[
-  #         data[[sex_col]] == 9], na.rm = TRUE)
-  #
-  #       max_density_value <- max(c(max(females_density$y, na.rm = TRUE),
-  #                                  max(males_density$y, na.rm = TRUE),
-  #                                  max(did_not_identify_density$y, na.rm = TRUE)),
-  #                                na.rm = TRUE)
-  #
-  #       plot(females_density, col = "steelblue4", lwd = 2,
-  #            main = "Density Plot of Median Difference Scores by Gender",
-  #            xlab = "Median Difference Scores", ylab = "Density",
-  #            xlim = range(c(females_density$x, males_density$x,
-  #                           did_not_identify_density$x)),
-  #            ylim = c(0, max_density_value * 1.1))
-  #       polygon(c(females_density$x, rev(females_density$x)),
-  #               c(rep(0, length(females_density$x)), rev(females_density$y)),
-  #               col = rgb(0.2, 0.6, 1, alpha = 0.3), border = NA)
-  #       lines(males_density, col = "darkblue", lwd = 2)
-  #       lines(did_not_identify_density, col = "darkgray", lwd = 2)
-  #       polygon(c(males_density$x, rev(males_density$x)),
-  #               c(rep(0, length(males_density$x)), rev(males_density$y)),
-  #               col = rgb(0, 0, 0.5, alpha = 0.3), border = NA)
-  #       polygon(c(did_not_identify_density$x, rev(did_not_identify_density$x)),
-  #               c(rep(0, length(did_not_identify_density$x)),
-  #                 rev(did_not_identify_density$y)),
-  #               col = rgb(0.5, 0.5, 0.5, alpha = 0.3), border = NA)
-  #       legend("topright", legend = c("Females", "Males", "Did not identify"),
-  #              col = c("steelblue4", "darkblue", "gray"), lwd = 2)
-  #     } else {
-  #       boxplot(Median_Difference_Score ~ data[[sex_col]], data = data,
-  #               main = "Difference Scores by Gender",
-  #               names = c("Females", "Males", "Did not identify"),
-  #               xlab = "Gender",
-  #               ylab = "Median Difference Scores",
-  #               col = "steelblue")
-  #     }
-  #     dev.off()
-  #   }
-  # )
 
   # Download handler for meta_diff_plot4
   output$download_meta_diff_plot4 <- downloadHandler(
@@ -2443,155 +2203,6 @@ server <- function(input, output, session) {
     }
   )
 
-
-  # output$meta_wage_plot4 <- renderPlot({
-  #   req(selected_data())
-  #   data <- selected_data()
-  #
-  #   # Identify the column with wage data (exit wage column)
-  #   wage_col <- grep("(?i)^(?=.*wage)(?=.*exit)(?!.*(desc))", names(data),
-  #                    value = TRUE, perl = TRUE)
-  #
-  #   # Extract wage data
-  #   wages <- data[, .SD, .SDcols = wage_col]
-  #   wages_vector <- as.vector(unlist(wages)) # Convert to vector if needed
-  #
-  #   # Identify the column for gender/sex
-  #   sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
-  #                   value = TRUE, perl = TRUE)
-  #
-  #   if (length(sex_col) == 0) {
-  #     stop("No gender/sex column found in the dataset.")
-  #   }
-  #
-  #
-  #   if (length(unique(wage_col[data[[sex_col]] == 0])) >= 2 &
-  #       length(unique(wage_col[data[[sex_col]] == 1])) >= 2 &
-  #       length(unique(wage_col[data[[sex_col]] == 9])) >= 2
-  #   ) {
-  #
-  #     # Calculate densities for each gender group
-  #     females_density <- density(wages_vector[data[[sex_col]] == 0],
-  #                                na.rm = TRUE)
-  #     males_density <- density(wages_vector[data[[sex_col]] == 1],
-  #                              na.rm = TRUE)
-  #     did_not_identify_density <- density(wages_vector[data[[sex_col]] == 9],
-  #                                         na.rm = TRUE)
-  #
-  #     # Determine the maximum y value for setting y limits
-  #     max_density_value <- max(c(max(females_density$y, na.rm = TRUE),
-  #                                max(males_density$y, na.rm = TRUE),
-  #                                max(did_not_identify_density$y, na.rm = TRUE)),
-  #                              na.rm = TRUE)
-  #
-  #     # Initialize the plot with dynamic y-limits
-  #     plot(females_density, col = "steelblue4", lwd = 2,
-  #          main = "Density Plot of Exit Wages by Gender",
-  #          xlab = "Exit Wages ($ per Hour)", ylab = "Density",
-  #          xlim = range(c(females_density$x, males_density$x,
-  #                         did_not_identify_density$x)),
-  #          ylim = c(0, max_density_value * 1.1))
-  #
-  #     # Fill under the density curves for each group
-  #     polygon(c(females_density$x, rev(females_density$x)),
-  #             c(rep(0, length(females_density$x)), rev(females_density$y)),
-  #             col = rgb(0.2, 0.6, 1, alpha = 0.3), border = NA)
-  #
-  #     lines(males_density, col = "darkblue", lwd = 2)
-  #     polygon(c(males_density$x, rev(males_density$x)),
-  #             c(rep(0, length(males_density$x)), rev(males_density$y)),
-  #             col = rgb(0, 0, 0.5, alpha = 0.3), border = NA)
-  #
-  #     lines(did_not_identify_density, col = "darkgray", lwd = 2)
-  #     polygon(c(did_not_identify_density$x, rev(did_not_identify_density$x)),
-  #             c(rep(0, length(did_not_identify_density$x)),
-  #               rev(did_not_identify_density$y)),
-  #             col = rgb(0.5, 0.5, 0.5, alpha = 0.3), border = NA)
-  #
-  #     # Add a legend to identify the gender groups
-  #     legend("topright", legend = c("Females", "Males", "Did not identify"),
-  #            col = c("steelblue4", "darkblue", "darkgray"), lwd = 2)
-  #
-  #   } else {
-  #     boxplot(wages_vector ~ data[[sex_col]],
-  #             main = "Exit Wages by Gender",
-  #             names = c("Females", "Males", "Did not identify"),
-  #             xlab = "Gender",
-  #             ylab = "Exit Wages ($ per Hour)",
-  #             col = "steelblue")
-  #   }
-  #
-  # })
-
-  # output$meta_wage_plot4 <- renderPlot({
-  #   req(selected_data())
-  #   data <- selected_data()
-  #
-  #   # Identify the column with wage data (exit wage column)
-  #   wage_col <- grep("(?i)^(?=.*wage)(?=.*exit)(?!.*(desc))", names(data), value = TRUE, perl = TRUE)
-  #   wages <- data[, .SD, .SDcols = wage_col]
-  #   wages_vector <- as.vector(unlist(wages)) # Convert to vector if needed
-  #
-  #   # Identify the column for gender/sex
-  #   sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data), value = TRUE, perl = TRUE)
-  #
-  #   if (length(sex_col) == 0) {
-  #     stop("No gender/sex column found in the dataset.")
-  #   }
-  #
-  #   if (all(sapply(c(0, 1, 3, 9), function(g) length(unique(wages_vector[data[[sex_col]] == g])) >= 2))) {
-  #     # Calculate densities for each group
-  #     females_density <- density(wages_vector[data[[sex_col]] == 0], na.rm = TRUE)
-  #     males_density <- density(wages_vector[data[[sex_col]] == 1], na.rm = TRUE)
-  #     other_density <- density(wages_vector[data[[sex_col]] == 3], na.rm = TRUE)
-  #     did_not_identify_density <- density(wages_vector[data[[sex_col]] == 9], na.rm = TRUE)
-  #
-  #     # Determine the maximum y value for setting y limits
-  #     max_density_value <- max(c(max(females_density$y, na.rm = TRUE),
-  #                                max(males_density$y, na.rm = TRUE),
-  #                                max(other_density$y, na.rm = TRUE),
-  #                                max(did_not_identify_density$y, na.rm = TRUE)), na.rm = TRUE)
-  #
-  #     # Initialize the plot with dynamic y-limits
-  #     plot(females_density, col = "steelblue4", lwd = 2,
-  #          main = "Density Plot of Exit Wages by Gender",
-  #          xlab = "Exit Wages ($ per Hour)", ylab = "Density",
-  #          xlim = range(c(females_density$x, males_density$x, other_density$x, did_not_identify_density$x)),
-  #          ylim = c(0, max_density_value * 1.1))
-  #
-  #     # Fill under the density curves for each group
-  #     polygon(c(females_density$x, rev(females_density$x)),
-  #             c(rep(0, length(females_density$x)), rev(females_density$y)),
-  #             col = rgb(0.2, 0.6, 1, alpha = 0.3), border = NA)
-  #
-  #     lines(males_density, col = "darkblue", lwd = 2)
-  #     polygon(c(males_density$x, rev(males_density$x)),
-  #             c(rep(0, length(males_density$x)), rev(males_density$y)),
-  #             col = rgb(0, 0, 0.5, alpha = 0.3), border = NA)
-  #
-  #     lines(other_density, col = "darkgreen", lwd = 2)
-  #     polygon(c(other_density$x, rev(other_density$x)),
-  #             c(rep(0, length(other_density$x)), rev(other_density$y)),
-  #             col = rgb(0.2, 0.8, 0.2, alpha = 0.3), border = NA)
-  #
-  #     lines(did_not_identify_density, col = "darkgray", lwd = 2)
-  #     polygon(c(did_not_identify_density$x, rev(did_not_identify_density$x)),
-  #             c(rep(0, length(did_not_identify_density$x)), rev(did_not_identify_density$y)),
-  #             col = rgb(0.5, 0.5, 0.5, alpha = 0.3), border = NA)
-  #
-  #     # Add a legend to identify the gender groups
-  #     legend("topright", legend = c("Females", "Males", "Other", "Did not identify"),
-  #            col = c("steelblue4", "darkblue", "darkgreen", "darkgray"), lwd = 2)
-  #   } else {
-  #     boxplot(wages_vector ~ data[[sex_col]],
-  #             main = "Exit Wages by Gender",
-  #             names = c("Females", "Males", "Other", "Did not identify"),
-  #             xlab = "Gender",
-  #             ylab = "Exit Wages ($ per Hour)",
-  #             col = c("steelblue", "darkblue", "darkgreen", "darkgray"))
-  #   }
-  # })
-
   output$meta_wage_plot4 <- renderPlot({
     req(selected_data())
     data <- selected_data()
@@ -2662,143 +2273,6 @@ server <- function(input, output, session) {
               col = c("steelblue", "darkblue", "darkgreen", "darkgray"))
     }
   })
-
-
-
-  # output$download_meta_wage_plot4 <- downloadHandler(
-  #   filename = function() { "exit_wages_by_gender_plot.png" },
-  #   content = function(file) {
-  #     png(file)
-  #     data <- selected_data()
-  #
-  #     wage_col <- grep("(?i)^(?=.*wage)(?=.*exit)(?!.*(desc))", names(data), value = TRUE, perl = TRUE)
-  #     wages <- data[, .SD, .SDcols = wage_col]
-  #     wages_vector <- as.vector(unlist(wages))
-  #
-  #     sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data), value = TRUE, perl = TRUE)
-  #
-  #     if (length(sex_col) == 0) {
-  #       stop("No gender/sex column found in the dataset.")
-  #     }
-  #
-  #     if (all(sapply(c(0, 1, 3, 9), function(g) length(unique(wages_vector[data[[sex_col]] == g])) >= 2))) {
-  #       females_density <- density(wages_vector[data[[sex_col]] == 0], na.rm = TRUE)
-  #       males_density <- density(wages_vector[data[[sex_col]] == 1], na.rm = TRUE)
-  #       other_density <- density(wages_vector[data[[sex_col]] == 3], na.rm = TRUE)
-  #       did_not_identify_density <- density(wages_vector[data[[sex_col]] == 9], na.rm = TRUE)
-  #
-  #       max_density_value <- max(c(max(females_density$y, na.rm = TRUE),
-  #                                  max(males_density$y, na.rm = TRUE),
-  #                                  max(other_density$y, na.rm = TRUE),
-  #                                  max(did_not_identify_density$y, na.rm = TRUE)), na.rm = TRUE)
-  #
-  #       plot(females_density, col = "steelblue4", lwd = 2,
-  #            main = "Density Plot of Exit Wages by Gender",
-  #            xlab = "Exit Wages ($ per Hour)", ylab = "Density",
-  #            xlim = range(c(females_density$x, males_density$x, other_density$x, did_not_identify_density$x)),
-  #            ylim = c(0, max_density_value * 1.1))
-  #
-  #       polygon(c(females_density$x, rev(females_density$x)),
-  #               c(rep(0, length(females_density$x)), rev(females_density$y)),
-  #               col = rgb(0.2, 0.6, 1, alpha = 0.3), border = NA)
-  #
-  #       lines(males_density, col = "darkblue", lwd = 2)
-  #       polygon(c(males_density$x, rev(males_density$x)),
-  #               c(rep(0, length(males_density$x)), rev(males_density$y)),
-  #               col = rgb(0, 0, 0.5, alpha = 0.3), border = NA)
-  #
-  #       lines(other_density, col = "darkgreen", lwd = 2)
-  #       polygon(c(other_density$x, rev(other_density$x)),
-  #               c(rep(0, length(other_density$x)), rev(other_density$y)),
-  #               col = rgb(0.2, 0.8, 0.2, alpha = 0.3), border = NA)
-  #
-  #       lines(did_not_identify_density, col = "darkgray", lwd = 2)
-  #       polygon(c(did_not_identify_density$x, rev(did_not_identify_density$x)),
-  #               c(rep(0, length(did_not_identify_density$x)), rev(did_not_identify_density$y)),
-  #               col = rgb(0.5, 0.5, 0.5, alpha = 0.3), border = NA)
-  #
-  #       legend("topright", legend = c("Females", "Males", "Other", "Did not identify"),
-  #              col = c("steelblue4", "darkblue", "darkgreen", "darkgray"), lwd = 2)
-  #     } else {
-  #       boxplot(wages_vector ~ data[[sex_col]],
-  #               main = "Exit Wages by Gender",
-  #               names = c("Females", "Males", "Other", "Did not identify"),
-  #               xlab = "Gender",
-  #               ylab = "Exit Wages ($ per Hour)",
-  #               col = c("steelblue", "darkblue", "darkgreen", "darkgray"))
-  #     }
-  #     dev.off()
-  #   }
-  # )
-
-
-  # Download handler for meta_wage_plot4
-  # output$download_meta_wage_plot4 <- downloadHandler(
-  #   filename = function() { "exit_wages_by_gender_plot.png" },
-  #   content = function(file) {
-  #     png(file)
-  #     data <- selected_data()
-  #
-  #     wage_col <- grep("(?i)^(?=.*wage)(?=.*exit)(?!.*(desc))", names(data),
-  #                      value = TRUE, perl = TRUE)
-  #     wages <- data[, .SD, .SDcols = wage_col]
-  #     wages_vector <- as.vector(unlist(wages))
-  #
-  #     sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
-  #                     value = TRUE, perl = TRUE)
-  #
-  #     if (length(sex_col) == 0) {
-  #       stop("No gender/sex column found in the dataset.")
-  #     }
-  #
-  #     if (length(unique(wage_col[data[[sex_col]] == 0])) >= 2 &
-  #         length(unique(wage_col[data[[sex_col]] == 1])) >= 2 &
-  #         length(unique(wage_col[data[[sex_col]] == 9])) >= 2
-  #     ) {
-  #       females_density <- density(wages_vector[data[[sex_col]] == 0], na.rm = TRUE)
-  #       males_density <- density(wages_vector[data[[sex_col]] == 1], na.rm = TRUE)
-  #       did_not_identify_density <- density(wages_vector[data[[sex_col]] == 9], na.rm = TRUE)
-  #
-  #       max_density_value <- max(c(max(females_density$y, na.rm = TRUE),
-  #                                  max(males_density$y, na.rm = TRUE),
-  #                                  max(did_not_identify_density$y, na.rm = TRUE)),
-  #                                na.rm = TRUE)
-  #
-  #       plot(females_density, col = "steelblue4", lwd = 2,
-  #            main = "Density Plot of Exit Wages by Gender",
-  #            xlab = "Exit Wages ($ per Hour)", ylab = "Density",
-  #            xlim = range(c(females_density$x, males_density$x,
-  #                           did_not_identify_density$x)),
-  #            ylim = c(0, max_density_value * 1.1))
-  #
-  #       polygon(c(females_density$x, rev(females_density$x)),
-  #               c(rep(0, length(females_density$x)), rev(females_density$y)),
-  #               col = rgb(0.2, 0.6, 1, alpha = 0.3), border = NA)
-  #
-  #       lines(males_density, col = "darkblue", lwd = 2)
-  #       polygon(c(males_density$x, rev(males_density$x)),
-  #               c(rep(0, length(males_density$x)), rev(males_density$y)),
-  #               col = rgb(0, 0, 0.5, alpha = 0.3), border = NA)
-  #
-  #       lines(did_not_identify_density, col = "darkgray", lwd = 2)
-  #       polygon(c(did_not_identify_density$x, rev(did_not_identify_density$x)),
-  #               c(rep(0, length(did_not_identify_density$x)),
-  #                 rev(did_not_identify_density$y)),
-  #               col = rgb(0.5, 0.5, 0.5, alpha = 0.3), border = NA)
-  #
-  #       legend("topright", legend = c("Females", "Males", "Did not identify"),
-  #              col = c("steelblue4", "darkblue", "darkgray"), lwd = 2)
-  #     } else {
-  #       boxplot(wages_vector ~ data[[sex_col]],
-  #               main = "Exit Wages by Gender",
-  #               names = c("Females", "Males", "Did not identify"),
-  #               xlab = "Gender",
-  #               ylab = "Exit Wages ($ per Hour)",
-  #               col = "steelblue")
-  #     }
-  #     dev.off()
-  #   }
-  # )
 
   # Download handler for meta_wage_plot4
   output$download_meta_wage_plot4 <- downloadHandler(
@@ -3235,14 +2709,6 @@ server <- function(input, output, session) {
 
     # these variables have been created in the data cleaning process,
     #   so we can use the exact names
-    # plot(data$Enroll_Length,
-    #      as.character(data$Final_Employment),
-    #      main = "Exit Employment Across Enrollment Length",
-    #      ylab = "Exit Employment",
-    #      xlab = "Enrollment Length (total quarters)",
-    #      col = "steelblue",
-    #      pch = 8)
-
 
     # Create a contingency table of Final_Employment by Gender
     employment_enroll_table <- table(data$Final_Employment,
@@ -3291,40 +2757,6 @@ server <- function(input, output, session) {
   )
 
 
-  # output$meta_employ_plot4 <- renderPlot({
-  #   req(selected_data())
-  #   data <- selected_data()
-  #
-  #   # the name for the gender/sex column could be varied, so we need to
-  #   #   account for this possibility
-  #   sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
-  #                   value = TRUE, perl = TRUE)
-  #
-  #
-  #   # Create a contingency table of Final_Employment by Gender
-  #   employment_gender_table <- table(data$Final_Employment,
-  #                                    data[[sex_col]])
-  #
-  #   rownames(employment_gender_table) <- c("Non-competitive Employment",
-  #                                          "Competitive Employment")
-  #
-  #   colnames(employment_gender_table) <- c("Male",
-  #                                          "Female",
-  #                                          "Other",
-  #                                          "Did not identify")
-  #
-  #
-  #   # Create a bar plot with bars broken up by gender
-  #   barplot(employment_gender_table, beside = TRUE,
-  #           col = c("lightsteelblue", "steelblue"),
-  #           legend.text = c("Non-competitive", "Competitive"),
-  #           args.legend = list(x = "topleft", bty = "n",
-  #                              title = "Employment Type"),
-  #           xlab = "Gender", ylab = "Count",
-  #           main = "Exit Employment by Gender")
-  #
-  # })
-
   output$meta_employ_plot4 <- renderPlot({
     req(selected_data())
     data <- selected_data()
@@ -3367,36 +2799,6 @@ server <- function(input, output, session) {
   })
 
 
-  # output$download_meta_employ_plot4 <- downloadHandler(
-  #   filename = function() { "exit_employment_by_gender_plot.png" },
-  #   content = function(file) {
-  #     png(file)
-  #     data <- selected_data()
-  #
-  #     sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
-  #                     value = TRUE, perl = TRUE)
-  #
-  #     employment_gender_table <- table(data$Final_Employment,
-  #                                      data[[sex_col]])
-  #
-  #     rownames(employment_gender_table) <- c("Non-competitive Employment",
-  #                                            "Competitive Employment")
-  #
-  #     colnames(employment_gender_table) <- c("Male",
-  #                                            "Female",
-  #                                            "Other",
-  #                                            "Did not identify")
-  #
-  #     barplot(employment_gender_table, beside = TRUE,
-  #             col = c("lightsteelblue", "steelblue"),
-  #             legend.text = c("Non-competitive", "Competitive"),
-  #             args.legend = list(x = "topleft", bty = "n",
-  #                                title = "Employment Type"),
-  #             xlab = "Gender", ylab = "Count",
-  #             main = "Exit Employment by Gender")
-  #     dev.off()
-  #   }
-  # )
 
   output$download_meta_employ_plot4 <- downloadHandler(
     filename = function() { "exit_employment_by_gender_plot.png" },
@@ -3471,16 +2873,6 @@ server <- function(input, output, session) {
 
     # Create the bar plot based on the contingency table
     par(oma = c(0, 0, 0, 0) + 0.6)
-    # barplot(employment_race_table, beside = TRUE,
-    #         col = c("lightsteelblue", "steelblue"),
-    #         legend.text = c("Non-competitive", "Competitive"),
-    #         args.legend = list(x = "topleft", bty = "n",
-    #                            title = "Employment Type"),
-    #         ylab = "Count",
-    #         xaxt = "n",
-    #         yaxt = "n",
-    #         xlab = "",
-    #         main = "Final Employment by Race", las = 2)
 
     bar_midpoints <- barplot(employment_race_table, beside = TRUE,
                              col = c("lightsteelblue", "steelblue"),
@@ -3993,22 +3385,24 @@ server <- function(input, output, session) {
       difference_cols <- grep("(?i)difference", names(data),
                               value = TRUE, perl = TRUE)
 
+      participant_col <- grep("(?i)^(?=.*participant)|(?=.*\\bid\\b)(?!.*\\bid\\B)",
+                              names(data), value = TRUE, perl = TRUE)
+
       # Exclude columns that contain "med" or "avail"
       exclude_patterns <- "(?i)med|avail"
       filtered_columns <- difference_cols[!grepl(exclude_patterns,
                                                  difference_cols, perl = TRUE)]
 
-      differences <- data[, .SD, .SDcols = filtered_columns]
+      differences <- data[, .SD, .SDcols = c(participant_col, filtered_columns)]
 
-      # Convert data to long format for anova test to work
-      long_data <- data.frame(
-        Difference_Scores = c(data$Difference_CPSO, data$Difference_CSS,
-                              data$Difference_EMP, data$Difference_FL,
-                 data$Difference_ILOM, data$Difference_ISA,
-                 data$Difference_JOBEX, data$Difference_JS,
-                 data$Difference_QWEX, data$Difference_WBLE),
-        Services = factor(rep(filtered_columns, each = nrow(data)))
-      )
+      # Convert data to long format to input into ANOVA test function
+      long_data <- melt(differences, id.vars = participant_col,
+                        measure.vars = filtered_columns,
+                        variable.name = "Services",
+                        value.name = "Difference_Scores")
+
+      # Convert Services column to a factor
+      long_data[, Services := factor(Services)]
 
 
       # Perform ANOVA
@@ -4039,14 +3433,6 @@ server <- function(input, output, session) {
 
   })
 
-  # observeEvent(input$anova, {
-  #   anova_run(TRUE)
-  # })
-
-  # output$model_scores_summary <- renderPrint({
-  #   req(model_scores())
-  #   summary(model_scores()$anova)
-  # })
 
   output$model_scores_summary <- renderPrint({
     req(model_scores())
@@ -4081,54 +3467,6 @@ server <- function(input, output, session) {
     }
   )
 
-
-  # # Render Tukey HSD pairwise comparison results (significant pairs only)
-  # output$tukey_scores_summary <- renderPrint({
-  #   req(model_scores())
-  #   tukey_result <- model_scores()$tukey
-  #
-  #   # Get the Tukey HSD results as a data frame
-  #   tukey_df <- as.data.frame(tukey_result$Services)
-  #   # Or use $Provider for "ANOVA across Providers"
-  #
-  #   # Filter only significant pairs (p-value < 0.05)
-  #   significant_pairs <- tukey_df[tukey_df$`p adj` < 0.05, ]
-  #
-  #   # If there are no significant pairs, print a message
-  #   if (nrow(significant_pairs) == 0) {
-  #     cat("No significant (alpha = 0.05) pairwise comparisons found. May be due to sampling sizes.")
-  #   } else {
-  #     print(significant_pairs)
-  #   }
-  # })
-
-  # output$tukey_scores_summary <- renderPrint({
-  #   req(selected_data())
-  #   req(input$anova)
-  #   data <- selected_data()
-  #   anova_test <- input$anova
-  #
-  #   req(model_scores())
-  #   tukey_result <- model_scores()$tukey
-  #
-  #
-  #   # Get the Tukey HSD results as a data frame
-  #   tukey_df <- as.data.frame(tukey_result$Services)  # Or $Provider for providers
-  #
-  #   # Round numeric columns
-  #   numeric_cols <- sapply(tukey_df, is.numeric)
-  #   tukey_df[, numeric_cols] <- lapply(tukey_df[, numeric_cols], round, 2)
-  #
-  #   # Filter only significant pairs (p-value < 0.05)
-  #   significant_pairs <- tukey_df[tukey_df$`p adj` < 0.05, ]
-  #
-  #   # If there are no significant pairs, print a message
-  #   if (nrow(significant_pairs) == 0) {
-  #     cat("No significant pairwise comparisons found. May be due to sampling sizes.")
-  #   } else {
-  #     print(significant_pairs)
-  #   }
-  # })
 
   output$tukey_scores_summary <- renderPrint({
     req(selected_data())
@@ -4223,9 +3561,10 @@ server <- function(input, output, session) {
 
   model_metadata <- reactive({
     req(selected_data())
+    req(input$response)
     data <- selected_data()
-
     response <- input$response
+
     if (response == "Predict Employment Outcome"){
       # employ_col <- grep("(?i)^(?=.*employment)(?!.*(?i)_desc)(?!.*(?i)_wage)(?!.*(?i)un)",
       #                    names(data), value = TRUE, perl = TRUE)
@@ -4346,10 +3685,11 @@ server <- function(input, output, session) {
       glm(formula, family = binomial, data = data)
     }
 
-    # # Set model_run to TRUE when the model is executed
+    # Set model_run to TRUE when the model is executed
     # model_run(TRUE)
 
   })
+
 
   # Reactive function to create residual plots
   output$metadata_residuals1 <- renderPlot({
@@ -4433,37 +3773,6 @@ server <- function(input, output, session) {
     }
   })
 
-  # # Explanation for ROC or Binned Residuals Plot
-  # output$plot_explanation <- renderUI({
-  #   req(model_metadata())
-  #
-  #   # Check the response type
-  #   response <- input$response
-  #
-  #   if (response == "Predict Employment Outcome") {
-  #     # Explanation for ROC plot
-  #     HTML("<b>ROC Curve Explanation:</b> The ROC curve plots the true positive rate (sensitivity) against the false positive rate (1-specificity) at various threshold levels. The Area Under the Curve (AUC) represents the model's ability to discriminate between positive and negative outcomes. A higher AUC indicates better model performance.")
-  #
-  #   } else if (response == "Predict Ending Wage" || response == "Predict Median Difference Score") {
-  #     # Explanation for Residuals vs. Fitted plot
-  #     HTML("<b>Residuals vs Fitted Plot Explanation:</b> This plot helps assess the model fit by showing the residuals (differences between observed and predicted values) against the fitted values (predicted values). Ideally, the residuals should be randomly scattered around 0, indicating that the model's assumptions are valid.")
-  #
-  #   } else {
-  #     # Explanation for Binned Residuals plot
-  #     HTML("<b>Binned Residuals Plot Explanation:</b> This plot divides the data into bins based on fitted values, showing the average residual versus the average fitted value for each bin. It helps assess how well the model fits in different ranges of the predictor variable.")
-  #   }
-  # })
-
-  # Explanation for ROC or Binned Residuals Plot
-  # output$roc_explanation <- renderUI({
-  #   HTML("<b>ROC Curve Explanation:</b> The ROC curve plots the true positive rate (sensitivity) against the false positive rate (1-specificity) at various threshold levels. The Area Under the Curve (AUC) represents the model's ability to discriminate between positive and negative outcomes. A higher AUC indicates better model performance.")
-  # })
-  # output$binned_explanation <- renderUI({
-  #   HTML("<b>Binned Residuals Plot Explanation:</b> This plot divides the data into bins based on fitted values, showing the average residual versus the average fitted value for each bin. It helps assess how well the model fits in different ranges of the predictor variable.")
-  # })
-  # output$residuals_explanation <- renderUI({
-  #   HTML("<b>Residuals vs Fitted Plot Explanation:</b> This plot helps assess the model fit by showing the residuals (differences between observed and predicted values) against the fitted values (predicted values). Ideally, the residuals should be randomly scattered around 0, indicating that the model's assumptions are valid.")
-  # })
 
 
   output$roc_explanation <- renderUI({
@@ -4518,33 +3827,7 @@ server <- function(input, output, session) {
     tags$p(HTML("<b>QQ Plot Explanation:</b> The QQ plot is used to check if the residuals follow a normal distribution. Points should lie approximately on the diagonal line if the residuals are normally distributed. Deviations from the line suggest departures from normality."))
   })
 
-  # output$model_metadata_summary <- renderPrint({
-  #   req(model_metadata())
-  #   summary(model_metadata())
-  # })
 
-
-  # output$model_metadata_summary <- renderPrint({
-  #   req(model_metadata())
-  #
-  #   # Fit the model (assuming `model_metadata()` is the result of your model fitting)
-  #   model <- model_metadata()
-  #
-  #   # Extract the desired components
-  #   coefficients <- round(coef(summary(model)), 2)
-  #   sigma <- round(summary(model)$sigma, 2)
-  #   r_squared <- round(summary(model)$r.squared, 2)
-  #   adj_r_squared <- round(summary(model)$adj.r.squared, 2)
-  #   f_stat <- round(summary(model)$fstatistic[1], 2) # F-statistic
-  #
-  #   # Print the extracted information
-  #   cat("Coefficients:\n")
-  #   print(coefficients)
-  #   cat("\nResidual Standard Error (sigma):", sigma)
-  #   cat("\nR-squared:", r_squared)
-  #   cat("\nAdjusted R-squared:", adj_r_squared)
-  #   cat("\nF-statistic:", f_stat, "\n")
-  # })
 
   output$model_metadata_summary <- renderPrint({
     req(model_metadata())
@@ -4586,41 +3869,6 @@ server <- function(input, output, session) {
       cat("Model type not supported for summary output.\n")
     }
   })
-
-
-  # output$download_pdf <- downloadHandler(
-  #   filename = function() {
-  #     paste("model_results_", Sys.Date(), ".pdf", sep = "")
-  #   },
-  #   content = function(file) {
-  #     # Create a temporary R Markdown file
-  #     temp_rmd <- tempfile(fileext = ".Rmd")
-  #
-  #     # Create the content for the report (replace with actual dynamic content)
-  #     report_content <- "
-  #   ---
-  #   title: 'Model Results Report'
-  #   output: pdf_document
-  #   ---
-  #
-  #   # Model Summary
-  #   `r model_summary`
-  #
-  #   # Residuals Plots
-  #   ![Residual Plot 1](residual_plot1.png)
-  #   ![Residual Plot 2](residual_plot2.png)
-  #
-  #   # Other Plots
-  #   ![Other Plot](other_plot.png)
-  #   "
-  #
-  #     # Write the Rmd content to the temporary file
-  #     writeLines(report_content, temp_rmd)
-  #
-  #     # Render the Rmd file to PDF
-  #     rmarkdown::render(temp_rmd, output_file = file, clean = TRUE)
-  #   }
-  # )
 
 
   output$model_metadata_exists <- reactive({
@@ -4671,23 +3919,6 @@ server <- function(input, output, session) {
         },
         fluidRow(
 
-          # conditionalPanel(condition = "output.model_scores_exists==true" ,
-          #                  uiOutput("histogram_explanation2"),
-          #                  column(12, plotOutput("scores_residuals1")),
-          #                  column(12, downloadButton("download_scores_residuals1",
-          #                                            "Download")),
-          #
-          #                  uiOutput("qqplot_explanation2"),
-          #                  column(12, plotOutput("scores_residuals2")),
-          #                  column(12, downloadButton("download_scores_residuals2",
-          #                                            "Download")),
-          #
-          #                  uiOutput("residuals_explanation2"),
-          #                  column(12, plotOutput("scores_residuals3")),
-          #                  column(12, downloadButton("download_scores_residuals3",
-          #                                            "Download"))
-          #                  )
-
           uiOutput("histogram_explanation2"),
           column(12, plotOutput("scores_residuals1")),
           # column(12, downloadButton("download_scores_residuals1",
@@ -4709,125 +3940,24 @@ server <- function(input, output, session) {
 
     } else if ((data_choice == "Use Generated Metadata") ||
                (data_choice == "Upload New Dataset" &&
-                dataset_type == "metadata")) {
+                input$dataset_type == "metadata")) {
       # fluidRow(
-      #   column(12, verbatimTextOutput("model_metadata_summary")),
-      #   column(12, plotOutput("metadata_residuals1")),
-      #   column(12, plotOutput("metadata_residuals2")),
-      #   conditionalPanel(
-      #     condition = "input.response === 'Predict Ending Wage' || input.response === 'Predict Median Difference Score'",
-      #     column(12, plotOutput("metadata_residuals3"))
-      #   ))
+      #   # Conditionally display the model summary and download button only after the model is run
+      #   if (model_run()) {
+      #
+      #     fluidRow(
+      #       column(12, verbatimTextOutput("model_metadata_summary")),
+      #       column(12, downloadButton("download_model_metadata_summary",
+      #                                 "Download Model Summary"))
+      #     )
+      #   },
 
-      # # this one works so far
-      # fluidRow(
-      #   column(12, verbatimTextOutput("model_metadata_summary")),
-      #   column(12, uiOutput("roc_explanation")),
-      #   column(12, plotOutput("metadata_residuals1")),
-      #   column(12, uiOutput("binned_explanation")),
-      #   column(12, plotOutput("metadata_residuals2")),
-      #   conditionalPanel(
-      #     condition = "input.response === 'Predict Ending Wage' || input.response === 'Predict Median Difference Score'",
-      #     column(12, uiOutput("residuals_explanation")),
-      #     column(12, plotOutput("metadata_residuals3"))
-      #   )
-      # )
-
-      # fluidRow(
-      #   column(12, verbatimTextOutput("model_metadata_summary")),
-      #   column(12, uiOutput("roc_explanation")),
-      #   column(12, plotOutput("metadata_residuals1")),
-      #   column(12, uiOutput("binned_explanation")),
-      #   column(12, plotOutput("metadata_residuals2")),
-      #   conditionalPanel(
-      #     condition = "input.response === 'Predict Ending Wage' || input.response === 'Predict Median Difference Score'",
-      #     column(12, uiOutput("histogram_explanation")),
-      #     column(12, plotOutput("metadata_residuals1")),
-      #     column(12, uiOutput("qqplot_explanation")),
-      #     column(12, plotOutput("metadata_residuals2")),
-      #     column(12, uiOutput("residuals_explanation")),
-      #     column(12, plotOutput("metadata_residuals3")),
-      #   ))
-
-      # fluidRow(
-      #   column(12, verbatimTextOutput("model_metadata_summary")),
-      #
-      #   # Display roc_explanation above plot1 if response is "Predict Employment Outcome"
-      #   # Otherwise, display histogram_explanation above plot1
-      #   conditionalPanel(
-      #     condition = "input.response === 'Predict Employment Outcome'",
-      #     column(12, uiOutput("roc_explanation")),
-      #   ),
-      #   conditionalPanel(
-      #     condition = "input.response !== 'Predict Employment Outcome'",
-      #     column(12, uiOutput("histogram_explanation")),
-      #   ),
-      #
-      #   column(12, plotOutput("metadata_residuals1")),
-      #
-      #   # Display binned_explanation above plot2 if response is "Predict Employment Outcome"
-      #   # Otherwise, display qqplot_explanation above plot2
-      #   conditionalPanel(
-      #     condition = "input.response === 'Predict Employment Outcome'",
-      #     column(12, uiOutput("binned_explanation")),
-      #   ),
-      #   conditionalPanel(
-      #     condition = "input.response !== 'Predict Employment Outcome'",
-      #     column(12, uiOutput("qqplot_explanation")),
-      #   ),
-      #
-      #   column(12, plotOutput("metadata_residuals2")),
-      #
-      #   # Display residuals_explanation above plot3 if response is "Predict Ending Wage" or "Predict Median Difference Score"
-      #   conditionalPanel(
-      #     condition = "input.response === 'Predict Ending Wage' || input.response === 'Predict Median Difference Score'",
-      #     column(12, uiOutput("residuals_explanation")),
-      #     column(12, plotOutput("metadata_residuals3")),
-      #   )
-      # )
-
-      # fluidRow(
-      #   column(12, verbatimTextOutput("model_metadata_summary")),
-      #
-      #   # Plot 1 with explanation above it
-      #   conditionalPanel(
-      #     condition = "input.response === 'Predict Employment Outcome'",
-      #     column(12, uiOutput("roc_explanation"))
-      #   ),
-      #   conditionalPanel(
-      #     condition = "input.response !== 'Predict Employment Outcome'",
-      #     column(12, uiOutput("histogram_explanation"))
-      #   ),
-      #   column(12, plotOutput("metadata_residuals1")),
-      #
-      #   # Plot 2 with explanation above it
-      #   conditionalPanel(
-      #     condition = "input.response === 'Predict Employment Outcome'",
-      #     column(12, uiOutput("binned_explanation"))
-      #   ),
-      #   conditionalPanel(
-      #     condition = "input.response !== 'Predict Employment Outcome'",
-      #     column(12, uiOutput("qqplot_explanation"))
-      #   ),
-      #   column(12, plotOutput("metadata_residuals2")),
-      #
-      #   # Plot 3 with explanation above it, only for specific responses
-      #   conditionalPanel(
-      #     condition = "input.response === 'Predict Ending Wage' || input.response === 'Predict Median Difference Score'",
-      #     column(12, uiOutput("residuals_explanation")),
-      #     column(12, plotOutput("metadata_residuals3"))
-      #   )
-      # )
-      #
       fluidRow(
-        column(12, verbatimTextOutput("model_metadata_summary")),
-        # conditionalPanel(
-        #   condition = "output.model_run == true",
-        #   column(12, downloadButton("download_model_metadata_summary", "Download Model Summary"))
-        # ),
 
-        column(12, downloadButton("download_model_metadata_summary",
-                                  "Download Model Summary")),
+        column(12, verbatimTextOutput("model_metadata_summary")),
+
+        # column(12, downloadButton("download_model_metadata_summary",
+        #                           "Download Model Summary")),
 
         # Plot 1 with the appropriate explanation above it
         column(12,
