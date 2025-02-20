@@ -3,7 +3,7 @@
 #' A small example of quarterly data, simulated to represent real IRB-protected
 #'   data.
 #'
-#' @format ## `rsa`
+#' @format ## `rsa_simulated`
 #' A data frame with 1988 rows and 518 columns:
 #' \describe{
 #'   \item{variables}{For a list and description of all 518 variables, check the
@@ -11,7 +11,7 @@
 #'   ...
 #' }
 #' @source <https://rsa.ed.gov/performance/rsa-911-policy-directive>
-"rsa"
+"rsa_simulated"
 
 
 #' A Simulated Subset of TRT Scores Data
@@ -19,7 +19,7 @@
 #' A small example of TRT scores data, simulated to represent real IRB-protected
 #'   data.
 #'
-#' @format ## `scores`
+#' @format ## `scores_simulated`
 #' A data frame with 1800 rows and 518 columns:
 #' \describe{
 #'   \item{variables}{For an understanding of the 32 variables, check the
@@ -28,4 +28,4 @@
 #'   ...
 #' }
 #' @source <https://rsa.ed.gov/performance/rsa-911-policy-directive>
-"scores"
+"scores_simulated"

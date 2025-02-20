@@ -1,3 +1,6 @@
+# Install the rsa.helpr package
+# devtools::install_github("rtaylor456/rsa.helpr")
+
 ## Load RSA data
 # Mac directory:
 # directory <- c("/Users/RuthTaylor/Library/CloudStorage/Box-Box/911 Data and Related Projects/911 Data/Utah Quarterly Data/USU Data Request")
@@ -30,8 +33,6 @@ data <- data.table::fread("data-raw/data_load_2025-02-17.csv",
 scores <- data.table::fread("data-raw/TRT Data_1.28.2025 at 12_00pm.csv",
                             stringsAsFactors = FALSE)
 
-
-# devtools::install_github("rtaylor456/rsa.helpr")
 
 data_clean <- rsa.helpr::clean_utah(data)
 View(data_clean)
