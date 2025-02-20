@@ -70,18 +70,22 @@ Through the process of data cleaning, small functions were created to handle spe
 cleaning problems. These functions serve as helper functions for repeated cleaning tasks within larger functions in `rsa.helpr`. However, all of these helper cleaning functions can be used individually, as demonstrated in the proceeding sections. Some examples of the 
 helper functions are shown below:
 
-#### `handle_date`
+#### `handle_date` (vector input)
 ```{r handle_date}
 
 ```
 
-#### `handle_excel_date`
+#### `handle_excel_date` (vector input)
 ```{r handle_excel_date}
 
 ```
 
 
-#### `handle_nines`
+#### `handle_nines` (vector input)
+This function is mainly applied to binary variables, with 2 levels and a missing
+value represented by a 9. This function replaces ensures missing values are 
+represented by 9s, and when `unidentified_to_0` = TRUE, it combines the 9s with
+0s.
 ```{r handle_nines}
 
 # rsa_subset <- rsa[, c("E10_Indian_Alaskan_911", "E11_Asian_911", 
@@ -95,7 +99,11 @@ head(var_clean, 10)
 
 ```
 
-#### `handle_code`
+#### `handle_code` (vector input)
+This function handles code variables, replacing NULL, NA, blanks, etc. with NA
+values in R. This is utilized for consistency and the opportunity to analyze 
+the distribution of missing information.
+
 ```{r handle_code}
 
 head(rsa$E18_Postal_Code_911, 10)
@@ -105,7 +113,12 @@ head(var_clean, 10)
 
 ```
 
-#### `handle_values`
+#### `handle_values` (vector input)
+This function is one of the more flexible handle functions, as it allows the 
+user to input the allowed values for a variable, as well as the accepted value
+to represent a missing value, through the `blank_value` parameter. The following
+example involves a variable which allows values 1, 2, 3, 4, where blanks should
+be 0s. (`blank_value` defaults to NA.)
 ```{r handle_values}
 # head(rsa$E356_Exit_Work_Status_911, 20)
 # 
@@ -124,7 +137,11 @@ head(var_clean, 20)
 ```
 
 
-#### `handle_abbrev`
+#### `handle_abbrev` (vector input)
+This function cleans up a name variable, allowing for a wide variety in value
+structure and abbreviates each value. When the value is already shortened or
+abbreviated, it is left alone; otherwise, the value is abbreviated with an 
+acronym, ignoring articles and prepositions.
 ```{r handle_abbrev}
 
 tail(scores$Provider, 10)
@@ -135,7 +152,11 @@ tail(var_clean, 10)
 ```
 
 
-#### `handle_splits`
+#### `handle_splits` (vector input)
+This function is used to separate variables with values including special 
+characters. It allows for differing lengths of values (e.g. 1, 1;2, 3;3;4, NA).
+It separates by the identified special character and creates new variables, 
+based on the original name, with one value per column.
 ```{r handle_splits}
 
 head(rsa$E395_App_Medical_911)
@@ -146,7 +167,10 @@ lapply(var_clean, head)
 
 ```
 
-#### `apply_handle_splits`
+#### `apply_handle_splits`  (data frame input)
+This function allows the user to apply the `handle_splits` function across 
+multiple variables in a dataset. Rather than intaking a vector input, the user
+applies this function to an entire data frame. 
 ```{r apply_handle_splits}
 
 rsa_subset <- rsa[, c("E395_App_Medical_911", "E396_Exit_Public_Support_911", 
@@ -156,13 +180,19 @@ special_cols <- c("E395_App_Medical_911", "E396_Exit_Public_Support_911",
                   "E142_FourYear_Comp_911")
 
 df_clean <- apply_handle_splits(rsa_subset, special_cols, sep = ";")
-head(df_clean)
+head(df_clean, 10)
 
 ```
 
 
 
-#### `separate_disability`
+#### `separate_disability` (data frame input)
+This function intakes an entire dataset, identifies special disability columns,
+and separates them into meaningful individual value columns. Unlike the 
+`apply_handle_splits` function, this function deals with the Primary_Disability
+and Secondary_Disability variables, which contain specifically 2 values in a 
+uniform structure.
+
 ```{r separate_disability}
 head(rsa$E43_Primary_Disability_911, 10)
 head(rsa$E44_Secondary_Disability_911, 10)
@@ -188,13 +218,18 @@ differences. They also include checks to handle conflicts in expected and and ob
 structures. `clean_utah` and `clean_scores` can be run simply, by inputting only the dataset
 and no other arguments, using default settings, as shown below:
 
-#### `clean_utah`
-```{r clean_utah}
-# rsa_clean <- clean_utah(rsa)
+#### clean_utah
+The following code demonstrates the simplicity of running the one-stop cleaning
+function for quarterly (Utah RSA-911) data, using defaults.
+```{r clean_utah, eval = FALSE}
+rsa_clean <- clean_utah(rsa)
 ```
 
 
 ###### `aggregate`
+The `aggregate` parameter of the `clean_utah` function removes duplicate rows 
+for participants per quarter. It defaults to TRUE, and when set to TRUE, we 
+retain only the most recent row per quarter across participants.
 ```{r aggregate}
 dim(rsa)
 
@@ -205,13 +240,26 @@ dim(rsa_clean)
 
 
 ###### `unidentified_to_0`
+The `unidentified_to_0` parameter of the `clean_utah` function converts missing
+values in various forms to 0 for appropriate variables when set to TRUE (TRUE is
+the default). In the following example, we show a binary variable which uses 9s
+to identify missing values. In our cleaning function, we would have first 
+cleaned the variable to only use 9s to represent missings, then convert to 0.
 ```{r unidentified_to_0}
+rsa_clean <- clean_utah(rsa, unidentified_to_0 = TRUE)
+head(rsa_clean$E42_Has_Disability_911)
 
+rsa_clean <- clean_utah(rsa, unidentified_to_0 = FALSE)
+head(rsa_clean$E42_Has_Disability_911)
 
 ```
 
 
 ###### `remove_desc`
+The `remove_desc` parameter of the `clean_utah` function removes unnecessary
+descriptor variables when set to TRUE, the default. These descriptor variables 
+include the meanings for symbolic numeric values, but they can be distracting 
+and bulky. An example of removing the variables is shown below.
 ```{r remove_desc}
 
 names(rsa)[10:20]
@@ -221,39 +269,91 @@ names(rsa_clean)[5:12]
 ```
 
 ###### `remove_strictly_na`
+The `remove_strictly_na` parameter of the `clean_utah` function, when set to
+TRUE, removes variables that have exclusively missing values at the end of the 
+cleaning process. This parameter defaults to TRUE, as removing unhelpful 
+variables and clutter in the data are typical goals of the cleaning process.
 ```{r remove_strictly_na}
 
+rsa_clean <- clean_utah(rsa, remove_strictly_na = FALSE)
+
+na_cols <- names(rsa_clean)[sapply(rsa_clean, function(x) all(is.na(x)))]
+na_cols
+
+rsa_clean <- clean_utah(rsa, remove_strictly_na = TRUE)
+na_cols <- names(rsa_clean)[sapply(rsa_clean, function(x) all(is.na(x)))]
+na_cols
 ```
 
 
 
 
-#### `clean_scores`
-```{r clean_scores}
+#### clean_scores
+The following code is an example of running the `clean_scores` function, using 
+defaults for ultimate simplicity. Note that when run with defaults, we are 
+provided a warning about participant ID values if our data contain multiple
+states.
+```{r clean_scores, warning=TRUE}
+
+scores_clean <- clean_scores(scores)
 
 ```
 
 
 ###### `state_filter`
+The `state_filter` parameter of the `clean_scores` function allows the user to
+extract only data from the state(s) of interest. As shown in the above example,
+when `state_filter` is not provided, the cleaning function will retain all 
+states--if there are multiple--in the data. However, it will append the state 
+abbreviation to the ID, as IDs are not unique across states. Below is an example
+of cleaning our scores data (which contain multiple states' data), extracting 
+only the data from Utah. 
 ```{r state_filter}
+unique(scores$State)
+
+scores_clean <- clean_scores(scores, state_filter = "Utah")
 
 ```
 
 
 ###### `clean_ID`
+The `clean_ID` parameter of the `clean_scores` function defaults to TRUE, and
+when set to TRUE, will remove rows of the data where participant ID is missing.
+Data with missing IDs often are fully empty rows and are best removed to avoid
+errors and clutter.
+
 ```{r clean_ID}
+
+scores_clean <- clean_scores(scores, state_filter = "Utah", clean_ID = TRUE)
+sum(is.na(scores_clean$Participant_ID))
 
 ```
 
 
 ###### `aggregate`
+Similar to the `aggregate` parameter of the `clean_utah` function, the 
+`clean_scores` removes duplicate scores for participants per TRT service test. 
+It defaults to TRUE, and when set to TRUE, we retain only the most recent score
+per TRT service across participants.
+
 ```{r aggregate2}
+dim(scores)
+
+scores_clean <- clean_scores(scores, aggregate = TRUE)
+dim(scores_clean)
 
 ```
 
 
-###### `ID_col`
-```{r ID_col}
+###### `ID_col` 
+This parameter allows for the user to specify an ID column with a different 
+naming structure than expected. We will not run the following code, as our data
+do have appropriate ID column names, but below is an example of identifying a 
+variable, "X", as our ID column.
+
+```{r ID_col, eval=FALSE}
+
+scores_clean <- clean_scores(scores, ID_col = "X")
 
 ```
 
@@ -268,14 +368,23 @@ merged dataset and condenses to metadata, with one row per unique participant. T
 function uses the same methods as described in the Data Cleaning section to summarize
 (medians, most common occurrences, most recent values).
 
-#### `merge_scores`
+#### merge_scores
+This function is to be run on cleaned RSA-911 quarterly and TRT scores datasets.
+Note that this function allows the user to specify the ID variable names in each
+dataset being merged, but the defaults are `Participant_ID` for each. 
 ```{r merge_scores}
+rsa_clean <- clean_utah(rsa)
+scores_clean <- clean_scores(scores, state_filter = "Utah")
 
+merged_data <- merge_scores(rsa_clean, scores_clean)
+dim(merged_data)
 ```
 
-#### `create_metadata`
+#### create_metadata
 ```{r create_metadata}
-
+metadata <- create_metadata(merged_data)
+nrow(metadata)
+length(unique(metadata$Participant_ID))
 ```
 
 
@@ -283,15 +392,15 @@ function uses the same methods as described in the Data Cleaning section to summ
 Below is an example of the process of producing fully cleaned, condensed 
 metadata using `rsa.helpr` functions:
 
-```{r example, eval=FALSE}
+```{r example, eval = FALSE}
 # Cleaning an RSA-911 datset using defaults
-data_cleaned <- clean_utah(data)
+rsa_clean <- clean_utah(rsa)
 
 # Cleaning a scores dataset using defaults and extracting only Utah data
-scores_cleaned <- clean_scores(scores, state_filter = "Utah")
+scores_clean <- clean_scores(scores, state_filter = "Utah")
 
 # Merge the datasets, keep only relevant participants, using defaults
-merged_data <- merge_scores(data_cleaned, scores_cleaned)
+merged_data <- merge_scores(rsa_clean, scores_clean)
 
 # Generate the condensed metadata
 metadata <- create_metadata(merged_data)
