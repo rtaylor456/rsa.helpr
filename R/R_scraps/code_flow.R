@@ -1,3 +1,26 @@
+## Load RSA data
+# Mac directory:
+# directory <- c("/Users/RuthTaylor/Library/CloudStorage/Box-Box/911 Data and Related Projects/911 Data/Utah Quarterly Data/USU Data Request")
+
+# PC directory:
+# directory <- "C:\\Users\\Ruth Taylor\\Box\\911 Data and Related Projects\\911 Data\\Utah Quarterly Data\\USU Data Request"
+
+# load data from directory
+# quarterly <- rsa.helpr::load_data(directory, download_csv = TRUE)
+
+
+## Load TRT Scores data
+# Mac directory:
+# directory <- c("/Users/RuthTaylor/Library/CloudStorage/Box-Box/911 Data and Related Projects/911 Data/TRT Data_1.28.2025 at 12:00pm.csv")
+
+# PC directory:
+# runs into issues, because of file name just take off Box
+
+# scores <- data.table::fread(directory, stringsAsFactors = FALSE)
+
+
+
+## Read data in without Box:
 # data <- data.table::fread("data-raw/rsa_full_1_29_25.csv",
 #                           stringsAsFactors = FALSE)
 
