@@ -1,3 +1,18 @@
+convert_mixed_dates <- function(x) {
+  sapply(x, function(val) {
+    if (is.na(val) || val %in% c("NULL", "")) {
+      return(NA)  # Convert "NULL" and empty strings to NA
+    } else if (grepl("^\\d{4}-\\d{2}-\\d{2}$", val)) {
+      return(as.Date(val))  # Already a proper date format
+    } else if (suppressWarnings(!is.na(as.numeric(val)))) {
+      return(as.Date(as.numeric(val), origin = "1899-12-30"))  # Convert Excel serial date
+    } else {
+      return(suppressWarnings(as.Date(val, format = "%Y-%m-%d")))  # Convert character date
+    }
+  }, USE.NAMES = FALSE)  # Prevent named output
+}
+
+
 #' Suppress unhelpful NAs warning.
 #'
 #' This function suppresses a warning only when the warning is "NAs introduced

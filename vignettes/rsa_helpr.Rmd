@@ -67,7 +67,8 @@ To achieve the standardization and simplification of data cleaning, our R packag
 
 ### Helper Functions
 Through the process of data cleaning, small functions were created to handle specific variable
-cleaning problems. These functions serve as helper functions for repeated cleaning tasks within larger functions in `rsa.helpr`. However, all of these helper cleaning functions can be used individually, as demonstrated in the proceeding sections.
+cleaning problems. These functions serve as helper functions for repeated cleaning tasks within larger functions in `rsa.helpr`. However, all of these helper cleaning functions can be used individually, as demonstrated in the proceeding sections. Some examples of the 
+helper functions are shown below:
 
 #### `handle_date`
 ```{r handle_date}
@@ -79,28 +80,46 @@ cleaning problems. These functions serve as helper functions for repeated cleani
 
 ```
 
-#### `handle_year`
-```{r handle_year}
-
-```
 
 #### `handle_nines`
 ```{r handle_nines}
 
-```
+# rsa_subset <- rsa[, c("E10_Indian_Alaskan_911", "E11_Asian_911", 
+#                       "E14_White_911", "E16_Veteran_Status_911", 
+#                       "E42_Has_Disability_911")]
 
-#### `handle_blanks`
-```{r handle_blanks}
+head(rsa$E14_White_911, 10)
+
+var_clean <- handle_nines(rsa$E14_White_911, unidentified_to_0 = TRUE)
+head(var_clean, 10)
 
 ```
 
 #### `handle_code`
 ```{r handle_code}
 
+head(rsa$E18_Postal_Code_911, 10)
+
+var_clean <- handle_code(rsa$E18_Postal_Code_911)
+head(var_clean, 10)
+
 ```
 
 #### `handle_values`
 ```{r handle_values}
+# head(rsa$E356_Exit_Work_Status_911, 20)
+# 
+# work_clean <- handle_values(rsa$E356_Exit_Work_Status_911, 
+#                               c(0, 1, 2, 3, 4, 9), 
+#                               blank_value = 0)
+# 
+# head(work_clean, 20)
+
+head(rsa$E99_JobExploration_Vendor_911, 20)
+
+var_clean <- handle_values(rsa$E99_JobExploration_Vendor_911, 
+                           values = c(1, 2, 3, 4), blank_value = 0)
+head(var_clean, 20)
 
 ```
 
@@ -108,16 +127,36 @@ cleaning problems. These functions serve as helper functions for repeated cleani
 #### `handle_abbrev`
 ```{r handle_abbrev}
 
+tail(scores$Provider, 10)
+
+var_clean <- handle_abbrev(scores$Provider)
+tail(var_clean, 10)
+
 ```
 
 
 #### `handle_splits`
 ```{r handle_splits}
 
+head(rsa$E395_App_Medical_911)
+
+var_clean <- handle_splits(rsa$E395_App_Medical_911, 
+                           var_name = "E395_App_Medical_911")
+lapply(var_clean, head)
+
 ```
 
 #### `apply_handle_splits`
 ```{r apply_handle_splits}
+
+rsa_subset <- rsa[, c("E395_App_Medical_911", "E396_Exit_Public_Support_911", 
+                      "E142_FourYear_Comp_911")]
+
+special_cols <- c("E395_App_Medical_911", "E396_Exit_Public_Support_911",
+                  "E142_FourYear_Comp_911")
+
+df_clean <- apply_handle_splits(rsa_subset, special_cols, sep = ";")
+head(df_clean)
 
 ```
 
@@ -125,7 +164,16 @@ cleaning problems. These functions serve as helper functions for repeated cleani
 
 #### `separate_disability`
 ```{r separate_disability}
+head(rsa$E43_Primary_Disability_911, 10)
+head(rsa$E44_Secondary_Disability_911, 10)
 
+data_clean <- separate_disability(rsa[1:100])
+
+head(data_clean$Primary_Cause, 10)
+head(data_clean$Primary_Impairment, 10)
+
+head(data_clean$Secondary_Cause, 10)
+head(data_clean$Secondary_Impairment, 10)
 ```
 
 
@@ -142,12 +190,16 @@ and no other arguments, using default settings, as shown below:
 
 #### `clean_utah`
 ```{r clean_utah}
-
+# rsa_clean <- clean_utah(rsa)
 ```
 
 
 ###### `aggregate`
 ```{r aggregate}
+dim(rsa)
+
+rsa_clean <- clean_utah(rsa, aggregate = TRUE)
+dim(rsa_clean)
 
 ```
 
@@ -155,22 +207,21 @@ and no other arguments, using default settings, as shown below:
 ###### `unidentified_to_0`
 ```{r unidentified_to_0}
 
+
 ```
 
 
 ###### `remove_desc`
 ```{r remove_desc}
 
+names(rsa)[10:20]
+
+names(rsa_clean)[5:12] 
+
 ```
 
 ###### `remove_strictly_na`
 ```{r remove_strictly_na}
-
-```
-
-
-###### `clean_specials`
-```{r clean_specials}
 
 ```
 

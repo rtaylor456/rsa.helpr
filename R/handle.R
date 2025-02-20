@@ -71,7 +71,7 @@ handle_nines <- function(x, unidentified_to_0 = TRUE) {
 #' @export
 handle_blanks <- function(x) {
   # Identify rows with values equal to " " or "NULL" in the specified column
-  x[x %in% c(" ", "NULL")] <- 0
+  x[x %in% c(" ", "NULL", NA, "NA")] <- 0
   return(x)
 }
 
