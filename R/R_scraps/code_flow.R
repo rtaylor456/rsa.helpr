@@ -12,9 +12,11 @@ scores <- data.table::fread("data-raw/TRT Data_1.28.2025 at 12_00pm.csv",
 
 data_clean <- rsa.helpr::clean_utah(data)
 View(data_clean)
+write.csv(data_clean, "data_clean.csv")
 
 scores_clean <- rsa.helpr::clean_scores(scores, state_filter = "Utah")
 View(scores_clean)
+write.csv(scores_clean, "scores_clean.csv")
 
 provider_data <- rsa.helpr::clean_provider(scores, state_filter = "Utah")
 
@@ -22,6 +24,7 @@ merged <- rsa.helpr::merge_scores(data_clean, scores_clean)
 
 metadata <- rsa.helpr::create_metadata(merged)
 View(metadata)
+write.csv(metadata, "metadata_clean.csv")
 
 # check visualization functions
 ?visualize_densities

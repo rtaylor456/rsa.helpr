@@ -601,10 +601,13 @@ server <- function(input, output, session) {
                  is.null(rv$metadata)) {
         return(NULL)
       }
+      # return(switch(input$data_choice,
+      #               "Use Cleaned RSA-911 Data" = rv$rsa_data_cleaned,
+      #               "Use Cleaned Scores Data" = rv$scores_data_cleaned,
+      #               "Use Cleaned Merged Data" = rv$merged_data,
+      #               "Use Generated Metadata" = rv$metadata))
       return(switch(input$data_choice,
-                    "Use Cleaned RSA-911 Data" = rv$rsa_data_cleaned,
                     "Use Cleaned Scores Data" = rv$scores_data_cleaned,
-                    "Use Cleaned Merged Data" = rv$merged_data,
                     "Use Generated Metadata" = rv$metadata))
     }
   })
@@ -616,9 +619,11 @@ server <- function(input, output, session) {
       tagList(
         # fileInput("new_data", "Upload New Dataset", accept = c(".csv")),
         radioButtons("dataset_type", "Select Dataset Type",
-                     choices = c("RSA-911" = "rsa",
-                                 "Scores" = "scores",
-                                 "Merged" = "merged",
+                     # choices = c("RSA-911" = "rsa",
+                     #             "Scores" = "scores",
+                     #             "Merged" = "merged",
+                     #             "Metadata" = "metadata"),
+                     choices = c("Scores" = "scores",
                                  "Metadata" = "metadata"),
                      inline = TRUE)
       )
@@ -676,58 +681,27 @@ server <- function(input, output, session) {
 
     if (choice == "Upload New Dataset") {
 
-      if (dataset_type == "rsa") {
-        # Check for the presence of required variables and absence of excluded variables
-        include_patterns <- "(?i)application|(?i)gender|(?i)sex|(?i)plan|(?i)disability"
-        exclude_patterns <- "(?i)score"
-
-        included_variables <- grep(include_patterns, names(data), value = TRUE,
-                                   perl = TRUE)
-        excluded_variables <- grep(exclude_patterns, names(data), value = TRUE,
-                                   perl = TRUE)
-
-        if (length(included_variables) < 1 || length(excluded_variables) > 0) {
-          return("THIS DOES NOT APPEAR TO BE AN RSA-911 DATASET. Please ensure it is classified correctly and contains RSA-911 variables and no score variables.")
-        }
-      }
-
-      else if (dataset_type == "scores") {
+      if (dataset_type == "scores") {
         # Check for the presence of required variables and absence of excluded variables
         include_patterns <- "(?i)score"
         exclude_patterns <- "(?i)application|(?i)gender|(?i)sex|(?i)plan|(?i)disability"
 
         included_variables <- grep(include_patterns, names(data), value = TRUE,
                                    perl = TRUE)
-        excluded_variables <- grep(exclude_patterns, included_variables,
+        excluded_variables <- grep(exclude_patterns, names(data),
                                    value = TRUE, perl = TRUE)
 
         if (length(included_variables) < 1 || length(excluded_variables) > 0) {
           return("THIS DOES NOT APPEAR TO BE A SCORES DATASET. Please ensure it is classified correctly and contains score variables and no RSA-911 variables.")
         }
-      }
-
-      else if (dataset_type == "merged") {
-        # Check for the presence of required variables and absence of excluded variables
+      } else if (dataset_type == "metadata") {
+        # Check for the presence of required variables, both demo. and scores
         demo_patterns <- "(?i)application|(?i)gender|(?i)sex|(?i)plan|(?i)disability"
         score_patterns <- "(?i)score"
 
         demo_variables <- grep(demo_patterns, names(data), value = TRUE,
                                perl = TRUE)
-        score_variables <- grep(score_patterns, names(data), value = TRUE,
-                                perl = TRUE)
 
-        if (length(demo_variables) < 1 || length(score_variables) < 1) {
-          return("THIS DOES NOT APPEAR TO BE A MERGED DATASET. Please ensure it is classified correctly and contains BOTH RSA-911 variables and score variables.")
-        }
-      }
-
-      else if (dataset_type == "metadata") {
-        # Check for the presence of required variables and absence of excluded variables
-        demo_patterns <- "(?i)application|(?i)gender|(?i)sex|(?i)plan|(?i)disability"
-        score_patterns <- "(?i)score"
-
-        demo_variables <- grep(demo_patterns, names(data), value = TRUE,
-                               perl = TRUE)
         score_variables <- grep(score_patterns, names(data), value = TRUE,
                                 perl = TRUE)
 
@@ -742,7 +716,7 @@ server <- function(input, output, session) {
 
         if (length(demo_variables) < 1 || length(score_variables) < 1) {
           return("THIS DOES NOT APPEAR TO BE A METADATA DATASET. Please ensure it is classified correctly and contains BOTH RSA-911 variables and score variables.")
-        }
+        } # make sure we have have metadata, one row per participant
         if (length(participants) != length(unique(participants))) {
           return("THIS DOES NOT APPEAR TO BE A METADATA DATASET. Please ensure it is classified correctly and contains only one row per participant.")
         }
@@ -751,11 +725,68 @@ server <- function(input, output, session) {
     }
   })
 
+
+
+  validate_uploaded_dataset <- function(data, dataset_type) {
+    if (dataset_type == "scores") {
+      include_patterns <- "(?i)score"
+      exclude_patterns <- "(?i)application|(?i)gender|(?i)sex|(?i)plan|(?i)disability"
+
+      included_variables <- grep(include_patterns, names(data), value = TRUE, perl = TRUE)
+      excluded_variables <- grep(exclude_patterns, names(data), value = TRUE, perl = TRUE)
+
+      if (length(included_variables) < 1) {
+        return(list(valid = FALSE, message = "Error: No score-related columns detected. Please upload a dataset that includes at least one 'score' variable."))
+      }
+      if (length(excluded_variables) > 0) {
+        return(list(valid = FALSE, message = "Error: Your dataset contains invalid columns (e.g., gender, sex, plan, disability). Please remove these columns and try again."))
+      }
+    } else if (dataset_type == "metadata") {
+      demo_patterns <- "(?i)application|(?i)gender|(?i)sex|(?i)plan|(?i)disability"
+      score_patterns <- "(?i)score"
+
+      demo_variables <- grep(demo_patterns, names(data), value = TRUE, perl = TRUE)
+      score_variables <- grep(score_patterns, names(data), value = TRUE, perl = TRUE)
+      participant_variable <- grep("(?i)participant|(?i)_ID", names(data), value = TRUE, perl = TRUE)
+
+      if (length(participant_variable) == 0) {
+        return(list(valid = FALSE, message = "Error: No participant ID column detected. Please include a 'participant' or '_ID' variable in your dataset."))
+      }
+      if (length(demo_variables) < 1) {
+        return(list(valid = FALSE, message = "Error: No demographic-related columns detected. Please upload a dataset that includes demographic variables."))
+      }
+      if (length(score_variables) < 1) {
+        return(list(valid = FALSE, message = "Error: No score-related columns detected. Your dataset must contain at least one 'score' variable."))
+      }
+
+      participants <- data[[participant_variable]]
+      if (length(participants) != length(unique(participants))) {
+        return(list(valid = FALSE, message = "Error: The dataset contains duplicate participant IDs. Ensure that each participant has a unique row."))
+      }
+    } else {
+      return(list(valid = FALSE, message = "Error: No valid dataset type selected."))
+    }
+
+    return(list(valid = TRUE, message = NULL))  # Dataset is valid
+  }
+
+
   ## VISUALS
   output$visuals_ui <- renderUI({
+    req(input$data_choice)
     data <- selected_data()
     data_choice <- input$data_choice
     dataset_type <- input$dataset_type
+
+    # If the user uploads a new dataset, check if it passes validation
+    if (data_choice == "Upload New Dataset") {
+      validation <- validate_uploaded_dataset(data, dataset_type)
+      if (!validation$valid) {
+        return(tags$p(validation$message, style = "color: red;
+                      font-weight: bold;"))
+        }
+    }
+
 
     if ((data_choice == "Use Cleaned Scores Data") ||
                (data_choice == "Upload New Dataset" &&
@@ -787,23 +818,7 @@ server <- function(input, output, session) {
                  # plotOutput("providers_plot2")
                  )
       )
-    } else if ((data_choice == "Use Cleaned Merged Data") ||
-               (data_choice == "Upload New Dataset" &&
-                dataset_type == "merged")) {
-      tabsetPanel(
-        tabPanel("General Demographics",
-                 plotOutput("gen_demo_plot1"), plotOutput("gen_demo_plot2"),
-                 plotOutput("gen_demo_plot3"), plotOutput("gen_demo_plot4"),
-                 plotOutput("gen_demo_plot5")),
-        tabPanel("Demographics & Scores",
-                 plotOutput("demo_scores_plot1"),
-                 plotOutput("demo_scores_plot2"),
-                 plotOutput("demo_scores_plot3"),
-                 plotOutput("demo_scores_plot4"),
-                 plotOutput("demo_scores_plot5"),
-                 plotOutput("demo_scores_plot6"))
-      )
-    }  else if ((data_choice == "Use Generated Metadata") ||
+    } else if ((data_choice == "Use Generated Metadata") ||
                 (data_choice == "Upload New Dataset" &&
                  dataset_type == "metadata")) {
       tabsetPanel(
@@ -1226,28 +1241,18 @@ server <- function(input, output, session) {
   )
 
 
-  ## MERGED plots
-  output$gen_demo_plot1 <- renderPlot({ plot(rnorm(100)) })
-  output$gen_demo_plot2 <- renderPlot({ plot(rnorm(100)) })
-  output$gen_demo_plot3 <- renderPlot({ plot(rnorm(100)) })
-  output$gen_demo_plot4 <- renderPlot({ plot(rnorm(100)) })
-  output$gen_demo_plot5 <- renderPlot({ plot(rnorm(100)) })
-
-  output$demo_scores_plot1 <- renderPlot({ plot(rnorm(100)) })
-  output$demo_scores_plot2 <- renderPlot({ plot(rnorm(100)) })
-  output$demo_scores_plot3 <- renderPlot({ plot(rnorm(100)) })
-  output$demo_scores_plot4 <- renderPlot({ plot(rnorm(100)) })
-  output$demo_scores_plot5 <- renderPlot({ plot(rnorm(100)) })
-  output$demo_scores_plot6 <- renderPlot({ plot(rnorm(100)) })
-
 
   ## METADATA plots
-  # Wage
+  # Time passed in program
   output$meta_gen_demo_plot1 <- renderPlot({
     req(selected_data())
     data <- selected_data()
 
-    hist(data$Median_Time_Passed_Days,
+    median_time_passed <- grep("(?i)median.*time.*passed.*days", names(data),
+                               value = TRUE,
+                               perl = TRUE)
+
+    hist(as.numeric(data[[median_time_passed]]),
          col = "steelblue",
          main = "Distribution of Time in Programs",
          xlab = "Median Time in Program (per individual)")
@@ -1376,12 +1381,16 @@ server <- function(input, output, session) {
                       names(data),
                       value = TRUE, perl = TRUE)
 
-    data_subset <- data[, .SD, .SDcols = c("Final_Employment",
+    # Find the column for final employment status
+    final_employ_col <- grep("(?i)(final).*?(employ)(?!.*(?i)_desc)",
+                             names(data), value = TRUE, perl = TRUE)
+
+    data_subset <- data[, .SD, .SDcols = c(final_employ_col,
                                            race_cols)]
 
     # Create a long-format data.table
     long_data <- melt(data_subset,
-                      id.vars = "Final_Employment",
+                      id.vars = final_employ_col,
                       measure.vars = race_cols,
                       variable.name = "Race",
                       value.name = "Has_Race")
@@ -3076,50 +3085,17 @@ server <- function(input, output, session) {
     data_choice <- input$data_choice
     dataset_type <- input$dataset_type
 
-    if ((data_choice == "Use Cleaned RSA-911 Data") ||
-        (data_choice == "Upload New Dataset" && dataset_type == "rsa")) {
-      # sidebarPanel(
-        fluidRow(
-          column(12,
-                 h4("RSA-911 Data Modeling Options")),
 
-          selectInput("response", "Select Response Variable",
-                      choices = c(" ",
-                                  "Predict Employment Outcome",
-                                  "Predict Ending Wage")
-                      ),
-          column(12,
-                 tags$label("Select Predictor Variables:")),
+    if (data_choice == "Upload New Dataset") {
+      validation <- validate_uploaded_dataset(data, dataset_type)
+      if (!validation$valid) {
+        return(tags$p(validation$message, style = "color: red;
+                      font-weight: bold;"))
+      }
+    }
 
-          column(12,
-                 checkboxInput("gender",
-                               "Gender",
-                               value = FALSE)),
-          column(12,
-                 checkboxInput("race",
-                               "Race",
-                               value = FALSE)),
-          column(12,
-                 checkboxInput("severity",
-                               "Severity",
-                               value = FALSE)),
-          column(12,
-                 checkboxInput("prim_impairment",
-                               "Primary Impairment",
-                               value = FALSE)),
-          column(12,
-                 checkboxInput("second_impairment",
-                               "Secondary Impairment",
-                               value = FALSE))
-          # column(12,
-          #        checkboxInput("interactions",
-          #                      "Interaction Effects",
-          #                      value = FALSE))
 
-      )
-    # )
-
-    } else if ((data_choice == "Use Cleaned Scores Data") ||
+    if ((data_choice == "Use Cleaned Scores Data") ||
                (data_choice == "Upload New Dataset" &&
                 dataset_type == "scores")) {
 
@@ -3132,16 +3108,7 @@ server <- function(input, output, session) {
                                 "ANOVA across Providers")
         )
       )
-    } else if ((data_choice == "Use Cleaned Merged Data") ||
-               (data_choice == "Upload New Dataset" &&
-                dataset_type == "merged")) {
-      sidebarPanel(
-        fluidRow(
-          column(12,
-                 h4("Merged Data Modeling Options"))
-        )
-      )
-    }  else if ((data_choice == "Use Generated Metadata") ||
+    } else if ((data_choice == "Use Generated Metadata") ||
                 (data_choice == "Upload New Dataset" &&
                  dataset_type == "metadata")) {
       fluidRow(
@@ -3189,183 +3156,6 @@ server <- function(input, output, session) {
       )
     }
   })
-
-
-  #############
-  # RSA MODEL #
-  #############
-
-  model_rsa <- reactive({
-    req(selected_data())
-    data <- selected_data()
-
-    response <- input$response
-    if (response == "Predict Employment Outcome"){
-      # employ_col <- grep("(?i)^(?=.*employment)(?!.*(?i)_desc)(?!.*(?i)_wage)(?!.*(?i)un)",
-      #                    names(data), value = TRUE, perl = TRUE)
-      # employ_col <- "E389_Q4_Employment_911"
-      exit_work_col <- grep("(?i)_exit*(?i)_work(?!.*(?i)_amt)(?!.*(?i)_desc)",
-                            names(data), value = TRUE, perl = TRUE)
-
-      # employ_col <- grep()
-      if (length(exit_work_col) < 1){
-        return("No employment variable available.")
-      } else{
-        y <- exit_work_col
-      }
-
-
-    } else if (response == "Predict Ending Wage") {
-      wage_col <- grep("(?i)^(?=.*wage)(?=.*exit)(?!.*(desc))", names(data),
-                       value = TRUE, perl = TRUE)
-
-      if (length(wage_col) < 1){
-        return("No employment variable available.")
-      } else{
-        y <- wage_col
-      }
-    }
-
-    predictors <- c()
-
-    if (input$gender) {
-      sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
-                      value = TRUE, perl = TRUE)
-      if (length(sex_col) < 1){
-        return("No gender/sex variable available.")
-      } else{
-        predictors <- c(predictors, sex_col)
-      }
-    }
-
-    if (input$race) {
-      race_cols <- grep("(?i)(_indian|_asian|_black|_hawaiian|_islander|_white|hispanic)(?!.*(?i)_desc)",
-                        names(data),
-                        value = TRUE, perl = TRUE)
-      if (length(race_cols) < 1){
-        return("No race variable(s) available.")
-      } else{
-        predictors <- c(predictors, race_cols)
-      }
-    }
-
-    if (input$severity) {
-      # severity_col <- grep("((?i)_SWD|(?i)_severity)(?!.*(?i)_desc|_age)",
-      #                      names(data), value = TRUE, perl = TRUE)
-      severity_col <- grep("((?i)_priority|(?i)_severity)(?!.*(?i)_desc|_age)",
-                           names(data), value = TRUE, perl = TRUE)
-      if (length(severity_col) < 1){
-        return("No disability severity variable available.")
-      } else{
-        predictors <- c(predictors, severity_col)
-      }
-    }
-
-    # if (input$enroll_length) {
-    #   enroll_length_col <- grep("Enroll_Length",
-    #                        names(data), value = TRUE, perl = TRUE)
-    #   if (length(enroll_length_col) < 1){
-    #     return("No enrollment length variable available.")
-    #   } else{
-    #     predictors <- c(predictors, enroll_length_col)
-    #   }
-    # }
-
-    if (input$prim_impairment) {
-      # prim_dis_col <- grep("(?i)^(?=.*prim)(?=.*impairment)(?!.*(desc))",
-      #                      names(data), value = TRUE, perl = TRUE)
-      if (length("Primary_Impairment_Group") < 1){
-        return("No primary impairment variable available.")
-      } else{
-        predictors <- c(predictors, "Primary_Impairment_Group")
-      }
-    }
-
-    if (input$second_impairment) {
-      # second_dis_col <- grep("(?i)^(?=.*sec)(?=.*impairment)(?!.*(desc))",
-      #                        names(data), value = TRUE, perl = TRUE)
-      if (length("Secondary_Impairment_Group") < 1){
-        return("No secondary impairment variable available.")
-      } else{
-        predictors <- c(predictors, "Secondary_Impairment_Group")
-      }
-    }
-
-    # Check if response and predictors are selected
-    req(response, length(predictors) > 0)
-
-    formula <- as.formula(paste(y, "~",
-                                paste(predictors, collapse = "+")))
-
-    # # Create the formula with interaction terms if specified
-    # if (input$interactions) {
-    #   interaction_terms <- paste(predictors, collapse = "*")
-    #   formula <- as.formula(paste(y, "~", interaction_terms))
-    # } else {
-    #   formula <- as.formula(paste(y, "~", paste(predictors, collapse = "+")))
-    # }
-
-    if (response == "Predict Ending Wage") {
-      lm(formula = formula, data = data)
-    } else if (response == "Predict Employment Outcome") {
-      glm(formula, family = binomial, data = data)
-    }
-
-  })
-
-
-  # Reactive function to create residual plots
-  output$rsa_residuals1 <- renderPlot({
-    req(model_rsa())
-
-    # residuals
-    model <- model_rsa()
-    residuals <- resid(model)
-
-    # histogram to look for normality
-    hist(residuals, col = "steelblue")
-
-  })
-
-  output$rsa_residuals2 <- renderPlot({
-    req(model_rsa())
-
-    # residuals
-    model <- model_rsa()
-    residuals <- resid(model)
-
-    # histogram to look for normality
-    qqnorm(residuals)
-    qqline(residuals, col = "steelblue")
-
-  })
-
-  output$rsa_residuals3 <- renderPlot({
-    req(model_rsa())
-
-    # Extract fitted values and residuals
-    model <- model_rsa()
-    residuals <- resid(model)
-    fitted <- fitted(model)
-
-    # Generate residuals vs. fitted values plot
-    plot(fitted, residuals,
-         main = "Residuals vs Fitted",
-         xlab = "Fitted Values",
-         ylab = "Residuals",
-         pch = 19)
-
-    # Add a horizontal line at y = 0 for reference
-    abline(h = 0, col = "steelblue", lty = 2)
-  })
-
-
-  # Render model summaries or ANOVA results
-  output$model_rsa_summary <- renderPrint({
-    req(model_rsa())
-    summary(model_rsa())
-  })
-
 
 
   ################
@@ -3692,23 +3482,88 @@ server <- function(input, output, session) {
 
 
   # Reactive function to create residual plots
+  # output$metadata_residuals1 <- renderPlot({
+  #   response <- input$response
+  #   req(model_metadata())
+  #
+  #   # residuals
+  #   model <- model_metadata()
+  #   # suppress warnings during model fitting
+  #   # model <- suppressWarnings(model_metadata())
+  #
+  #
+  #   if (!inherits(model, "lm") && !inherits(model, "glm")) {
+  #     stop("Error: model_metadata() did not return a valid model object")
+  #   }
+  #
+  #   residuals <- resid(model)
+  #   # Suppress the warning related to fitted probabilities being 0 or 1
+  #   # residuals <- suppressWarnings(resid(model))
+  #
+  #   if (response == "Predict Ending Wage" ||
+  #       response == "Predict Median Difference Score"){
+  #     # histogram to look for normality
+  #     hist(residuals, col = "steelblue")
+  #   } else{
+  #     y <- "Final_Employment"
+  #     # Ensure the model is logistic (family = binomial)
+  #     # Calculate predicted probabilities
+  #     predicted_probs <- predict(model, type = "response")
+  #
+  #     # ignore warnings for now, brainstorm more nuanced modeling later
+  #     # predicted_probs <- suppressWarnings(predict(model, type = "response"))
+  #
+  #
+  #     # Use pROC to generate an ROC curve
+  #     library(pROC)
+  #     # roc_obj <- roc(model$y, predicted_probs)
+  #     roc_obj <- roc(model$model[[y]], predicted_probs)
+  #
+  #     # Plot the ROC curve
+  #     plot(roc_obj, col = "steelblue", lwd = 2, main = "ROC Curve")
+  #     # Add diagonal line (no skill classifier
+  #     # abline(a = 0, b = 1, col = "gray", lty = 2)
+  #   }
+  #
+  #
+  # })
+
   output$metadata_residuals1 <- renderPlot({
     response <- input$response
-    req(model_metadata())
+    req(model_metadata())  # Ensure that the model metadata exists
+
+    # Use tryCatch to suppress warnings and check if model is valid
+    model <- tryCatch({
+      model_metadata()  # Attempt to get the model
+    }, warning = function(w) {
+      # If the warning is about 0 or 1 probabilities, we suppress it
+      if (grepl("glm.fit: fitted probabilities numerically 0 or 1 occurred", w$message)) {
+        return(NULL)  # Return NULL if the model fitting fails due to perfect separation
+      }
+      stop(w)  # Otherwise, propagate the warning
+    }, error = function(e) {
+      # Handle errors (e.g., model fitting failed)
+      showNotification("Error in fitting model: check your data or model specification.", type = "error")
+      return(NULL)  # Return NULL if model fitting fails
+    })
+
+    # If model is NULL, return nothing
+    if (is.null(model)) {
+      return(NULL)
+    }
 
     # residuals
-    model <- model_metadata()
     residuals <- resid(model)
 
     if (response == "Predict Ending Wage" ||
-        response == "Predict Median Difference Score"){
+        response == "Predict Median Difference Score") {
       # histogram to look for normality
       hist(residuals, col = "steelblue")
-    } else{
+    } else {
       y <- "Final_Employment"
       # Ensure the model is logistic (family = binomial)
       # Calculate predicted probabilities
-      predicted_probs <- predict(model, type = "response")
+      predicted_probs <- suppressWarnings(predict(model, type = "response"))
 
       # Use pROC to generate an ROC curve
       library(pROC)
@@ -3716,12 +3571,11 @@ server <- function(input, output, session) {
 
       # Plot the ROC curve
       plot(roc_obj, col = "steelblue", lwd = 2, main = "ROC Curve")
-      # Add diagonal line (no skill classifier
+      # Add diagonal line (no skill classifier)
       # abline(a = 0, b = 1, col = "gray", lty = 2)
     }
-
-
   })
+
 
   output$metadata_residuals2 <- renderPlot({
     response <- input$response
@@ -3883,16 +3737,20 @@ server <- function(input, output, session) {
   # Render the model summary based on dataset type
   output$models_main <- renderUI({
     data_choice <- input$data_choice
+    dataset_type <- input$dataset_type
+    data <- selected_data()
 
-    if (data_choice == "Use Cleaned RSA-911 Data" ||
-        (data_choice == "Upload New Dataset" && input$dataset_type == "rsa")) {
-      fluidRow(
-        column(12, verbatimTextOutput("model_rsa_summary")),
-        column(12, plotOutput("rsa_residuals1")),
-        column(12, plotOutput("rsa_residuals2")),
-        column(12, plotOutput("rsa_residuals3"))
-      )
-    } else if (data_choice == "Use Cleaned Scores Data" ||
+
+    if (data_choice == "Upload New Dataset") {
+      validation <- validate_uploaded_dataset(data, dataset_type)
+      if (!validation$valid) {
+        return(tags$p(validation$message, style = "color: red;
+                      font-weight: bold;"))
+      }
+    }
+
+
+    if (data_choice == "Use Cleaned Scores Data" ||
                (data_choice == "Upload New Dataset" &&
                 input$dataset_type == "scores")) {
       fluidRow(

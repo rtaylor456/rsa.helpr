@@ -1,3 +1,90 @@
+# old dataset-type validation function
+# validate_uploaded_dataset <- function(data, dataset_type) {
+#   if (dataset_type == "scores") {
+#     include_patterns <- "(?i)score"
+#     exclude_patterns <- "(?i)application|(?i)gender|(?i)sex|(?i)plan|(?i)disability"
+#
+#     included_variables <- grep(include_patterns, names(data), value = TRUE, perl = TRUE)
+#     excluded_variables <- grep(exclude_patterns, names(data), value = TRUE, perl = TRUE)
+#
+#     if (length(included_variables) < 1 || length(excluded_variables) > 0) {
+#       return(FALSE)  # Invalid dataset
+#     }
+#   } else if (dataset_type == "metadata") {
+#     demo_patterns <- "(?i)application|(?i)gender|(?i)sex|(?i)plan|(?i)disability"
+#     score_patterns <- "(?i)score"
+#
+#     demo_variables <- grep(demo_patterns, names(data), value = TRUE, perl = TRUE)
+#     score_variables <- grep(score_patterns, names(data), value = TRUE, perl = TRUE)
+#     participant_variable <- grep("(?i)participant|(?i)_ID", names(data), value = TRUE, perl = TRUE)
+#
+#     if (length(participant_variable) == 0 || length(demo_variables) < 1 || length(score_variables) < 1) {
+#       return(FALSE)  # Invalid dataset
+#     }
+#
+#     participants <- data[[participant_variable]]
+#     if (length(participants) != length(unique(participants))) {
+#       return(FALSE)  # Invalid dataset
+#     }
+#   } else {
+#     return(FALSE)  # No valid dataset type
+#   }
+#
+#   return(TRUE)  # Dataset is valid
+# }
+
+# within visuals_ui, models_main and models_sidebar
+# old way, no message, just blank
+# if (data_choice == "Upload New Dataset" &&
+#     !validate_uploaded_dataset(data, dataset_type)) {
+#   return(NULL)  # Show blank tab if dataset is invalid
+# }
+
+# Validate dataset
+# validation <- validate_uploaded_dataset(data, dataset_type)
+#
+# if (data_choice == "Upload New Dataset" && !validation$valid) {
+#   return(tags$p(validation$message, style = "color: red; font-weight: bold;"))
+# }
+#
+
+
+## original check, not a function
+# if (data_choice == "Upload New Dataset") {
+#   if (dataset_type == "scores") {
+#     include_patterns <- "(?i)score"
+#     exclude_patterns <- "(?i)application|(?i)gender|(?i)sex|(?i)plan|(?i)disability"
+#
+#     included_variables <- grep(include_patterns, names(data), value = TRUE, perl = TRUE)
+#     excluded_variables <- grep(exclude_patterns, names(data), value = TRUE, perl = TRUE)
+#
+#     if (length(included_variables) < 1 || length(excluded_variables) > 0) {
+#       return(NULL)  # Show blank tab if dataset is invalid
+#     }
+#   } else if (dataset_type == "metadata") {
+#     demo_patterns <- "(?i)application|(?i)gender|(?i)sex|(?i)plan|(?i)disability"
+#     score_patterns <- "(?i)score"
+#
+#     demo_variables <- grep(demo_patterns, names(data), value = TRUE, perl = TRUE)
+#     score_variables <- grep(score_patterns, names(data), value = TRUE, perl = TRUE)
+#     participant_variable <- grep("(?i)participant|(?i)_ID", names(data), value = TRUE, perl = TRUE)
+#
+#     if (length(participant_variable) == 0 || length(demo_variables) < 1 || length(score_variables) < 1) {
+#       return(NULL)  # Show blank tab if dataset is invalid
+#     }
+#
+#     participants <- data[[participant_variable]]
+#     if (length(participants) != length(unique(participants))) {
+#       return(NULL)  # Show blank tab if dataset is invalid
+#     }
+#   } else {
+#     return(NULL)  # No dataset type selected, show blank tab
+#   }
+# }
+
+
+############# OLD APP CODE:
+
 library(shiny)
 library(DT)
 library(data.table)
