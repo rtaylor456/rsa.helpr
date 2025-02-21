@@ -15,7 +15,7 @@ rsconnect::accounts()
 #                           secret='h4WBYUlWWDCFvpXCMzq+9irkOQoIgo/UImTi1yES')
 
 # check that account is set up
-rsconnect::accounts()
+# rsconnect::accounts()
 
 #########################################################
 
