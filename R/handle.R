@@ -140,7 +140,7 @@ handle_abbrev <- function(x) {
       paste0(substr(capitalized_words, 1, 1), collapse = "")
     } else {
       # Return full name if there's only one capitalized word
-      name
+      trimws(name)
     }
   })
 }
