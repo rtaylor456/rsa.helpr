@@ -37,14 +37,18 @@ clean_utah <- function(data,
   # Ensure data is a data.table
   setDT(data)
 
+  ##############################################################################
   ######################
   ## REMOVABLE        ##
   ######################
   # DESCRIPTION columns - unnecessary for analysis
   if (remove_desc) {
     desc_cols <- grep("(?i)_desc", names(data), value = TRUE, perl = TRUE)
-
-    data[, (desc_cols) := NULL]
+    if (length(desc_cols) > 0) {
+      data[, (desc_cols) := NULL]
+    } else {
+      warning("No description columns to remove.")
+    }
   }
 
   # ADMIN columns
@@ -52,7 +56,10 @@ clean_utah <- function(data,
   extra_cols <- grep("(?i)_data_|(?i)VR_Case_Type_Flag(?!.*(?i)_desc)",
                      names(data),
                      value = TRUE, perl = TRUE)
-  data[, (extra_cols) := NULL]
+
+  if (length(extra_cols) > 0) {
+    data[, (extra_cols) := NULL]
+  }
 
   # Additional miscellaneous columns to remove
   columns_to_remove <- c("X", "x", "V1")
@@ -65,7 +72,7 @@ clean_utah <- function(data,
     data[, (existing_columns) := NULL]
   }
 
-
+  ##############################################################################
   ######################
   ## NUMERIC          ##
   ######################
@@ -82,8 +89,7 @@ clean_utah <- function(data,
   # AGE column
   age_cols <- grep("(?i)^(?=.*age)(?=.*app)(?!.*(desc|amt))", names(data),
                    value = TRUE, perl = TRUE)
-
-  # Rename
+  # Rename Age column
   names(data)[names(data) %in% age_cols] <- "Age_At_Application"
 
 
@@ -106,6 +112,7 @@ clean_utah <- function(data,
        .SDcols = numeric_cols]
 
 
+  ##############################################################################
   ######################
   ## DATE             ##
   ######################
@@ -118,6 +125,7 @@ clean_utah <- function(data,
   data[, (date_cols) := lapply(.SD, handle_excel_date), .SDcols = date_cols]
 
 
+  ##############################################################################
   ######################
   ## FACTORS: nominal ##
   ######################
@@ -203,18 +211,6 @@ clean_utah <- function(data,
   }), .SDcols = sex_cols]
 
 
-  # E45_Disability_Priority_911 - 0, 1, 2, NULL (null means something different
-  #                                               than 0)
-  # E78_Secondary_Enrollment_911 - 0, 1,2, NULL (Nulls --> 0)
-
-  other_factor_cols <- grep("((?i)_disability_priority|(?i)_secondary_enrollment)(?!.*(?i)_desc)",
-                            names(data),
-                            value = TRUE, perl = TRUE)
-
-  data[, (other_factor_cols) := lapply(.SD, function(x) {
-    handle_values(x, c(0, 1, 2))
-  }),
-  .SDcols = other_factor_cols]
 
   # E355_Exit_Reason_911 - 2-19, NULL -- 02, 03, 04, 06, 07, 08, 13-22
 
@@ -227,72 +223,182 @@ clean_utah <- function(data,
   .SDcols = exit_reason_cols]
 
 
-  ######################
-  ## FACTORS: ordinal ##
-  ######################
-
-  # E84_PostSecondary_Enrollment_911
-  post_sec_cols <- grep("(?i)_postsecondary_enroll(?!.*(?i)_desc|(?i)_date)",
-                        names(data), value = TRUE, perl = TRUE)
-
-  data[, (post_sec_cols) := lapply(.SD, function(x) {
-    handle_values(x, 0:3, blank_value = 0)
-  }),
-  .SDcols = post_sec_cols]
-
-  # E354_Exit_Type_911
-  # E356_Exit_Work_Status_911
-  exit_var_cols <- grep("((?i)_exit_type_|(?i)_exit_work_)(?!.*(?i)_desc|(?i)_date)",
-                        names(data), value = TRUE, perl = TRUE)
-
-  data[, (exit_var_cols) := lapply(.SD, function(x) {
-    handle_values(x, 0:7, blank_value = 0)
-  }),
-  .SDcols = exit_var_cols]
-
-  # E378_PostExit_Credential_911
-  exit_cred_cols <- grep("(?i)_postexit_credential(?!.*(?i)_desc|(?i)_date)",
-                         names(data), value = TRUE, perl = TRUE)
-
-  data[, (exit_cred_cols) := lapply(.SD, function(x) {
-    handle_values(x, 1:8, blank_value = 0)
-  }),
-  .SDcols = exit_cred_cols]
-
-
   # EMPLOYMENT columns
   # 1-4, 9, 0 --factors--potentially ordinal...
   employ_cols <- grep("(?i)_employ", names(data), value = TRUE, perl = TRUE)
   employ_cols <- employ_cols[!grepl("wage|match|desc", employ_cols,
                                     ignore.case = TRUE)]
-  # this is our exit work status--this is the important variable
-  exit_work_col <- grep("(?i)_exit*(?i)_work(?!.*(?i)_amt)(?!.*(?i)_desc)",
-                        names(data), value = TRUE, perl = TRUE)
 
   data[, (employ_cols) := lapply(.SD, function(x) {
     handle_values(x, c(0, 1, 2, 3, 4, 9), blank_value = 0)
   }),
   .SDcols = employ_cols]
 
+  # Convert 9s to 0s as well, if user chooses to set unidentified_to_0 = TRUE
   data[, (employ_cols) := lapply(.SD, function(x) {
     handle_nines(x, unidentified_to_0)
   }),
   .SDcols = employ_cols]
 
 
+  # E356_Exit_Work_Status_911
+  # this is our exit work status--this is the important variable
+  exit_work_col <- grep("(?i)_exit*(?i)_work(?!.*(?i)_amt)(?!.*(?i)_desc)",
+                        names(data), value = TRUE, perl = TRUE)
+
   data[, (exit_work_col) := lapply(.SD, function(x) {
-    handle_values(x, c(0:5, 7, 9), blank_value = 0)
+    handle_values(x, c(1:5, 7), blank_value = 0)
   }),
   .SDcols = exit_work_col]
 
 
-  # Create a new variable for employment status with a name that's easier to
-  #    reference
+  # NEW VARIABLE: Final_Employment
+  # Create a new variable for employment status, binary for analysis
+  #  1: competitively employed
+  #  0: non-competitively employed (other values)
   data[, Final_Employment := lapply(.SD, function(x) ifelse(x == 1, 1, 0)),
        .SDcols = exit_work_col]
 
 
-  # GRADE LEVEL - based on age
+  ##############################################################################
+  ########################
+  ## SPECIAL CHARACTERS ##
+  ########################
+  # E394_App_Public_Support_911 - 0, 1-4
+  # E395_App_Medical_911 - 0, 1-7 - limit of 3 types
+  # E396_Exit_Public_Support_911 - 0, 1-4
+  # E397_Exit_Medical_911 - 0, 1-7 - limit of 3 types
+  # E74_SWD_Age_911 - two values, ages
+
+  special_cols <- grep("((?i)_app_pub|(?i)_app_med|(?i)_exit_pub|(?i)_exit_med|(?i)_swd_age_)(?!.*(?i)_Desc)",
+                       names(data), value = TRUE, perl = TRUE)
+
+  # COMP columns - can enter a max of 3 values
+  comp_cols <- grep("(?i)_comp_(?!.*(?i)_desc)", names(data), value = TRUE,
+                    perl = TRUE)
+  comp_cols <- comp_cols[!grepl("provide|amt|date", comp_cols,
+                                ignore.case = TRUE)]
+
+  all_special_cols <- c(special_cols, comp_cols)
+
+  # There are too many special character variables, so it's best to let the
+  #   user decide which variables they want to clean
+  if (!is.null(clean_specials) && length(all_special_cols) > 0) {
+    data <- apply_handle_splits(data, clean_specials, sep = ";")
+  }
+
+
+  # NEW VARIABLE: DISABILITY columns
+  disability_cols <- grep("(?i)(primary|secondary).*disability(?!.*(?i)_desc)",
+                          names(data), value = TRUE, perl = TRUE)
+  data <- separate_disability(data)
+
+  impairment_vars <- c("Primary_Impairment", "Secondary_Impairment")
+  group_vars <- paste0(impairment_vars, "_Group")
+
+  # Apply the same logic to both columns at once using lapply
+  data[, (group_vars) := lapply(.SD, function(x) {
+    fifelse(x == 0, "None",
+            fifelse(x %in% c(1, 2, 8),
+                    "Visual",
+                    fifelse(x %in% c(3, 4, 5, 6, 7,
+                                     9),
+                            "Aud_Comm",
+                            fifelse(x %in% c(10, 11, 12,
+                                             13, 14, 15,
+                                             16),
+                                    "Physical",
+                                    fifelse(x == 17,
+                                            "Intell_Learn",
+                                            fifelse(x %in% c(18, 19),
+                                                    "Psych",
+                                                    NA_character_)))))) }),
+    .SDcols = impairment_vars]
+
+  # Set factor levels for both columns
+  data[, (group_vars) := lapply(.SD, factor,
+                                levels = c("None",
+                                           "Visual",
+                                           "Aud_Comm",
+                                           "Physical",
+                                           "Intell_Learn",
+                                           "Psych")),
+       .SDcols = group_vars]
+
+
+
+  ##############################################################################
+  ########################
+  ## Type conversion    ##
+  ########################
+
+  # for now, convert everything to factors except numeric_cols
+
+  # Convert all other columns to factors
+  factor_cols <- unique(setdiff(names(data), c(numeric_cols, date_cols)))
+  data[, (factor_cols) := lapply(.SD, as.factor), .SDcols = factor_cols]
+
+  ##############################################################################
+  ######################
+  ## FACTORS: ordinal ##
+  ######################
+
+  ### NEW: these seem ORDINAL!
+  # E45_Disability_Priority_911 - 0, 1, 2, NULL (null means something different
+  #                                               than 0)
+  # E78_Secondary_Enrollment_911 - 0, 1,2, NULL (Nulls --> 0)
+
+  other_factor_cols <- grep("((?i)_disability_priority|(?i)_secondary_enrollment)(?!.*(?i)_desc)",
+                            names(data),
+                            value = TRUE, perl = TRUE)
+
+  # Apply the handle_values function and convert to ordered factor
+  data[, (other_factor_cols) := lapply(.SD, function(x) {
+    factor(handle_values(x, c(0, 1, 2)), levels = c(0, 1, 2), ordered = TRUE)
+  }), .SDcols = other_factor_cols]
+
+
+
+  # E84_PostSecondary_Enrollment_911
+  post_sec_cols <- grep("(?i)_postsecondary_enroll(?!.*(?i)_desc|(?i)_date)",
+                        names(data), value = TRUE, perl = TRUE)
+
+  data[, (post_sec_cols) := lapply(.SD, function(x) {
+    factor(handle_values(x, 0:3, blank_value = 0),
+           levels = c(0:3), ordered = TRUE)
+  }), .SDcols = post_sec_cols]
+
+
+  # E354_Exit_Type_911
+  # exit_var_cols <- grep("((?i)_exit_type_|(?i)_exit_work_)(?!.*(?i)_desc|(?i)_date)",
+  #                       names(data), value = TRUE, perl = TRUE)
+
+  exit_var_cols <- grep("((?i)_exit_type)(?!.*(?i)_desc|(?i)_date)",
+                        names(data), value = TRUE, perl = TRUE)
+
+  # (order is a little weird for this one)
+  data[, (exit_var_cols) := lapply(.SD, function(x) {
+    factor(handle_values(x, 0:7, blank_value = 0),
+           levels = c(0, 7, 1, 2, 3, 4, 5, 6),
+           ordered = TRUE)
+  }), .SDcols = exit_var_cols]
+
+
+
+  # E378_PostExit_Credential_911
+  exit_cred_cols <- grep("(?i)_postexit_credential(?!.*(?i)_desc|(?i)_date)",
+                         names(data), value = TRUE, perl = TRUE)
+
+  # (order is a little weird for this one too)
+  data[, (exit_cred_cols) := lapply(.SD, function(x) {
+    factor(handle_values(x, 1:8, blank_value = 0),
+           levels = c(8, 6, 7, 5, 1, 2, 3, 4),
+           ordered = TRUE)
+  }), .SDcols = exit_cred_cols]
+
+
+
+  # NEW VARIABLE: Age_Group
   data[, Age_Group := fifelse(Age_At_Application < 5, "<5",
                               fifelse((Age_At_Application >= 5 &
                                          Age_At_Application < 8), "5-7",
@@ -324,86 +430,14 @@ clean_utah <- function(data,
                              ordered = TRUE)]
 
 
-  ########################
-  ## SPECIAL CHARACTERS ##
-  ########################
-  # E394_App_Public_Support_911 - 0, 1-4
-  # E395_App_Medical_911 - 0, 1-7 - limit of 3 types
-  # E396_Exit_Public_Support_911 - 0, 1-4
-  # E397_Exit_Medical_911 - 0, 1-7 - limit of 3 types
-  # E74_SWD_Age_911 - two values, ages
-
-  special_cols <- grep("((?i)_app_pub|(?i)_app_med|(?i)_exit_pub|(?i)_exit_med|(?i)_swd_age_)(?!.*(?i)_Desc)",
-                       names(data), value = TRUE, perl = TRUE)
-
-  # COMP columns - can enter a max of 3 values
-  comp_cols <- grep("(?i)_comp_(?!.*(?i)_desc)", names(data), value = TRUE,
-                    perl = TRUE)
-  comp_cols <- comp_cols[!grepl("provide|amt|date", comp_cols,
-                                ignore.case = TRUE)]
-
-  all_special_cols <- c(special_cols, comp_cols)
-
-  # There are too many special character variables, so it's best to let the
-  #   user decide which variables they want to clean
-  if (!is.null(clean_specials) && length(all_special_cols) > 0) {
-    data <- apply_handle_splits(data, clean_specials, sep = ";")
-  }
-
-
-  # DISABILITY columns
-  disability_cols <- grep("(?i)(primary|secondary).*disability(?!.*(?i)_desc)",
-                          names(data), value = TRUE, perl = TRUE)
-  data <- separate_disability(data)
-
-  impairment_vars <- c("Primary_Impairment", "Secondary_Impairment")
-  group_vars <- paste0(impairment_vars, "_Group")
-
-  # Apply the same logic to both columns at once using lapply
-  data[, (group_vars) := lapply(.SD, function(x) {
-                                                  fifelse(x == 0, "None",
-                                                  fifelse(x %in% c(1, 2, 8),
-                                                         "Visual",
-                                                  fifelse(x %in% c(3, 4, 5, 6, 7,
-                                                                  9),
-                                                         "Aud./Comm.",
-                                                  fifelse(x %in% c(10, 11, 12,
-                                                                  13, 14, 15,
-                                                                  16),
-                                                         "Physical",
-                                                  fifelse(x == 17,
-                                                         "Intell./Learn.",
-                                                  fifelse(x %in% c(18, 19),
-                                                         "Psych.",
-                                                         NA_character_)))))) }),
-       .SDcols = impairment_vars]
-
-  # Set factor levels for both columns
-  data[, (group_vars) := lapply(.SD, factor,
-                                levels = c("None",
-                                           "Visual",
-                                           "Aud./Comm.",
-                                           "Physical",
-                                           "Intell./Learn.",
-                                           "Psych.")),
-       .SDcols = group_vars]
-
-
   ##############################################################################
-  ########################
-  ## Type conversion    ##
-  ########################
+  #######################
+  ## DATA AGGREGATION  ##
+  #######################
 
-  # for now, convert everything to factors except numeric_cols
-
-  # Convert all other columns to factors
-  factor_cols <- unique(setdiff(names(data), c(numeric_cols, date_cols)))
-  data[, (factor_cols) := lapply(.SD, as.factor), .SDcols = factor_cols]
-
-  # DATA AGGREGATION
   if (aggregate) {
 
-    ## Initial checks
+    ## FIRST, run some checks
     # Make sure we have necessary columns for cleaning processes
 
     participant_col <- grep("(?i)^(?=.*participant)|(?=.*\\bid\\b)(?!.*\\bid\\B)",
@@ -421,57 +455,84 @@ clean_utah <- function(data,
     required_cols <- c(participant_col, year_col, quarter_col, app_date_col)
 
 
-    missing_cols <- setdiff(required_cols, names(data))
+    # Set a flag to determine if we should proceed with aggregation
+    skip_aggregation <- FALSE
 
-    if (length(missing_cols) > 0) {
-      stop("Missing required columns: ", paste(missing_cols, collapse = ", "))
+
+    ## CHECK 1: Ensure all required columns were found
+    if (length(participant_col) < 1 ||
+        length(year_col) < 1 ||
+        length(quarter_col) < 1 ||
+        length(app_date_col) < 1) {
+
+      warning("Skipping aggregation. Missing required columns: ",
+              paste(c(
+                if (length(participant_col) < 1) "Participant ID",
+                if (length(year_col) < 1) "Year",
+                if (length(quarter_col) < 1) "Quarter",
+                if (length(app_date_col) < 1) "Application Date"
+              ), collapse = ", "))
+
+      # Raise flag to skip aggregation
+      skip_aggregation <- TRUE
     }
 
+    ## CHECK 2
     # Check if essential columns have only NA values
     empty_cols <- sapply(data[, required_cols, with = FALSE],
                          function(x) all(is.na(x)))
 
     if (any(empty_cols)) {
-      stop("Some required columns have no data: ",
-           paste(names(empty_cols[empty_cols]), collapse = ", "))
+      warning("Skipping aggregation. Some required columns have no data: ",
+              paste(names(empty_cols[empty_cols]), collapse = ", "))
+
+      # Raise flag to skip aggregation
+      skip_aggregation <- TRUE
     }
 
+    ## RUN AGGREGATION PROCESS
+    # If we pass these two checks, then run the aggregation code
 
-    names(data)[names(data) %in% participant_col] <- "Participant_ID"
-    names(data)[names(data) %in% year_col] <- "E1_Year_911"
-    names(data)[names(data) %in% quarter_col] <- "E2_Quarter_911"
-    names(data)[names(data) %in% app_date_col] <- "E7_Application_Date_911"
+    if (!skip_aggregation) {
+      # Rename the variables in the case that they don't match the codebook,
+      #  for easier referencing
+      names(data)[names(data) %in% participant_col] <- "Participant_ID"
+      names(data)[names(data) %in% year_col] <- "E1_Year_911"
+      names(data)[names(data) %in% quarter_col] <- "E2_Quarter_911"
+      names(data)[names(data) %in% app_date_col] <- "E7_Application_Date_911"
 
-    # Remove rows where application date is missing --these are typically fully
-    #   missing data rows anyway.
-    data <- data[!is.na(E7_Application_Date_911)]
+      # Remove rows where application date is missing --these are typically
+      #   fully missing data rows anyway.
+      data <- data[!is.na(E7_Application_Date_911)]
 
-    # Order the data by Participant_ID, year, quarter, and reverse order
-    #   application date
-    setorder(data, Participant_ID, E1_Year_911, E2_Quarter_911,
-             -E7_Application_Date_911)
+      # Order the data by Participant_ID, year, quarter, and reverse order
+      #   application date
+      setorder(data, Participant_ID, E1_Year_911, E2_Quarter_911,
+               -E7_Application_Date_911)
 
 
-    # Create a helper column to identify the first occurrence within each group
-    data[, Occurrences_Per_Quarter := .N, by = .(Participant_ID,
-                                                 E1_Year_911,
-                                                 E2_Quarter_911)]
-    # Save only the first occurrence
-    data <- data[, .SD[1], by = .(Participant_ID,
-                                  E1_Year_911,
-                                  E2_Quarter_911)]
+      # Create a helper column to identify the first occurrence within each
+      #   group
+      data[, Occurrences_Per_Quarter := .N, by = .(Participant_ID,
+                                                   E1_Year_911,
+                                                   E2_Quarter_911)]
+      # Save only the first occurrence
+      data <- data[, .SD[1], by = .(Participant_ID,
+                                    E1_Year_911,
+                                    E2_Quarter_911)]
 
-    # Sort by year and quarter
-    setorder(data, E1_Year_911, E2_Quarter_911)
+      # Sort by year and quarter
+      setorder(data, E1_Year_911, E2_Quarter_911)
+    }
   }
 
-  # REMOVE COLUMNS WITH ONLY NAs
+  # REMOVE COLUMNS WITH ONLY NAs when remove_strictly_na = TRUE
   if (remove_strictly_na) {
     data <- data[, which(unlist(lapply(data, function(x) !all(is.na(x))))),
                  with = FALSE]
   }
 
-  # return the cleaned dataset
+  # Return the cleaned dataset
   return(data)
 
 }
