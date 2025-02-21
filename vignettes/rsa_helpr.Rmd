@@ -70,17 +70,6 @@ Through the process of data cleaning, small functions were created to handle spe
 cleaning problems. These functions serve as helper functions for repeated cleaning tasks within larger functions in `rsa.helpr`. However, all of these helper cleaning functions can be used individually, as demonstrated in the proceeding sections. Some examples of the 
 helper functions are shown below:
 
-#### `handle_date` (vector input)
-```{r handle_date}
-
-```
-
-#### `handle_excel_date` (vector input)
-```{r handle_excel_date}
-
-```
-
-
 #### `handle_nines` (vector input)
 This function is mainly applied to binary variables, with 2 levels and a missing
 value represented by a 9. This function replaces ensures missing values are 
@@ -88,13 +77,13 @@ represented by 9s, and when `unidentified_to_0` = TRUE, it combines the 9s with
 0s.
 ```{r handle_nines}
 
-# rsa_subset <- rsa[, c("E10_Indian_Alaskan_911", "E11_Asian_911", 
+# rsa_subset <- rsa_simulated[, c("E10_Indian_Alaskan_911", "E11_Asian_911", 
 #                       "E14_White_911", "E16_Veteran_Status_911", 
 #                       "E42_Has_Disability_911")]
 
-head(rsa$E14_White_911, 10)
+head(rsa_simulated$E14_White_911, 10)
 
-var_clean <- handle_nines(rsa$E14_White_911, unidentified_to_0 = TRUE)
+var_clean <- handle_nines(rsa_simulated$E14_White_911, unidentified_to_0 = TRUE)
 head(var_clean, 10)
 
 ```
@@ -106,9 +95,9 @@ the distribution of missing information.
 
 ```{r handle_code}
 
-head(rsa$E18_Postal_Code_911, 10)
+head(rsa_simulated$E18_Postal_Code_911, 10)
 
-var_clean <- handle_code(rsa$E18_Postal_Code_911)
+var_clean <- handle_code(rsa_simulated$E18_Postal_Code_911)
 head(var_clean, 10)
 
 ```
@@ -120,17 +109,17 @@ to represent a missing value, through the `blank_value` parameter. The following
 example involves a variable which allows values 1, 2, 3, 4, where blanks should
 be 0s. (`blank_value` defaults to NA.)
 ```{r handle_values}
-# head(rsa$E356_Exit_Work_Status_911, 20)
+# head(rsa_simulated$E356_Exit_Work_Status_911, 20)
 # 
-# work_clean <- handle_values(rsa$E356_Exit_Work_Status_911, 
+# work_clean <- handle_values(rsa_simulated$E356_Exit_Work_Status_911, 
 #                               c(0, 1, 2, 3, 4, 9), 
 #                               blank_value = 0)
 # 
 # head(work_clean, 20)
 
-head(rsa$E99_JobExploration_Vendor_911, 20)
+head(rsa_simulated$E99_JobExploration_Vendor_911, 20)
 
-var_clean <- handle_values(rsa$E99_JobExploration_Vendor_911, 
+var_clean <- handle_values(rsa_simulated$E99_JobExploration_Vendor_911, 
                            values = c(1, 2, 3, 4), blank_value = 0)
 head(var_clean, 20)
 
@@ -144,9 +133,9 @@ abbreviated, it is left alone; otherwise, the value is abbreviated with an
 acronym, ignoring articles and prepositions.
 ```{r handle_abbrev}
 
-tail(scores$Provider, 10)
+tail(scores_simulated$Provider, 10)
 
-var_clean <- handle_abbrev(scores$Provider)
+var_clean <- handle_abbrev(scores_simulated$Provider)
 tail(var_clean, 10)
 
 ```
@@ -159,9 +148,9 @@ It separates by the identified special character and creates new variables,
 based on the original name, with one value per column.
 ```{r handle_splits}
 
-head(rsa$E395_App_Medical_911)
+head(rsa_simulated$E395_App_Medical_911)
 
-var_clean <- handle_splits(rsa$E395_App_Medical_911, 
+var_clean <- handle_splits(rsa_simulated$E395_App_Medical_911, 
                            var_name = "E395_App_Medical_911")
 lapply(var_clean, head)
 
@@ -173,7 +162,7 @@ multiple variables in a dataset. Rather than intaking a vector input, the user
 applies this function to an entire data frame. 
 ```{r apply_handle_splits}
 
-rsa_subset <- rsa[, c("E395_App_Medical_911", "E396_Exit_Public_Support_911", 
+rsa_subset <- rsa_simulated[, c("E395_App_Medical_911", "E396_Exit_Public_Support_911", 
                       "E142_FourYear_Comp_911")]
 
 special_cols <- c("E395_App_Medical_911", "E396_Exit_Public_Support_911",
@@ -194,10 +183,10 @@ and Secondary_Disability variables, which contain specifically 2 values in a
 uniform structure.
 
 ```{r separate_disability}
-head(rsa$E43_Primary_Disability_911, 10)
-head(rsa$E44_Secondary_Disability_911, 10)
+head(rsa_simulated$E43_Primary_Disability_911, 10)
+head(rsa_simulated$E44_Secondary_Disability_911, 10)
 
-data_clean <- separate_disability(rsa[1:100])
+data_clean <- separate_disability(rsa_simulated[1:100])
 
 head(data_clean$Primary_Cause, 10)
 head(data_clean$Primary_Impairment, 10)
@@ -222,7 +211,7 @@ and no other arguments, using default settings, as shown below:
 The following code demonstrates the simplicity of running the one-stop cleaning
 function for quarterly (Utah RSA-911) data, using defaults.
 ```{r clean_utah, eval = FALSE}
-rsa_clean <- clean_utah(rsa)
+rsa_clean <- clean_utah(rsa_simulated)
 ```
 
 
@@ -231,9 +220,9 @@ The `aggregate` parameter of the `clean_utah` function removes duplicate rows
 for participants per quarter. It defaults to TRUE, and when set to TRUE, we 
 retain only the most recent row per quarter across participants.
 ```{r aggregate}
-dim(rsa)
+dim(rsa_simulated)
 
-rsa_clean <- clean_utah(rsa, aggregate = TRUE)
+rsa_clean <- clean_utah(rsa_simulated, aggregate = TRUE)
 dim(rsa_clean)
 
 ```
@@ -246,10 +235,10 @@ the default). In the following example, we show a binary variable which uses 9s
 to identify missing values. In our cleaning function, we would have first 
 cleaned the variable to only use 9s to represent missings, then convert to 0.
 ```{r unidentified_to_0}
-rsa_clean <- clean_utah(rsa, unidentified_to_0 = TRUE)
+rsa_clean <- clean_utah(rsa_simulated, unidentified_to_0 = TRUE)
 head(rsa_clean$E42_Has_Disability_911)
 
-rsa_clean <- clean_utah(rsa, unidentified_to_0 = FALSE)
+rsa_clean <- clean_utah(rsa_simulated, unidentified_to_0 = FALSE)
 head(rsa_clean$E42_Has_Disability_911)
 
 ```
@@ -262,7 +251,7 @@ include the meanings for symbolic numeric values, but they can be distracting
 and bulky. An example of removing the variables is shown below.
 ```{r remove_desc}
 
-names(rsa)[10:20]
+names(rsa_simulated)[10:20]
 
 names(rsa_clean)[5:12] 
 
@@ -275,12 +264,12 @@ cleaning process. This parameter defaults to TRUE, as removing unhelpful
 variables and clutter in the data are typical goals of the cleaning process.
 ```{r remove_strictly_na}
 
-rsa_clean <- clean_utah(rsa, remove_strictly_na = FALSE)
+rsa_clean <- clean_utah(rsa_simulated, remove_strictly_na = FALSE)
 
 na_cols <- names(rsa_clean)[sapply(rsa_clean, function(x) all(is.na(x)))]
 na_cols
 
-rsa_clean <- clean_utah(rsa, remove_strictly_na = TRUE)
+rsa_clean <- clean_utah(rsa_simulated, remove_strictly_na = TRUE)
 na_cols <- names(rsa_clean)[sapply(rsa_clean, function(x) all(is.na(x)))]
 na_cols
 ```
@@ -295,7 +284,7 @@ provided a warning about participant ID values if our data contain multiple
 states.
 ```{r clean_scores, warning=TRUE}
 
-scores_clean <- clean_scores(scores)
+scores_clean <- clean_scores(scores_simulated)
 
 ```
 
@@ -309,9 +298,9 @@ abbreviation to the ID, as IDs are not unique across states. Below is an example
 of cleaning our scores data (which contain multiple states' data), extracting 
 only the data from Utah. 
 ```{r state_filter}
-unique(scores$State)
+unique(scores_simulated$State)
 
-scores_clean <- clean_scores(scores, state_filter = "Utah")
+scores_clean <- clean_scores(scores_simulated, state_filter = "Utah")
 
 ```
 
@@ -324,7 +313,8 @@ errors and clutter.
 
 ```{r clean_ID}
 
-scores_clean <- clean_scores(scores, state_filter = "Utah", clean_ID = TRUE)
+scores_clean <- clean_scores(scores_simulated, state_filter = "Utah", 
+                             clean_ID = TRUE)
 sum(is.na(scores_clean$Participant_ID))
 
 ```
@@ -337,9 +327,9 @@ It defaults to TRUE, and when set to TRUE, we retain only the most recent score
 per TRT service across participants.
 
 ```{r aggregate2}
-dim(scores)
+dim(scores_simulated)
 
-scores_clean <- clean_scores(scores, aggregate = TRUE)
+scores_clean <- clean_scores(scores_simulated, aggregate = TRUE)
 dim(scores_clean)
 
 ```
@@ -353,7 +343,7 @@ variable, "X", as our ID column.
 
 ```{r ID_col, eval=FALSE}
 
-scores_clean <- clean_scores(scores, ID_col = "X")
+scores_clean <- clean_scores(scores_simulated, ID_col = "X")
 
 ```
 
@@ -373,8 +363,8 @@ This function is to be run on cleaned RSA-911 quarterly and TRT scores datasets.
 Note that this function allows the user to specify the ID variable names in each
 dataset being merged, but the defaults are `Participant_ID` for each. 
 ```{r merge_scores}
-rsa_clean <- clean_utah(rsa)
-scores_clean <- clean_scores(scores, state_filter = "Utah")
+rsa_clean <- clean_utah(rsa_simulated)
+scores_clean <- clean_scores(scores_simulated, state_filter = "Utah")
 
 merged_data <- merge_scores(rsa_clean, scores_clean)
 dim(merged_data)
@@ -394,10 +384,10 @@ metadata using `rsa.helpr` functions:
 
 ```{r example, eval = FALSE}
 # Cleaning an RSA-911 datset using defaults
-rsa_clean <- clean_utah(rsa)
+rsa_clean <- clean_utah(rsa_simulated)
 
 # Cleaning a scores dataset using defaults and extracting only Utah data
-scores_clean <- clean_scores(scores, state_filter = "Utah")
+scores_clean <- clean_scores(scores_simulated, state_filter = "Utah")
 
 # Merge the datasets, keep only relevant participants, using defaults
 merged_data <- merge_scores(rsa_clean, scores_clean)
@@ -410,6 +400,102 @@ metadata <- create_metadata(merged_data)
 These four functions provide any researcher with a completely reproducible process for
 preparing data, all with incredible ease.
 
+
+### Visualization Functions
+
+To support analysis following data preparation, we provide three functions for 
+the visualizations we anticipate to be used most often. 
+
+#### visualize_densities
+`visualize_densities` greatly simplifies the process of creating a density plot
+to compare the distributions across levels of a qualitative variable. While 
+other plotting functions in `R` can be easily applied to cleaned variables, 
+creating a density plot across categories requires a higher level of coding
+proficiency. To provide researchers with less `R` fluency the ability to use 
+these valuable plots, the `visualize_densities` function handles all of the 
+necessary programming steps internally. The user must simply input the 
+quantitative and categorical variables of interest, and the density plot is 
+produced, with appropriate labels. The following code provides two examples of
+utilizing the function. 
+The first, plotting median difference scores across gender, relies on the 
+function defaults. This example demonstrates the warnings produced when a level 
+of the categorical/grouping variable is too sparse, as well as when level labels
+are not provided by the user.
+
+```{r visualize_densities, warning = TRUE}
+
+visualize_densities(metadata$E9_Gender_911,
+                               metadata$Median_Difference_Score)
+```
+
+The next example, examining exit wages across disability priority levels, shows customizing the plot a bit more using some of
+the parameters.
+```{r visualize_densities2}
+visualize_densities(metadata$E45_Disability_Priority_911,
+                               metadata$Median_Difference_Score,
+                    cat_var_name = "Disability Priority",
+                    num_var_name = "Median Diff. Score",
+                    level_labels = c("Not severe", "Severe",
+                                     "Highly severe"))
+```
+
+
+
+
+The functions `visualize_metadata` and `visualize_scores` offer more extensive
+visualizations. These larger functions provide a shortcut to standard 
+visualizations, simply requiring the user to input a cleaned dataset and 
+selected type of analysis in order to generate a series of exploratory plots. 
+A select set of commonly-examined variables are used in these visualizations.
+
+#### visualize_metadata
+```{r visualize_metadata, eval = FALSE}
+visualize_metadata(metadata, option = "general_demo",
+                              one_window = TRUE)
+
+```
+
+
+```{r visualize_metadata2}
+
+rsa.helpr::visualize_metadata(metadata, option = "investigate_scores",
+                              one_window = TRUE)
+
+```
+
+```{r visualize_metadata3}
+rsa.helpr::visualize_metadata(metadata, option = "investigate_wage",
+                              one_window = TRUE)
+
+```
+
+
+```{r visualize_metadata4, eval = FALSE}
+rsa.helpr::visualize_metadata(metadata, option = "investigate_employment",
+                              one_window = TRUE)
+
+```
+
+
+
+
+#### visualize_scores
+```{r visualize_scores}
+rsa.helpr::visualize_scores(scores_clean, option = "overview",
+                            one_window = TRUE)
+```
+
+
+```{r visualize_scores2}
+rsa.helpr::visualize_scores(scores_clean, option = "across_service",
+                            one_window = TRUE)
+```
+
+
+```{r visualize_scores3}
+rsa.helpr::visualize_scores(scores_clean, option = "across_provider",
+                            one_window = TRUE)
+```
 
 
 ## An Interactive `rshiny` Data Dashboard
