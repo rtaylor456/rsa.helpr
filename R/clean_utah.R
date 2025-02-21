@@ -289,8 +289,6 @@ clean_utah <- function(data,
 
 
   # NEW VARIABLE: DISABILITY columns
-  disability_cols <- grep("(?i)(primary|secondary).*disability(?!.*(?i)_desc)",
-                          names(data), value = TRUE, perl = TRUE)
   data <- separate_disability(data)
 
   impairment_vars <- c("Primary_Impairment", "Secondary_Impairment")

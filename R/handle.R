@@ -8,7 +8,7 @@
 #' @export
 handle_date <- function(x) {
   date <- suppressWarnings(as.Date(as.character(x), format = "%Y%m%d"))
-  return(date)
+  date
 }
 
 
@@ -20,9 +20,9 @@ handle_date <- function(x) {
 #' @param x An Excel date variable, origin 1899-12-30.
 #' @returns The converted date variable.
 #' @export
-handle_excel_date <- function(x){
+handle_excel_date <- function(x) {
   date <- suppressWarnings(as.Date(as.numeric(x), origin = "1899-12-30"))
-  return(date)
+  date
 }
 
 
@@ -36,7 +36,7 @@ handle_excel_date <- function(x){
 #' @export
 handle_year <- function(x) {
   year <- suppressWarnings(as.numeric(gsub("\\D*(\\d{4})\\D*", "\\1", x)))
-  return(year)
+  year
 }
 
 
@@ -72,7 +72,7 @@ handle_nines <- function(x, unidentified_to_0 = TRUE) {
 handle_blanks <- function(x) {
   # Identify rows with values equal to " " or "NULL" in the specified column
   x[x %in% c(" ", "NULL", NA, "NA")] <- 0
-  return(x)
+  x
 }
 
 
@@ -85,9 +85,9 @@ handle_blanks <- function(x) {
 #'   meaning in numeric or factor form. Simply represent recorded ids.
 #' @returns The cleaned code variable.
 #' @export
-handle_code <- function(x){
+handle_code <- function(x) {
   x[x %in% c(" ", "NULL", NA, "NA", "")] <- NA
-  return(x)
+  x
 }
 
 
@@ -101,7 +101,7 @@ handle_code <- function(x){
 #'   Default is to replace incorrect values to NA.
 #' @returns The converted date variable.
 #' @export
-handle_values <- function(x, values, blank_value = NA){
+handle_values <- function(x, values, blank_value = NA) {
   x <- suppressWarnings(as.numeric(x))
   x[is.na(x) | !(x %in% values)] <- blank_value
   return(x)
@@ -137,10 +137,10 @@ handle_abbrev <- function(x) {
     # Step 4: Generate the acronym
     if (length(capitalized_words) > 1) {
       # Acronym from initials
-      return(paste0(substr(capitalized_words, 1, 1), collapse = ""))
+      paste0(substr(capitalized_words, 1, 1), collapse = "")
     } else {
       # Return full name if there's only one capitalized word
-      return(name)
+      name
     }
   })
 }
@@ -163,8 +163,8 @@ handle_splits <- function(var, var_name, sep = ";") {
   split_values <- strsplit(as.character(var), split = sep, perl = TRUE)
 
   # Replace "NULL" strings and blanks with NA
-  split_values <- lapply(split_values, function(x) ifelse(x %in% c("NULL", ""),
-                                                          NA, x))
+  split_values <- lapply(split_values,
+                         function(x) ifelse(x %in% c("NULL", ""), NA, x))
 
   # Determine the max number of splits
   max_splits <- max(lengths(split_values))
@@ -233,27 +233,25 @@ separate_disability <- function(df) {
   setDT(df)
 
   prim_disability <- grep("(?i)^(?=.*prim)(?=.*disab)(?!.*(desc))",
-                       names(df), value = TRUE, perl = TRUE)
+                          names(df), value = TRUE, perl = TRUE)
 
   second_disability <- grep("(?i)^(?=.*second)(?=.*disab)(?!.*(desc))",
-                          names(df), value = TRUE, perl = TRUE)
+                            names(df), value = TRUE, perl = TRUE)
 
   # Separate E43_Primary_Disability_911 into E43_Primary_Impairment_911 and
   #   E43_Primary_Cause_911
   df[, c("Primary_Impairment",
          "Primary_Cause") := tstrsplit(df[[prim_disability]],
-                                               ";",
-                                               fixed = TRUE)]
+                                       ";", fixed = TRUE)]
 
   # Separate E44_Secondary_Disability_911 into E44_Secondary_Impairment_911 and
   #   E44_Secondary_Cause_911
   df[, c("Secondary_Impairment",
          "Secondary_Cause") := tstrsplit(df[[second_disability]],
-                                                 ";",
-                                                 fixed = TRUE)]
+                                         ";", fixed = TRUE)]
   # remove original columns
   df[, (prim_disability) := NULL]
   df[, (second_disability) := NULL]
 
-  return(df)
+  df
 }

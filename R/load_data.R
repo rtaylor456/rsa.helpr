@@ -27,7 +27,7 @@ load_data <- function(directory, files = NULL, download_csv = FALSE) {
   if (!is.null(files)) {
     # Match the user-specified file names (ignoring case for case-insensitivity)
     file_list <- all_files[grepl(paste(files, collapse = "|"),
-                                      basename(all_files), ignore.case = TRUE)]
+                                 basename(all_files), ignore.case = TRUE)]
   } else {
     file_list <- all_files
   }
@@ -36,12 +36,11 @@ load_data <- function(directory, files = NULL, download_csv = FALSE) {
   data_list <- list()
 
   # Read files with error handling and exclusion
-  for (i in 1:length(file_list)) {
+  for (i in seq_along(file_list)) {
     tryCatch({
       # Ensure file is a valid Excel file
       if (grepl("\\.xlsx$", file_list[i])) {
         message("Reading: ", file_list[i])
-        # data <- readxl::read_excel(file_list[i], col_names = TRUE)
         data <- suppressWarnings(readxl::read_excel(file_list[i],
                                                     col_names = TRUE))
         data_list[[i]] <- data
@@ -68,10 +67,11 @@ load_data <- function(directory, files = NULL, download_csv = FALSE) {
 
     # Convert all columns to the same class across datasets
     for (col in colnames(data)) {
-      data[[col]] <- as.character(data[[col]])  # Use character as the "safest" type
+      # Use character as the "safest" type
+      data[[col]] <- as.character(data[[col]])
     }
 
-    return(data)
+    data
   })
 
   # Step 3: Combine datasets into a single data.table

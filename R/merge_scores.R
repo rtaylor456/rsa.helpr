@@ -23,5 +23,6 @@ merge_scores <- function(quarterly_data, scores_data,
                        by.x = "Participant_ID",
                        by.y = "Participant_ID",
                        all = FALSE)
+  merged_data
 
 }
