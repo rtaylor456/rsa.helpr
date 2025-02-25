@@ -2,6 +2,7 @@ library(shiny)
 library(data.table)
 library(readxl)
 library(DT)
+library(bit64)
 
 if (!requireNamespace("rsa.helpr", quietly = TRUE)) {
   # devtools::install_github("rtaylor456/rsa.helpr")
@@ -340,6 +341,42 @@ server <- function(input, output, session) {
                                      aggregate = input$aggregate_scores,
                                      ID_col = id_col)
 
+      # Check for required provider-related columns
+      required_cols <- c(
+        "provider", "service", "proctor", "mode", "pre_post",
+        "completed", "caseload", "group_freq", "online_freq", "rural_freq"
+      )
+
+      found_cols <- c(
+        grep("(?i)provider", names(df_scores_combined), value = TRUE,
+             perl = TRUE),
+        grep("(?i)serv", names(df_scores_combined), value = TRUE, perl = TRUE),
+        grep("(?i)proctor", names(df_scores_combined), value = TRUE,
+             perl = TRUE),
+        grep("(?i)mode", names(df_scores_combined), value = TRUE,
+             perl = TRUE),
+        grep("(?i)^(?=.*pre)(?=.*post)", names(df_scores_combined),
+             value = TRUE, perl = TRUE),
+        grep("(?i)^(?=.*complete)|(?=.*date)", names(df_scores_combined),
+             value = TRUE, perl = TRUE),
+        grep("(?i)^(?=.*case)|(?=.*caseload)|(?=.*workload)",
+             names(df_scores_combined), value = TRUE, perl = TRUE),
+        grep("(?i)^(?=.*group)|(?=.*grp)(?=.*freq)", names(df_scores_combined),
+             value = TRUE, perl = TRUE),
+        grep("(?i)^(?=.*online)(?=.*freq)", names(df_scores_combined),
+             value = TRUE, perl = TRUE),
+        grep("(?i)^(?=.*rural)(?=.*freq)", names(df_scores_combined),
+             value = TRUE, perl = TRUE)
+      )
+
+      if (length(found_cols) == length(required_cols)) {
+        cleaned_provider <- clean_provider(
+          data = df_scores_combined,
+          state_filter = states_of_interest,
+          ID_col = id_col
+        )
+        rv$provider_data_cleaned <- cleaned_provider
+      }
 
       incProgress(1/3, detail = "Finalizing...")
       rv$scores_data_cleaned <- cleaned_scores
@@ -791,33 +828,94 @@ server <- function(input, output, session) {
     if ((data_choice == "Use Cleaned Scores Data") ||
                (data_choice == "Upload New Dataset" &&
                 dataset_type == "scores")) {
-      tabsetPanel(
+
+      tab_panels <- list(
         tabPanel("Overview",
                  plotOutput("overview_plot1"),
                  downloadButton("download_overview_plot1", "Download Plot"),
-
                  plotOutput("overview_plot2"),
                  downloadButton("download_overview_plot2", "Download Plot"),
-
                  plotOutput("overview_plot3"),
                  downloadButton("download_overview_plot3", "Download Plot")),
 
         tabPanel("Across Services",
                  plotOutput("services_plot1"),
                  downloadButton("download_services_plot1", "Download Plot"),
-
                  plotOutput("services_plot2"),
                  downloadButton("download_services_plot2", "Download Plot"),
-
                  plotOutput("services_plot3"),
                  downloadButton("download_services_plot3", "Download Plot")),
 
         tabPanel("Across Providers",
                  plotOutput("providers_plot1"),
-                 downloadButton("download_providers_plot1", "Download Plot")
-                 # plotOutput("providers_plot2")
-                 )
+                 downloadButton("download_providers_plot1", "Download Plot"))
       )
+
+      # tabsetPanel(
+      #   tabPanel("Overview",
+      #            plotOutput("overview_plot1"),
+      #            downloadButton("download_overview_plot1", "Download Plot"),
+      #
+      #            plotOutput("overview_plot2"),
+      #            downloadButton("download_overview_plot2", "Download Plot"),
+      #
+      #            plotOutput("overview_plot3"),
+      #            downloadButton("download_overview_plot3", "Download Plot")),
+      #
+      #   tabPanel("Across Services",
+      #            plotOutput("services_plot1"),
+      #            downloadButton("download_services_plot1", "Download Plot"),
+      #
+      #            plotOutput("services_plot2"),
+      #            downloadButton("download_services_plot2", "Download Plot"),
+      #
+      #            plotOutput("services_plot3"),
+      #            downloadButton("download_services_plot3", "Download Plot")),
+      #
+      #   tabPanel("Across Providers",
+      #            plotOutput("providers_plot1"),
+      #            downloadButton("download_providers_plot1", "Download Plot")
+      #            # plotOutput("providers_plot2")
+      #            ),
+      #
+      #   tabPanel("Provider Data",
+      #            plotOutput("provider_data_plot1"),
+      #            downloadButton("download_providers_plot1", "Download Plot"),
+      #
+      #            plotOutput("provider_data_plot2"),
+      #            downloadButton("download_providers_plot2", "Download Plot"),
+      #
+      #            plotOutput("provider_data_plot3"),
+      #            downloadButton("download_providers_plot3", "Download Plot"))
+      # )
+
+      # Add the "Provider Data" tab only if provider data exists
+      if (!is.null(rv$provider_data_cleaned)) {
+        tab_panels <- append(tab_panels, list(
+          tabPanel("New Provider Variables",
+                   plotOutput("provider_data_plot1"),
+                   downloadButton("download_providers_plot1", "Download Plot"),
+
+                   plotOutput("provider_data_plot2"),
+                   downloadButton("download_providers_plot2", "Download Plot"),
+
+                   plotOutput("provider_data_plot3"),
+                   downloadButton("download_providers_plot3", "Download Plot"),
+
+                   plotOutput("provider_data_plot4"),
+                   downloadButton("download_providers_plot4", "Download Plot"),
+
+                   plotOutput("provider_data_plot5"),
+                   downloadButton("download_providers_plot5", "Download Plot"))
+        ))
+      }
+
+      # Render the tabset panel
+      if ((data_choice == "Use Cleaned Scores Data") ||
+          (data_choice == "Upload New Dataset" && dataset_type == "scores")) {
+        do.call(tabsetPanel, tab_panels)
+      }
+
     } else if ((data_choice == "Use Generated Metadata") ||
                 (data_choice == "Upload New Dataset" &&
                  dataset_type == "metadata")) {
@@ -1240,6 +1338,60 @@ server <- function(input, output, session) {
     }
   )
 
+
+  ## PROVIDER DATA plots
+  ## SCORES plots
+  output$provider_data_plot1 <- renderPlot({
+    req(rv$provider_data_cleaned)
+    data <- rv$provider_data_cleaned
+
+    barplot(table(data$Caseload))
+
+  })
+
+  # Download handler for overview_plot1
+  output$download_provider_data_plot1 <- downloadHandler(
+    filename = function() { "provider_caseload.png" },
+    content = function(file) {
+      png(file)
+      barplot(table(data$Caseload))
+      dev.off()
+    }
+  )
+
+
+  output$provider_data_plot2 <- renderPlot({
+    req(rv$provider_data_cleaned)
+    data <- rv$provider_data_cleaned
+
+    barplot(table(data$Group_freq))
+
+  })
+
+  output$provider_data_plot3 <- renderPlot({
+    req(rv$provider_data_cleaned)
+    data <- rv$provider_data_cleaned
+
+    barplot(table(data$Online_freq))
+
+  })
+
+
+  output$provider_data_plot4 <- renderPlot({
+    req(rv$provider_data_cleaned)
+    data <- rv$provider_data_cleaned
+
+    barplot(table(data$Rural_freq))
+
+  })
+
+  output$provider_data_plot5 <- renderPlot({
+    req(rv$provider_data_cleaned)
+    data <- rv$provider_data_cleaned
+
+    barplot(table(data$Mode))
+
+  })
 
 
   ## METADATA plots
