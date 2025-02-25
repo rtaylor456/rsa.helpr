@@ -20,7 +20,11 @@ rsconnect::accounts()
 #########################################################
 
 # Then, set working directory in R to folder with app
+# For PC
 setwd("C:/Users/Ruth Taylor/Desktop/rsa.helpr/R/dashboard")
+
+# For MAC
+setwd("/Users/RuthTaylor/Desktop/masters/rsa.helpr/R/dashboard")
 
 # now deploy app
 rsconnect::deployApp()
