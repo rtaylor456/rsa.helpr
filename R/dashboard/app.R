@@ -10,6 +10,9 @@ if (!requireNamespace("rsa.helpr", quietly = TRUE)) {
 }
 library(rsa.helpr)
 
+# see if this addresses server connection problem
+library(shinybusy)
+
 # options(shiny.maxRequestSize = 1000 * 1024^2)  # 500MB
 options(shiny.maxRequestSize = 1.5 * 1024^3)  # 1.5GB
 
@@ -252,6 +255,11 @@ ui <- fluidPage(
 
 # Define server logic
 server <- function(input, output, session) {
+
+  # see if this addresses server connection problem
+  observe({
+    invalidateLater(30000, session)  # Sends a heartbeat every 30 seconds
+  })
 
   # Reactive values to store data
   rv <- reactiveValues(
