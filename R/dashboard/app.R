@@ -282,13 +282,22 @@ server <- function(input, output, session) {
       file_paths <- input$rsa_data$datapath
       file_types <- tools::file_ext(input$rsa_data$name)
 
+      # df_list <- mapply(function(path, type) {
+      #   if (type == "csv") {
+      #     fread(path, stringsAsFactors = FALSE)
+      #   } else {
+      #     as.data.table(read_excel(path))
+      #   }
+      # }, file_paths, file_types, SIMPLIFY = FALSE)
+
       df_list <- mapply(function(path, type) {
         if (type == "csv") {
-          fread(path, stringsAsFactors = FALSE)
+          fread(path, stringsAsFactors = FALSE, nThread = 2)  # Use multiple threads
         } else {
           as.data.table(read_excel(path))
         }
       }, file_paths, file_types, SIMPLIFY = FALSE)
+
 
       incProgress(1/3, detail = "Combining data...")
       df_combined <- do.call(rbind, df_list)
