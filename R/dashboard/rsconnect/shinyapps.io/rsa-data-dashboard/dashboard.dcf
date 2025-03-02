@@ -5,6 +5,6 @@ account: rsa-data-dashboard
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 13527453
-bundleId: 9877421
+bundleId: 9877445
 url: https://rsa-data-dashboard.shinyapps.io/dashboard/
 version: 1

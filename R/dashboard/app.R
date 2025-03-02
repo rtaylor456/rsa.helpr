@@ -274,53 +274,6 @@ server <- function(input, output, session) {
   )
 
 
-  # # Function to read and clean RSA-911 CSV files
-  # read_and_clean_rsa_data <- reactive({
-  #   req(input$rsa_data)
-  #
-  #   withProgress(message = 'Cleaning RSA-911 Data...', value = 0, {
-  #     file_paths <- input$rsa_data$datapath
-  #     file_types <- tools::file_ext(input$rsa_data$name)
-  #
-  #     # df_list <- mapply(function(path, type) {
-  #     #   if (type == "csv") {
-  #     #     fread(path, stringsAsFactors = FALSE)
-  #     #   } else {
-  #     #     as.data.table(read_excel(path))
-  #     #   }
-  #     # }, file_paths, file_types, SIMPLIFY = FALSE)
-  #
-  #     df_list <- mapply(function(path, type) {
-  #       if (type == "csv") {
-  #         fread(path, stringsAsFactors = FALSE, nThread = 2)  # Use multiple threads
-  #       } else {
-  #         as.data.table(read_excel(path))
-  #       }
-  #     }, file_paths, file_types, SIMPLIFY = FALSE)
-  #
-  #
-  #     incProgress(1/3, detail = "Combining data...")
-  #     df_combined <- do.call(rbind, df_list)
-  #
-  #     rm(df_list)  # Remove the intermediate list
-  #     gc()         # Force garbage collection
-  #
-  #     specials_to_clean <- if (nzchar(input$clean_specials)) strsplit(input$clean_specials, ",\\s*")[[1]] else NULL
-  #
-  #     incProgress(1/3, detail = "Cleaning data...")
-  #     df_cleaned <- clean_utah(df_combined,
-  #                              aggregate = input$aggregate_utah,
-  #                              unidentified_to_0 = input$unidentified_to_0,
-  #                              clean_specials = specials_to_clean,
-  #                              remove_desc = input$remove_desc,
-  #                              remove_strictly_na = input$remove_strictly_na)
-  #
-  #     incProgress(1/3, detail = "Finalizing...")
-  #     rv$rsa_data_cleaned <- df_cleaned
-  #     return(df_cleaned)
-  #   })
-  # })
-
   # Function to read and clean RSA-911 CSV files
   read_and_clean_rsa_data <- reactive({
     req(input$rsa_data)
@@ -329,21 +282,21 @@ server <- function(input, output, session) {
       file_paths <- input$rsa_data$datapath
       file_types <- tools::file_ext(input$rsa_data$name)
 
-      # df_list <- mapply(function(path, type) {
-      #   if (type == "csv") {
-      #     fread(path, stringsAsFactors = FALSE)
-      #   } else {
-      #     as.data.table(read_excel(path))
-      #   }
-      # }, file_paths, file_types, SIMPLIFY = FALSE)
-
       df_list <- mapply(function(path, type) {
         if (type == "csv") {
-          fread(path, stringsAsFactors = FALSE, nThread = 2)  # Use multiple threads
+          fread(path, stringsAsFactors = FALSE)
         } else {
           as.data.table(read_excel(path))
         }
       }, file_paths, file_types, SIMPLIFY = FALSE)
+
+      # df_list <- mapply(function(path, type) {
+      #   if (type == "csv") {
+      #     fread(path, stringsAsFactors = FALSE, nThread = 2)  # Use multiple threads
+      #   } else {
+      #     as.data.table(read_excel(path))
+      #   }
+      # }, file_paths, file_types, SIMPLIFY = FALSE)
 
 
       incProgress(1/3, detail = "Combining data...")
@@ -352,21 +305,19 @@ server <- function(input, output, session) {
       rm(df_list)  # Remove the intermediate list
       gc()         # Force garbage collection
 
-      return(df_combined)
+      specials_to_clean <- if (nzchar(input$clean_specials)) strsplit(input$clean_specials, ",\\s*")[[1]] else NULL
 
-      # specials_to_clean <- if (nzchar(input$clean_specials)) strsplit(input$clean_specials, ",\\s*")[[1]] else NULL
-      #
-      # incProgress(1/3, detail = "Cleaning data...")
-      # df_cleaned <- clean_utah(df_combined,
-      #                          aggregate = input$aggregate_utah,
-      #                          unidentified_to_0 = input$unidentified_to_0,
-      #                          clean_specials = specials_to_clean,
-      #                          remove_desc = input$remove_desc,
-      #                          remove_strictly_na = input$remove_strictly_na)
-      #
-      # incProgress(1/3, detail = "Finalizing...")
-      # rv$rsa_data_cleaned <- df_cleaned
-      # return(df_cleaned)
+      incProgress(1/3, detail = "Cleaning data...")
+      df_cleaned <- clean_utah(df_combined,
+                               aggregate = input$aggregate_utah,
+                               unidentified_to_0 = input$unidentified_to_0,
+                               clean_specials = specials_to_clean,
+                               remove_desc = input$remove_desc,
+                               remove_strictly_na = input$remove_strictly_na)
+
+      incProgress(1/3, detail = "Finalizing...")
+      rv$rsa_data_cleaned <- df_cleaned
+      return(df_cleaned)
     })
   })
 
