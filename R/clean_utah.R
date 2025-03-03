@@ -46,6 +46,7 @@ clean_utah <- function(data,
     desc_cols <- grep("(?i)_desc", names(data), value = TRUE, perl = TRUE)
     if (length(desc_cols) > 0) {
       data[, (desc_cols) := NULL]
+      gc()  # Trigger garbage collection after removing description columns
     } else {
       warning("No description columns to remove.")
     }
@@ -59,6 +60,7 @@ clean_utah <- function(data,
 
   if (length(extra_cols) > 0) {
     data[, (extra_cols) := NULL]
+    gc() # Trigger garbage collection after removing admin columns
   }
 
   # Additional miscellaneous columns to remove
@@ -111,6 +113,10 @@ clean_utah <- function(data,
          lapply(.SD, function(x) suppressWarnings(as.numeric(x))),
        .SDcols = numeric_cols]
 
+  # Converting columns to numeric can generate intermediate objects, which may
+  #   linger in memory.
+  gc()
+
 
   ##############################################################################
   ######################
@@ -123,6 +129,10 @@ clean_utah <- function(data,
                     perl = TRUE)
 
   data[, (date_cols) := lapply(.SD, handle_excel_date), .SDcols = date_cols]
+
+  # When handling date transformations (like Excel dates), you might generate
+  #  intermediate results that can be garbage collected:
+  gc()
 
 
   ##############################################################################
@@ -363,7 +373,7 @@ clean_utah <- function(data,
 
   data[, (post_sec_cols) := lapply(.SD, function(x) {
     factor(handle_values(x, 0:3, blank_value = 0),
-           levels = c(0:3), ordered = TRUE)
+           levels = c(0, 3, 2, 1), ordered = TRUE)
   }), .SDcols = post_sec_cols]
 
 
@@ -534,3 +544,4 @@ clean_utah <- function(data,
   return(data)
 
 }
+

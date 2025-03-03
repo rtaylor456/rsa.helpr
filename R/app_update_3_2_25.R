@@ -76,7 +76,7 @@ ui <- fluidPage(
 
                            column(12,
                                   downloadButton("download_rsa",
-                                              "Download Cleaned RSA-911 Data"))
+                                                 "Download Cleaned RSA-911 Data"))
                          ),
                          tags$hr(style = "margin: 20px 0;"),  # Add larger space
 
@@ -122,7 +122,7 @@ ui <- fluidPage(
 
                            column(12,
                                   downloadButton("download_scores",
-                                                "Download Cleaned Scores Data"))
+                                                 "Download Cleaned Scores Data"))
                          ),
                          tags$hr(style = "margin: 20px 0;"),  # Add larger space
 
@@ -139,7 +139,7 @@ ui <- fluidPage(
                                             value = "Participant_ID")),
                            column(12,
                                   downloadButton("download_merged",
-                                                "Download Cleaned Merged Data"))
+                                                 "Download Cleaned Merged Data"))
                          ),
                          tags$hr(style = "margin: 20px 0;"),  # Add larger space
 
@@ -160,7 +160,7 @@ ui <- fluidPage(
                                                                 "Using Cleaned RSA-911 Data" = "rsa"),
                                                  selected = "merged")
                                   )
-                                  ),
+                           ),
                            column(12,
                                   actionButton("generate_metadata",
                                                "Generate Metadata")),
@@ -253,7 +253,7 @@ ui <- fluidPage(
                        mainPanel(
                          uiOutput("models_main")
                        )
-                       )
+              )
   )
 )
 
@@ -845,13 +845,13 @@ server <- function(input, output, session) {
       if (!validation$valid) {
         return(tags$p(validation$message, style = "color: red;
                       font-weight: bold;"))
-        }
+      }
     }
 
 
     if ((data_choice == "Use Cleaned Scores Data") ||
-               (data_choice == "Upload New Dataset" &&
-                dataset_type == "scores")) {
+        (data_choice == "Upload New Dataset" &&
+         dataset_type == "scores")) {
 
       tab_panels <- list(
         tabPanel("Overview",
@@ -941,8 +941,8 @@ server <- function(input, output, session) {
       }
 
     } else if ((data_choice == "Use Generated Metadata") ||
-                (data_choice == "Upload New Dataset" &&
-                 dataset_type == "metadata")) {
+               (data_choice == "Upload New Dataset" &&
+                dataset_type == "metadata")) {
       tabsetPanel(
         tabPanel("General Demographics",
                  # textOutput("cultural_barriers_text"),  # Add this line for your text
@@ -968,7 +968,7 @@ server <- function(input, output, session) {
 
                  plotOutput("meta_gen_demo_plot7"),
                  downloadButton("download_meta_gen_demo_plot7", "Download Plot"),
-                 ),
+        ),
 
         tabPanel("Difference Scores",
                  plotOutput("meta_diff_plot1"),
@@ -991,7 +991,7 @@ server <- function(input, output, session) {
 
                  plotOutput("meta_diff_plot7"),
                  downloadButton("download_meta_diff_plot7", "Download Plot")
-                 ),
+        ),
         tabPanel("Wage",
                  plotOutput("meta_wage_plot1"),
                  downloadButton("download_meta_wage_plot1", "Download Plot"),
@@ -1013,7 +1013,7 @@ server <- function(input, output, session) {
 
                  plotOutput("meta_wage_plot7"),
                  downloadButton("download_meta_wage_plot7", "Download Plot")
-                 ),
+        ),
         tabPanel("Employment",
                  plotOutput("meta_employ_plot1"),
                  downloadButton("download_meta_employ_plot1", "Download Plot"),
@@ -1035,10 +1035,10 @@ server <- function(input, output, session) {
 
                  plotOutput("meta_employ_plot7"),
                  downloadButton("download_meta_employ_plot7", "Download Plot")
-                 ),
+        ),
         tabPanel("Post-Secondary Enrollment",
                  uiOutput("post_secondary_text"),
-                 )
+        )
       )
     }
   })
@@ -1189,7 +1189,7 @@ server <- function(input, output, session) {
     data <- selected_data()
 
     pre_cols <- grep("(?i)pre", names(data),
-                            value = TRUE, perl = TRUE)
+                     value = TRUE, perl = TRUE)
     pre_scores <- data[, .SD, .SDcols = pre_cols]
 
     # Find the overall median for all differences scores
@@ -1242,7 +1242,7 @@ server <- function(input, output, session) {
     data <- selected_data()
 
     post_cols <- grep("(?i)post", names(data),
-                     value = TRUE, perl = TRUE)
+                      value = TRUE, perl = TRUE)
     post_scores <- data[, .SD, .SDcols = post_cols]
 
     # Find the overall median for all differences scores
@@ -1430,7 +1430,7 @@ server <- function(input, output, session) {
     req(selected_data())  # Ensure data is loaded
 
     cult_bar_col <- grep("(?i)(cult).*?(barrier)(?!.*(?i)_desc)",
-                     names(data), value = TRUE, perl = TRUE)
+                         names(data), value = TRUE, perl = TRUE)
 
     # Check if a matching column was found
     if (length(cult_var) > 0) {
@@ -1493,7 +1493,7 @@ server <- function(input, output, session) {
          main = "Distribution of Time in Programs",
          xlab = "Median Time in Program (per individual)")
 
-    })
+  })
 
   # Download handler for Time in Programs Plot
   output$download_meta_gen_demo_plot1 <- downloadHandler(
@@ -1659,7 +1659,7 @@ server <- function(input, output, session) {
          cex = .8,
          adj = c(1, 1))  # Adjust text alignment to center under bars
 
-    })
+  })
 
   # Download handler for Race Distribution Plot
   output$download_meta_gen_demo_plot4 <- downloadHandler(
@@ -1709,7 +1709,7 @@ server <- function(input, output, session) {
             names = c("Non-significant", "Significant", "Most significant"),
             col = c("lightsteelblue", "steelblue", "darkblue"))
 
-    })
+  })
 
   # Download handler for Severity Distribution Plot
   output$download_meta_gen_demo_plot5 <- downloadHandler(
@@ -1853,7 +1853,7 @@ server <- function(input, output, session) {
          xlab = "Median Days Spent in Programs (per individual)",
          col = "steelblue",
          pch = 3)
-    })
+  })
 
   # Download handler for meta_diff_plot2
   output$download_meta_diff_plot2 <- downloadHandler(
@@ -1882,7 +1882,7 @@ server <- function(input, output, session) {
             ylab = "Median Difference Scores",
             col = "steelblue")
 
-    })
+  })
 
   # Download handler for meta_diff_plot3
   output$download_meta_diff_plot3 <- downloadHandler(
@@ -2051,10 +2051,10 @@ server <- function(input, output, session) {
 
     if (length(unique(data$Median_Difference_Score[
       data[[severity_col]] == 0])) >= 2 &
-        length(unique(data$Median_Difference_Score[
-          data[[severity_col]] == 1])) >= 2 &
-        length(unique(data$Median_Difference_Score[
-          data[[severity_col]] == 2])) >= 2
+      length(unique(data$Median_Difference_Score[
+        data[[severity_col]] == 1])) >= 2 &
+      length(unique(data$Median_Difference_Score[
+        data[[severity_col]] == 2])) >= 2
     ) {
       # Create density for each group
       non_significant_density <- density(data$Median_Difference_Score[
@@ -2197,7 +2197,7 @@ server <- function(input, output, session) {
     #                      names(data), value = TRUE, perl = TRUE)
 
     boxplot(Median_Difference_Score ~
-            Primary_Impairment_Group,
+              Primary_Impairment_Group,
             data = data,
             main = "Difference Scores by Primary Disability Type",
             xlab = "Primary Disability",
@@ -2264,7 +2264,7 @@ server <- function(input, output, session) {
             xlab = "",
             ylab = "Median Difference Score",
             main = "Difference Scores Across Race"
-            )
+    )
     # axis(side = 1, labels = FALSE) # this adds in x-axis tick marks
     axis(side = 2, las = 2, mgp = c(3, 0.75, 0))
 
@@ -2425,7 +2425,7 @@ server <- function(input, output, session) {
             ylab = "Exit Wages ($ per Hour)",
             col = "steelblue")
 
-    })
+  })
 
   # Download handler for meta_wage_plot3
   output$download_meta_wage_plot3 <- downloadHandler(
@@ -2615,7 +2615,7 @@ server <- function(input, output, session) {
     if (length(unique(wage_col[data[[severity_col]] == 0])) >= 2 &
         length(unique(wage_col[data[[severity_col]] == 1])) >= 2 &
         length(unique(wage_col[data[[severity_col]] == 2])) >= 2
-        ) {
+    ) {
       # Create density for each group
       non_significant_density <- density(wage_col[
         data[[severity_col]] == 0], na.rm = TRUE)
@@ -3201,14 +3201,14 @@ server <- function(input, output, session) {
 
     # Create a contingency table of Final_Employment by Gender
     employment_severity_table <- table(data$Final_Employment,
-                                     data[[severity_col]])
+                                       data[[severity_col]])
 
     rownames(employment_severity_table) <- c("Non-competitive Employment",
-                                           "Competitive Employment")
+                                             "Competitive Employment")
 
     colnames(employment_severity_table) <- c("Non-significant",
-                                           "Significant",
-                                           "Most significant")
+                                             "Significant",
+                                             "Most significant")
 
 
     # Create a bar plot with bars broken up by gender
@@ -3280,7 +3280,7 @@ server <- function(input, output, session) {
                                title = "Employment Type"),
             xlab = "Primary Impairment", ylab = "Count",
             main = "Exit Employment by Primary Impairment",
-            )
+    )
 
   })
 
@@ -3316,7 +3316,7 @@ server <- function(input, output, session) {
   ##################
 
   output$models_sidebar <- renderUI({
-  # output$models_ui <- renderUI({
+    # output$models_ui <- renderUI({
     data <- selected_data()
     data_choice <- input$data_choice
     dataset_type <- input$dataset_type
@@ -3332,8 +3332,8 @@ server <- function(input, output, session) {
 
 
     if ((data_choice == "Use Cleaned Scores Data") ||
-               (data_choice == "Upload New Dataset" &&
-                dataset_type == "scores")) {
+        (data_choice == "Upload New Dataset" &&
+         dataset_type == "scores")) {
 
       fluidRow(
         column(12,
@@ -3345,8 +3345,8 @@ server <- function(input, output, session) {
         )
       )
     } else if ((data_choice == "Use Generated Metadata") ||
-                (data_choice == "Upload New Dataset" &&
-                 dataset_type == "metadata")) {
+               (data_choice == "Upload New Dataset" &&
+                dataset_type == "metadata")) {
       fluidRow(
         column(12,
                h4("Metadata Modeling Options")),
@@ -3442,7 +3442,7 @@ server <- function(input, output, session) {
 
       result <- aov(Median_Difference_Score ~ Provider,
                     data = na.omit(data[, c("Median_Difference_Score",
-                                                "Provider")]))
+                                            "Provider")]))
 
       # pairwise comparisons
       tukey_result <- TukeyHSD(result)
@@ -3595,14 +3595,14 @@ server <- function(input, output, session) {
       # employ_col <- grep("(?i)^(?=.*employment)(?!.*(?i)_desc)(?!.*(?i)_wage)(?!.*(?i)un)",
       #                    names(data), value = TRUE, perl = TRUE)
       # employ_col <- "E389_Q4_Employment_911"
-#
-#       exit_work_col <- grep("(?i)_exit*(?i)_work(?!.*(?i)_amt)(?!.*(?i)_desc)",
-#                             names(data), value = TRUE, perl = TRUE)
+      #
+      #       exit_work_col <- grep("(?i)_exit*(?i)_work(?!.*(?i)_amt)(?!.*(?i)_desc)",
+      #                             names(data), value = TRUE, perl = TRUE)
 
       # if (length(exit_work_col) < 1){
       #   return("No employment variable available.")
       # } else{
-        y <- "Final_Employment"
+      y <- "Final_Employment"
       # }
 
 
@@ -3987,8 +3987,8 @@ server <- function(input, output, session) {
 
 
     if (data_choice == "Use Cleaned Scores Data" ||
-               (data_choice == "Upload New Dataset" &&
-                input$dataset_type == "scores")) {
+        (data_choice == "Upload New Dataset" &&
+         input$dataset_type == "scores")) {
       fluidRow(
         # Conditionally show the caption and ANOVA results
         if (anova_run()) {
@@ -4110,6 +4110,5 @@ server <- function(input, output, session) {
 
 # Run the application
 shinyApp(ui = ui, server = server)
-
 
 
