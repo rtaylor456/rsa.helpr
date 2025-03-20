@@ -306,8 +306,8 @@ clean_utah <- function(data,
 
   # Apply the same logic to both columns at once using lapply
   data[, (group_vars) := lapply(.SD, function(x) {
-    fifelse(x == 0, "None",
-            fifelse(x %in% c(1, 2, 8),
+                                                  fifelse(x == 0, "None",
+                                                  fifelse(x %in% c(1, 2, 8),
                     "Visual",
                     fifelse(x %in% c(3, 4, 5, 6, 7,
                                      9),

@@ -6,7 +6,7 @@
 #' @param data The TRT scores dataset.
 #' @param state_filter A character vector identifying the state(s) of interest.
 #'   Defaults to NULL.
-#' @param ID_col Differing variable naming structure for participant ID.
+#' @param id_col Differing variable naming structure for participant ID.
 #'   (Eg. "X", or another name not similar to "participant" or "ID".)
 #'   Defaults to NULL.
 #' @param remove_questions Defaults to TRUE. When TRUE, removes question item
@@ -22,8 +22,7 @@
 #' @export
 #' @import data.table
 
-
-clean_provider <- function(data, state_filter = NULL, ID_col = NULL,
+clean_provider <- function(data, state_filter = NULL, id_col = NULL,
                            remove_questions = TRUE, condense = FALSE,
                            clean_id = TRUE) {
   # Convert to data.table
@@ -33,23 +32,23 @@ clean_provider <- function(data, state_filter = NULL, ID_col = NULL,
                 names(data), value = TRUE, perl = TRUE)
 
   # this code is a bit redundant, but I'll leave it in for now..
-  if (length(state) > 0){
+  if (length(state) > 0) {
     names(data)[names(data) %in% state] <- "State"
   }
 
   # If user provides state_filter and there is a state variable in data,
-  if (!is.null(state_filter) & length(state) > 0){
+  if (!is.null(state_filter) && length(state) > 0) {
     # then filter by state(s) provided by user
     data <- data[get(state) %in% state_filter]
     # Else if user identifies states to filter by but there is no state variable,
-  } else if (!is.null(state_filter) & length(state) < 1){
+  } else if (!is.null(state_filter) && length(state) < 1) {
     # then return a warning, but continue with cleaning process
     warning("There is no state-identifying variable in this dataset. Cleaning process will continue on.")
   } # Else carry on (without warning message)
 
 
-  if (!is.null(ID_col)){
-    participant <- ID_col
+  if (!is.null(id_col)) {
+    participant <- id_col
   } else {
     # do some necessary renaming of variables
     participant <- grep("(?i)^(?=.*participant)|(?=.*\\bid\\b)(?!.*\\bid\\B)",
@@ -111,11 +110,11 @@ clean_provider <- function(data, state_filter = NULL, ID_col = NULL,
 
 
   # Remove question item columns if specified
-  if (remove_questions & length(question_cols) > 0){
+  if (remove_questions && length(question_cols) > 0) {
     # then remove question item columns
     data[, (question_cols) := NULL]
     # Else if user identifies to remove question items and there are none,
-  } else if (remove_questions & length(question_cols) < 1){
+  } else if (remove_questions && length(question_cols) < 1) {
     # then return a warning, but continue with cleaning process
     warning("There are no question item variables in this dataset. Cleaning process will continue on.")
   } # Else carry on (without warning message)
@@ -188,7 +187,7 @@ clean_provider <- function(data, state_filter = NULL, ID_col = NULL,
   data[, Mode := factor(Mode, levels = mode_levels, ordered = TRUE)]
 
   # Clean and convert Pre_Post
-  # Ordinal: pre > post
+  # Ordinal pre > post
   pre_post_levels <- c("pre", "post")
   data[, Pre_Post := tolower(Pre_Post)]
   data[, Pre_Post := factor(Pre_Post, levels = pre_post_levels, ordered = TRUE)]
@@ -207,9 +206,6 @@ clean_provider <- function(data, state_filter = NULL, ID_col = NULL,
     data <- data[, .(Score = median(Score, na.rm = TRUE),
                      Difference = median(Difference, na.rm = TRUE),
                      Mode = names(sort(table(Mode), decreasing = TRUE))[1],
-                     # Provider = Provider,
-                     # Service = Service,
-                     # Pre_Post = Pre_Post,
                      Caseload = names(sort(table(Caseload),
                                            decreasing = TRUE))[1],
                      Group_freq = names(sort(table(Group_freq),
@@ -226,4 +222,3 @@ clean_provider <- function(data, state_filter = NULL, ID_col = NULL,
 
   return(data)
 }
-

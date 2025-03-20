@@ -19,22 +19,7 @@
 
 create_metadata <- function(data, includes_scores = TRUE) {
   # Convert data to data.table if it's not already
-  # data <- as.data.table(data)
   setDT(data)
-
-  # participant_col <- grep("(?i)^(?=.*participant)|(?=.*\\bid\\b)(?!.*\\bid\\B)",
-  #                         names(data), value = TRUE, perl = TRUE)
-  #
-  # year_col <- grep("(?i)year|(?i)yr_(?!.*(?i)_desc)", names(data),
-  #                  value = TRUE, perl = TRUE)
-  #
-  # quarter_col <- grep("(?i)_quarter|(?i)_qt_(?!.*(?i)_desc)", names(data),
-  #                     value = TRUE, perl = TRUE)
-  #
-  #
-  # names(data)[names(data) %in% participant_col] <- "Participant_ID"
-  # names(data)[names(data) %in% year_col] <- "E1_Year_911"
-  # names(data)[names(data) %in% quarter_col] <- "E2_Quarter_911"
 
   ## INITIAL FACTOR CONVERSION
   data[, lapply(.SD, function(col) {
@@ -45,16 +30,6 @@ create_metadata <- function(data, includes_scores = TRUE) {
       col
     }
   }), .SDcols = names(data)]
-
-  # data[, (names(data)) := lapply(names(data), function(col_name) {
-  #   if (col_name %in% c("Provider", grep("Has_Multiple_Scores",
-  #                                        names(data), value = TRUE))) {
-  #     as.factor(data[[col_name]])
-  #   } else {
-  #     data[[col_name]]
-  #   }
-  # })]
-
 
 
   ## CREATE NEW VARIABLES
@@ -70,14 +45,14 @@ create_metadata <- function(data, includes_scores = TRUE) {
 
   # group enrollment length
   data[, Enroll_Length_Grp := fifelse(Enroll_Length < 5, "<5",
-                          fifelse(Enroll_Length >= 5 & Enroll_Length < 11,
-                                  "5-10",
-                          "11+"))]
+                                      fifelse(Enroll_Length >= 5 &
+                                                Enroll_Length < 11, "5-10",
+                                              "11+"))]
 
   # Convert Age_Group to an ordered factor
   data[, Enroll_Length_Grp := factor(Enroll_Length_Grp,
-                               levels = c("<5", "5-10", "11+"),
-                               ordered = TRUE)]
+                                     levels = c("<5", "5-10", "11+"),
+                                     ordered = TRUE)]
 
 
   # Create variables that count the number of years and quarters
@@ -98,14 +73,11 @@ create_metadata <- function(data, includes_scores = TRUE) {
   integer_cols <- names(data)[sapply(data, is.integer)]
   double_cols <- setdiff(numeric_cols, integer_cols)
 
-  # original code
-  # data[, (numeric_cols) := lapply(.SD, median, na.rm = TRUE),
-  #      .SDcols = numeric_cols, by = Participant_ID]
 
   # to handle different types of numeric variables
-  data[, (integer_cols) := lapply(.SD, function(x) as.integer(median(x,
-                                                           na.rm = TRUE))),
-       .SDcols = integer_cols, by = Participant_ID]
+  data[, (integer_cols) := lapply(.SD, function(x) {
+    as.integer(median(x, na.rm = TRUE))
+  }), .SDcols = integer_cols, by = Participant_ID]
 
   data[, (double_cols) := lapply(.SD, function(x) median(x, na.rm = TRUE)),
        .SDcols = double_cols, by = Participant_ID]
@@ -113,15 +85,14 @@ create_metadata <- function(data, includes_scores = TRUE) {
 
   ## DATE VARIABLES
   # Handle date variables
-  # date_cols <- names(data)[sapply(data, lubridate::is.Date)]
   date_cols <- names(data)[sapply(data, function(x) inherits(x, "Date"))]
 
   data[, (date_cols) := lapply(.SD,
-                               function(x) as.Date(ifelse(all(is.na(unique(x))),
-                                                          NA,
-                                                        max(x, na.rm = TRUE)))),
-       .SDcols = date_cols,
-       by = Participant_ID]
+                               function(x) {
+                                 as.Date(ifelse(all(is.na(unique(x))), NA,
+                                                max(x, na.rm = TRUE)))
+                               }),
+  .SDcols = date_cols, by = Participant_ID]
 
 
   ## FACTOR VARIABLES
@@ -169,4 +140,3 @@ create_metadata <- function(data, includes_scores = TRUE) {
 
   return(metadata)
 }
-

@@ -1,3 +1,6 @@
+# # Next, order by participant
+# data <- data[order(get(participant))]
+
 clean_check <- function(data, aggregate = TRUE) {
 
   # Convert to data.table format

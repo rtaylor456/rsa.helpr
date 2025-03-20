@@ -6,11 +6,11 @@
 #' @param data The TRT scores dataset.
 #' @param state_filter A character vector identifying the state(s) of interest.
 #'   Defaults to NULL.
-#' @param clean_ID TRUE or FALSE. Defaults to TRUE, when TRUE, rows where
+#' @param clean_id TRUE or FALSE. Defaults to TRUE, when TRUE, rows where
 #'   participant ID is missing are removed.
 #' @param aggregate TRUE or FALSE. Defaults to TRUE, when TRUE, rows are
 #'   aggregated to include only unique participants are kept.
-#' @param ID_col Differing variable naming structure for participant ID.
+#' @param id_col Differing variable naming structure for participant ID.
 #'   (Eg. "X", or another name not similar to "participant" or "ID".)
 #'   Defaults to NULL.
 #'
@@ -20,8 +20,8 @@
 #' @export
 #' @import data.table
 
-clean_scores <- function(data, state_filter = NULL, clean_ID = TRUE,
-                          aggregate = TRUE, ID_col = NULL) {
+clean_scores <- function(data, state_filter = NULL, clean_id = TRUE,
+                         aggregate = TRUE, id_col = NULL) {
 
   # Convert to data.table format
   setDT(data)
@@ -30,19 +30,19 @@ clean_scores <- function(data, state_filter = NULL, clean_ID = TRUE,
   state <- grep("(?i)^(?=.*state)|(?=.*\\bst\\b)(?!.*\\bst\\B)",
                 names(data), value = TRUE, perl = TRUE)
 
-  if (length(state) > 0){
+  if (length(state) > 0) {
     names(data)[names(data) %in% state] <- "State"
   }
 
   # If user provides state_filter and there is a state variable in data,
-  if (!is.null(state_filter) & length(state) > 0) {
+  if (!is.null(state_filter) && length(state) > 0) {
     # then filter by state(s) provided by user
     data <- data[get(state) %in% state_filter]
     # Else if user identifies states to filter by but there is no state variable,
-  } else if (!is.null(state_filter) & length(state) < 1) {
+  } else if (!is.null(state_filter) && length(state) < 1) {
     # then return a warning, but continue with cleaning process
     warning("There is no state-identifying variable in this dataset. Cleaning process will continue on.")
-  } else if (is.null(state_filter) & length(state) > 0) {
+  } else if (is.null(state_filter) && length(state) > 0) {
     unique_states <- unique(na.omit(data[[state]]))
     if (length(unique_states) > 1) {
       warning("There are multiple states with overlapping Participant IDs. State abbreviations will be appended to Participant ID")
@@ -54,8 +54,8 @@ clean_scores <- function(data, state_filter = NULL, clean_ID = TRUE,
 
 
   # Clean and check Participant ID
-  if (!is.null(ID_col)) {
-    participant <- ID_col
+  if (!is.null(id_col)) {
+    participant <- id_col
   } else {
     # do some necessary renaming of variables
     participant <- grep("(?i)^(?=.*participant)|(?=.*\\bid\\b)(?!.*\\bid\\B)",
@@ -87,20 +87,17 @@ clean_scores <- function(data, state_filter = NULL, clean_ID = TRUE,
   #   unnecessary
   data[, (participant) := as.numeric(get(participant))]
 
-  # Remove rows where participant ID is NA if clean_ID = TRUE
-  if (clean_ID) {
+  # Remove rows where participant ID is NA if clean_id = TRUE
+  if (clean_id) {
     data <- data[!is.na(get(participant))]
   }
-
-  # # Next, order by participant
-  # data <- data[order(get(participant))]
 
   # Rename variable for easier referencing
   names(data)[names(data) %in% participant] <- "Participant_ID"
 
   # If we found unique_states > 0, now is when we will append the state abbrev.
   #   to the IDs.
-  if (is.null(state_filter) & length(state) > 0) {
+  if (is.null(state_filter) && length(state) > 0) {
     unique_states <- unique(na.omit(data[[state]]))
     if (length(unique_states) > 1) {
       state_abbrevs <- setNames(state.abb, state.name)
@@ -136,7 +133,6 @@ clean_scores <- function(data, state_filter = NULL, clean_ID = TRUE,
   mode <- grep("(?i)mode", names(data), value = TRUE, perl = TRUE)
 
   # Rename other variables as desired:
-  # names(data)[names(data) %in% participant] <- "Participant_ID"
   names(data)[names(data) %in% pre_post] <- "Pre_Post"
   names(data)[names(data) %in% provider] <- "Provider"
   names(data)[names(data) %in% service] <- "Service"
@@ -206,17 +202,17 @@ clean_scores <- function(data, state_filter = NULL, clean_ID = TRUE,
 
   # Specify the required columns
   required_cols_pre <- c("Participant_ID", "Service", "Pre_Date", "Provider",
-                     "Pre_Score")
+                         "Pre_Score")
 
   required_cols_post <- c("Participant_ID", "Service", "Post_Date", "Provider",
-                         "Post_Score")
+                          "Post_Score")
 
   # Add "State" and "Mode" if they exist in the dataset
-  if ("State" %in% names(pre_data) & "State" %in% names(post_data)) {
+  if ("State" %in% names(pre_data) && "State" %in% names(post_data)) {
     required_cols_pre <- c(required_cols_pre, "State")
     required_cols_post <- c(required_cols_post, "State")
   }
-  if ("Mode" %in% names(pre_data) & "State" %in% names(pre_data)) {
+  if ("Mode" %in% names(pre_data) && "State" %in% names(pre_data)) {
     required_cols_pre <- c(required_cols_pre, "Mode")
     required_cols_post <- c(required_cols_post, "Mode")
   }
@@ -228,8 +224,8 @@ clean_scores <- function(data, state_filter = NULL, clean_ID = TRUE,
   # Extract needed columns from post_data
   post_selected <- post_data[, c(required_cols_post, "Difference"),
                              with = FALSE]
-      # with=FALSE handles the format of the function argument for columns that
-      #  is weird in data.table
+  # with=FALSE handles the format of the function argument for columns that
+  #  is weird in data.table
 
 
   # Merge the pre and post data
@@ -326,7 +322,7 @@ clean_scores <- function(data, state_filter = NULL, clean_ID = TRUE,
   # Calculate Differences_Available -- the count of difference scores available
   #   per participant
   scores_final[, Differences_Available := rowSums(!is.na(.SD)),
-       .SDcols = difference_cols, by = Participant_ID]
+               .SDcols = difference_cols, by = Participant_ID]
 
   # Calculate Median columns:
 
@@ -334,7 +330,7 @@ clean_scores <- function(data, state_filter = NULL, clean_ID = TRUE,
   #   scores
   if (length(pre_score_cols) > 0) {
     scores_final[, Median_Pre_Score := median(unlist(.SD), na.rm = TRUE),
-         .SDcols = pre_score_cols, by = Participant_ID]
+                 .SDcols = pre_score_cols, by = Participant_ID]
   } else {
     scores_final[, Median_Pre_Score := NA_real_]
   }
@@ -343,7 +339,7 @@ clean_scores <- function(data, state_filter = NULL, clean_ID = TRUE,
   #   scores
   if (length(post_score_cols) > 0) {
     scores_final[, Median_Post_Score := median(unlist(.SD), na.rm = TRUE),
-         .SDcols = post_score_cols, by = Participant_ID]
+                 .SDcols = post_score_cols, by = Participant_ID]
   } else {
     scores_final[, Median_Post_Score := NA_real_]
   }
@@ -352,7 +348,7 @@ clean_scores <- function(data, state_filter = NULL, clean_ID = TRUE,
   #   difference values.
   if (length(difference_cols) > 0) {
     scores_final[, Median_Difference_Score := median(unlist(.SD), na.rm = TRUE),
-         .SDcols = difference_cols, by = Participant_ID]
+                 .SDcols = difference_cols, by = Participant_ID]
   } else {
     scores_final[, Median_Difference_Score := NA_real_]
   }
@@ -361,12 +357,10 @@ clean_scores <- function(data, state_filter = NULL, clean_ID = TRUE,
   #   time passed values.
   if (length(time_cols) > 0) {
     scores_final[, Median_Time_Passed_Days := median(unlist(.SD), na.rm = TRUE),
-         .SDcols = time_cols, by = Participant_ID]
+                 .SDcols = time_cols, by = Participant_ID]
   } else {
     scores_final[, Median_Time_Passed_Days := NA_real_]
   }
 
   return(scores_final)
 }
-
-

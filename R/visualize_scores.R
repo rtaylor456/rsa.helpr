@@ -17,7 +17,8 @@
 #' @export
 #'
 visualize_scores <- function(data, option = c("overview", "across_service",
-                                  "across_provider"), one_window = FALSE) {
+                                              "across_provider"),
+                             one_window = FALSE) {
 
   option <- match.arg(option) # this produces an automatic check
 
@@ -39,7 +40,7 @@ visualize_scores <- function(data, option = c("overview", "across_service",
 
     # Check if the required columns are found
     if (length(median_diff_col) == 0 || length(median_time_col) == 0 ||
-        length(diff_available_col) == 0) {
+          length(diff_available_col) == 0) {
       stop("Missing required columns for 'overview' visualization.")
     }
 
@@ -50,7 +51,9 @@ visualize_scores <- function(data, option = c("overview", "across_service",
             paste(diff_available_col, collapse = ", "))
 
     # Set adjusted plotting window if necessary
-    if (one_window == TRUE) { par(mfrow = c(3, 1)) }
+    if (one_window == TRUE) {
+      par(mfrow = c(3, 1))
+    }
 
     ## PLOT 1
     hist(data[[median_diff_col]],
@@ -71,9 +74,10 @@ visualize_scores <- function(data, option = c("overview", "across_service",
          xlab = "Number of Program Difference Scores per Individual")
 
     # Reset plotting window
-    if (one_window == TRUE) { par(mfrow = c(1, 1)) }
-  }
-  else if (option == "across_service") {
+    if (one_window == TRUE) {
+      par(mfrow = c(1, 1))
+    }
+  } else if (option == "across_service") {
 
     # Check if the required columns are found
 
@@ -100,7 +104,7 @@ visualize_scores <- function(data, option = c("overview", "across_service",
 
 
     if (length(filtered_columns) == 0 || length(pre_cols) == 0 ||
-        length(post_cols) == 0) {
+          length(post_cols) == 0) {
       stop("Missing required columns for 'across_services' visualization.")
     }
 
@@ -112,7 +116,9 @@ visualize_scores <- function(data, option = c("overview", "across_service",
 
 
     # Set adjusted plotting window if necessary
-    if (one_window == TRUE) { par(mfrow = c(3, 1)) }
+    if (one_window == TRUE) {
+      par(mfrow = c(3, 1))
+    }
 
     ## PLOT 1
 
@@ -127,7 +133,8 @@ visualize_scores <- function(data, option = c("overview", "across_service",
             names = NA,  # Suppress default labels
             main = "Distributions of Difference Scores Across Services",
             ylab = "Difference Scores",
-            ylim = range(differences_scores_vector, na.rm = TRUE) * c(0.95, 1.05),
+            ylim = range(differences_scores_vector, na.rm = TRUE) * c(0.95,
+                                                                      1.05),
             col = "lightsteelblue",
             xaxt = "n")
 
@@ -137,10 +144,10 @@ visualize_scores <- function(data, option = c("overview", "across_service",
 
     # Add rotated labels manually
     axis(1,
-         at = 1:length(short_labels),
+         at = seq_along(short_labels),
          labels = FALSE, # Prevent overlapping
          tck = 0)
-    text(x = 1:length(short_labels),
+    text(x = seq_along(short_labels),
          y = par("usr")[3] - 10,  # Adjust y position
          labels = short_labels,
          srt = 45,  # Rotate labels
@@ -171,10 +178,10 @@ visualize_scores <- function(data, option = c("overview", "across_service",
 
     # Add rotated labels manually
     axis(1,
-         at = 1:length(short_labels),
+         at = seq_along(short_labels),
          labels = FALSE, # Prevent overlapping
          tck = 0)
-    text(x = 1:length(short_labels),
+    text(x = seq_along(short_labels),
          y = par("usr")[3] - 10,  # Adjust y position
          labels = short_labels,
          srt = 45,  # Rotate labels
@@ -205,10 +212,10 @@ visualize_scores <- function(data, option = c("overview", "across_service",
 
     # Add rotated labels manually
     axis(1,
-         at = 1:length(short_labels),
+         at = seq_along(short_labels),
          labels = FALSE, # Prevent overlapping
          tck = 0)
-    text(x = 1:length(short_labels),
+    text(x = seq_along(short_labels),
          y = par("usr")[3] - 10,  # Adjust y position
          labels = short_labels,
          srt = 45,  # Rotate labels
@@ -219,9 +226,10 @@ visualize_scores <- function(data, option = c("overview", "across_service",
 
 
     # Return plotting window to normal
-    if (one_window == TRUE) { par(mfrow = c(1, 1)) }
-  }
-  else if (option == "across_provider") {
+    if (one_window == TRUE) {
+      par(mfrow = c(1, 1))
+    }
+  } else if (option == "across_provider") {
 
     # Check if the required columns are found
 
@@ -244,7 +252,9 @@ visualize_scores <- function(data, option = c("overview", "across_service",
             paste(provider_col, collapse = ", "))
 
     # Alter this if I add in more plots
-    if (one_window == TRUE) { par(mfrow = c(1, 1)) }
+    if (one_window == TRUE) {
+      par(mfrow = c(1, 1))
+    }
 
     ## PLOT
 
@@ -260,7 +270,6 @@ visualize_scores <- function(data, option = c("overview", "across_service",
 
     par(las = 2)
     boxplot(data[[median_diff_col]] ~ provider_col_clean,
-            # data = data,
             main = "Median Difference Scores Across Providers",
             ylab = "Median Difference Score",
             cex.axis = 0.7,
@@ -270,11 +279,10 @@ visualize_scores <- function(data, option = c("overview", "across_service",
     par(las = 1)
 
     # Return plotting window to normal -- not necessary for this option yet
-    if (one_window == TRUE) { par(mfrow = c(1, 1)) }
+    if (one_window == TRUE) {
+      par(mfrow = c(1, 1))
+    }
 
   }
 
 }
-
-
-

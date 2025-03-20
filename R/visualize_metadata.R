@@ -37,7 +37,7 @@ visualize_metadata <- function(data, option = c("general_demo",
 
     # Find the column for enrollment length
     enroll_len_col <- grep("(?i)(enroll|enrollment).*?(length|len)(?!.*(?i)_grp)",
-                            names(data), value = TRUE, perl = TRUE)
+                           names(data), value = TRUE, perl = TRUE)
 
     # Find the column for sex/gender
     sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
@@ -50,7 +50,7 @@ visualize_metadata <- function(data, option = c("general_demo",
 
     # Find the column for final employment status
     final_employ_col <- grep("(?i)(final).*?(employ)(?!.*(?i)_desc)",
-                         names(data), value = TRUE, perl = TRUE)
+                             names(data), value = TRUE, perl = TRUE)
 
     # Find the column for disability severity
     severity_col <- grep("((?i)_priority|(?i)_severity)(?!.*(?i)_desc|_age)",
@@ -58,19 +58,19 @@ visualize_metadata <- function(data, option = c("general_demo",
 
     # Find the column for primary impairment group
     prim_impair_grp_col <- grep("(?i)(prim|primary).*?(impair|disability).*?(grp|group)(?!.*(?i)_desc)",
-                            names(data), value = TRUE, perl = TRUE)
+                                names(data), value = TRUE, perl = TRUE)
 
     # Find the column for secondary impairment group
     second_impair_grp_col <- grep("(?i)(sec|second).*?(impair|disability).*?(grp|group)(?!.*(?i)_desc)",
-                                names(data), value = TRUE, perl = TRUE)
+                                  names(data), value = TRUE, perl = TRUE)
 
 
     # Check if the required columns are found
     if (length(median_time_col) == 0 || length(enroll_len_col) == 0 ||
-        length(sex_col) == 0 || length(race_cols) == 0 ||
-        length(final_employ_col) == 0 || length(severity_col) == 0 ||
-        length(prim_impair_grp_col) == 0 ||
-        length(second_impair_grp_col) == 0) {
+          length(sex_col) == 0 || length(race_cols) == 0 ||
+          length(final_employ_col) == 0 || length(severity_col) == 0 ||
+          length(prim_impair_grp_col) == 0 ||
+          length(second_impair_grp_col) == 0) {
       stop("Missing required columns for 'general demo' visualization.")
     }
 
@@ -87,7 +87,9 @@ visualize_metadata <- function(data, option = c("general_demo",
 
 
     # Set adjusted plotting window if necessary
-    if (one_window == TRUE) {par(mfrow = c(3, 3))}
+    if (one_window == TRUE) {
+      par(mfrow = c(3, 3))
+    }
 
     ## PLOT 1: Time (days) in program
     hist(data[[median_time_col]],
@@ -124,7 +126,6 @@ visualize_metadata <- function(data, option = c("general_demo",
     race_table <- table(filtered_data$Race)
 
     # Create the bar plot based on the contingency table
-    # par(oma = c(0, 0, 0, 0) + 0.6)
     barplot_heights <- barplot(race_table, beside = TRUE,
                                ylab = "Count",
                                xaxt = "n",   # Disable default x-axis labels
@@ -209,11 +210,11 @@ visualize_metadata <- function(data, option = c("general_demo",
 
     # Find the column for enrollment length
     enroll_len_col <- grep("(?i)(enroll|enrollment).*?(length|len)(?!.*(?i)_grp)",
-                            names(data), value = TRUE, perl = TRUE)
+                           names(data), value = TRUE, perl = TRUE)
 
     # Find the column for enrollment length group
     enroll_len_grp_col <- grep("(?i)(enroll|enrollment).*?(length|len)*?(_grp)",
-                           names(data), value = TRUE, perl = TRUE)
+                               names(data), value = TRUE, perl = TRUE)
 
     # Find the column for sex/gender
     sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
@@ -226,7 +227,7 @@ visualize_metadata <- function(data, option = c("general_demo",
 
     # Find the column for final employment status
     final_employ_col <- grep("(?i)(final).*?(employ)(?!.*(?i)_desc)",
-                         names(data), value = TRUE, perl = TRUE)
+                             names(data), value = TRUE, perl = TRUE)
 
     # Find the column for disability severity
     severity_col <- grep("((?i)_priority|(?i)_severity)(?!.*(?i)_desc|_age)",
@@ -234,20 +235,20 @@ visualize_metadata <- function(data, option = c("general_demo",
 
     # Find the column for primary impairment group
     prim_impair_grp_col <- grep("(?i)(prim|primary).*?(impair|disability).*?(grp|group)(?!.*(?i)_desc)",
-                            names(data), value = TRUE, perl = TRUE)
+                                names(data), value = TRUE, perl = TRUE)
 
     # Find the column for secondary impairment group
     second_impair_grp_col <- grep("(?i)(sec|second).*?(impair|disability).*?(grp|group)(?!.*(?i)_desc)",
-                                names(data), value = TRUE, perl = TRUE)
+                                  names(data), value = TRUE, perl = TRUE)
 
 
     # Check if the required columns are found
     if (length(median_diff_col) == 0 || length(median_time_col) == 0 ||
-        length(enroll_len_col) == 0 ||
-        length(sex_col) == 0 || length(race_cols) == 0 ||
-        length(final_employ_col) == 0 || length(severity_col) == 0 ||
-        length(prim_impair_grp_col) == 0 ||
-        length(second_impair_grp_col) == 0) {
+          length(enroll_len_col) == 0 ||
+          length(sex_col) == 0 || length(race_cols) == 0 ||
+          length(final_employ_col) == 0 || length(severity_col) == 0 ||
+          length(prim_impair_grp_col) == 0 ||
+          length(second_impair_grp_col) == 0) {
       stop("Missing required columns for 'investigate scores' visualization.")
     }
 
@@ -265,7 +266,9 @@ visualize_metadata <- function(data, option = c("general_demo",
 
 
     # Set adjusted plotting window if necessary
-    if (one_window == TRUE) {par(mfrow = c(3, 3))}
+    if (one_window == TRUE) {
+      par(mfrow = c(3, 3))
+    }
 
     ## PLOT 1
     hist(data[[median_diff_col]],
@@ -285,7 +288,6 @@ visualize_metadata <- function(data, option = c("general_demo",
 
     ## PLOT 3
     boxplot(data[[median_diff_col]] ~ data[[enroll_len_grp_col]],
-            # data = data,
             main = "Difference Scores Across Quarters Enrolled",
             xlab = "Enrollment Length Group (total quarters)",
             ylab = "Median Difference Scores",
@@ -315,18 +317,16 @@ visualize_metadata <- function(data, option = c("general_demo",
     filtered_data <- long_data[Has_Race == 1]
 
     boxplot(Median_Difference_Score ~ Race, data = filtered_data,
-            # names = gsub("^E[0-9]+_|_911$", "", race_cols),
-            col = "steelblue",
-            xaxt = "n",
-            yaxt = "n",
-            xlab = "",
-            ylab = "Median Difference Score",
-            main = "Difference Scores Across Race"
+      col = "steelblue",
+      xaxt = "n",
+      yaxt = "n",
+      xlab = "",
+      ylab = "Median Difference Score",
+      main = "Difference Scores Across Race"
     )
-    # axis(side = 1, labels = FALSE) # this adds in x-axis tick marks
     axis(side = 2, las = 2, mgp = c(3, 0.75, 0))
 
-    text(x = 1:length(race_cols),
+    text(x = seq_along(race_cols),
          y = par("usr")[3] - 0.45,
          labels = gsub("^E[0-9]+_|_911$", "", race_cols),
          xpd = NA,
@@ -347,7 +347,6 @@ visualize_metadata <- function(data, option = c("general_demo",
     ## PLOT 7: Primary impairment group
     boxplot(data[[median_diff_col]] ~
               data[[prim_impair_grp_col]],
-            # data = data,
             main = "Difference Scores by Primary Disability Type",
             xlab = "Primary Disability",
             ylab = "Median Difference Scores",
@@ -357,7 +356,6 @@ visualize_metadata <- function(data, option = c("general_demo",
 
     boxplot(data[[median_diff_col]] ~
               data[[second_impair_grp_col]],
-            # data = data,
             main = "Difference Scores by Secondary Disability Type",
             xlab = "Secondary Disability",
             ylab = "Median Difference Scores",
@@ -415,10 +413,10 @@ visualize_metadata <- function(data, option = c("general_demo",
 
     # Check if the required columns are found
     if (length(median_time_col) == 0 || length(enroll_len_col) == 0 ||
-        length(sex_col) == 0 || length(race_cols) == 0 ||
-        length(final_employ_col) == 0 || length(severity_col) == 0 ||
-        length(prim_impair_grp_col) == 0 ||
-        length(second_impair_grp_col) == 0 || length(wage_col) == 0) {
+          length(sex_col) == 0 || length(race_cols) == 0 ||
+          length(final_employ_col) == 0 || length(severity_col) == 0 ||
+          length(prim_impair_grp_col) == 0 ||
+          length(second_impair_grp_col) == 0 || length(wage_col) == 0) {
       stop("Missing required columns for 'investigate wage' visualization.")
     }
 
@@ -436,7 +434,9 @@ visualize_metadata <- function(data, option = c("general_demo",
 
 
     # Set adjusted plotting window if necessary
-    if (one_window == TRUE) {par(mfrow = c(3, 3))}
+    if (one_window == TRUE) {
+      par(mfrow = c(3, 3))
+    }
 
 
     ## PLOT 1
@@ -492,28 +492,23 @@ visualize_metadata <- function(data, option = c("general_demo",
       stop("wage_col should contain exactly one column name.")
     }
 
-    # Extract the wage column name
-    # wage_col_name <- wage_col[1]
-
 
     # Create a formula for the boxplot
-    # boxplot_formula <- as.formula(paste(wage_col_name, "~ Race"))
     boxplot_formula <- as.formula(paste(wage_col, "~ Race"))
 
 
     # Plot using the dynamic formula
-    # par(oma = c(0, 0, 0, 0) + 0.6)
     boxplot(boxplot_formula, data = filtered_data,
-            col = "steelblue",
-            xaxt = "n",
-            yaxt = "n",
-            xlab = "",
-            ylab = "Exit Wages ($ per Hour)",
-            main = "Exit Wages Across Race"
+      col = "steelblue",
+      xaxt = "n",
+      yaxt = "n",
+      xlab = "",
+      ylab = "Exit Wages ($ per Hour)",
+      main = "Exit Wages Across Race"
     )
     axis(side = 2, las = 2, mgp = c(3, 0.75, 0))
 
-    text(x = 1:length(race_cols),
+    text(x = seq_along(race_cols),
          y = par("usr")[3] - 0.45,
          labels = gsub("^E[0-9]+_|_911$", "", race_cols),
          xpd = NA,
@@ -603,11 +598,11 @@ visualize_metadata <- function(data, option = c("general_demo",
 
     # Check if the required columns are found
     if (length(median_time_col) == 0 || length(enroll_len_col) == 0 ||
-        length(sex_col) == 0 || length(race_cols) == 0 ||
-        length(final_employ_col) == 0 || length(severity_col) == 0 ||
-        length(prim_impair_grp_col) == 0 ||
-        length(second_impair_grp_col) == 0 || length(wage_col) == 0 ||
-        length(exit_work_col) == 0) {
+          length(sex_col) == 0 || length(race_cols) == 0 ||
+          length(final_employ_col) == 0 || length(severity_col) == 0 ||
+          length(prim_impair_grp_col) == 0 ||
+          length(second_impair_grp_col) == 0 || length(wage_col) == 0 ||
+          length(exit_work_col) == 0) {
       stop("Missing required columns for 'investigate employment' visualization.")
     }
 
@@ -625,7 +620,9 @@ visualize_metadata <- function(data, option = c("general_demo",
 
 
     # Set adjusted plotting window if necessary
-    if (one_window == TRUE) {par(mfrow = c(3, 3))}
+    if (one_window == TRUE) {
+      par(mfrow = c(3, 3))
+    }
 
     ## PLOT 1
     barplot(table(data[[final_employ_col]]),
@@ -765,30 +762,28 @@ visualize_metadata <- function(data, option = c("general_demo",
 
     # Create a bar plot with bars broken up by gender
     barplot(employment_prim_dis_table, beside = TRUE,
-            col = c("lightsteelblue", "steelblue"),
-            legend.text = c("Non-competitive", "Competitive"),
-            args.legend = list(x = "topleft", bty = "n",
-                               title = "Employment Type"),
-            xlab = "Primary Impairment", ylab = "Count",
-            main = "Exit Employment by Primary Impairment",
+      col = c("lightsteelblue", "steelblue"),
+      legend.text = c("Non-competitive", "Competitive"),
+      args.legend = list(x = "topleft", bty = "n", title = "Employment Type"),
+      xlab = "Primary Impairment", ylab = "Count",
+      main = "Exit Employment by Primary Impairment",
     )
 
     ## PLOT 8
     employment_second_dis_table <- table(data[[final_employ_col]],
-                                       data[[second_impair_grp_col]])
+                                         data[[second_impair_grp_col]])
 
     rownames(employment_second_dis_table) <- c("Non-competitive Employment",
-                                             "Competitive Employment")
+                                               "Competitive Employment")
 
 
     # Create a bar plot with bars broken up by gender
     barplot(employment_second_dis_table, beside = TRUE,
-            col = c("lightsteelblue", "steelblue"),
-            legend.text = c("Non-competitive", "Competitive"),
-            args.legend = list(x = "topright", bty = "n",
-                               title = "Employment Type"),
-            xlab = "Secondary Impairment", ylab = "Count",
-            main = "Exit Employment by Secondary Impairment",
+      col = c("lightsteelblue", "steelblue"),
+      legend.text = c("Non-competitive", "Competitive"),
+      args.legend = list(x = "topright", bty = "n", title = "Employment Type"),
+      xlab = "Secondary Impairment", ylab = "Count",
+      main = "Exit Employment by Secondary Impairment",
     )
 
     # Reset the plotting window

@@ -946,20 +946,20 @@ server <- function(input, output, session) {
       tabsetPanel(
         tabPanel("General Demographics",
                  # textOutput("cultural_barriers_text"),  # Add this line for your text
-                 uiOutput("cultural_barriers_text"),
+                 # uiOutput("cultural_barriers_text"),
+                 uiOutput("social_variables_text"),
 
-                 plotOutput("meta_gen_demo_plot1"),
-                 downloadButton("download_meta_gen_demo_plot1", "Download Plot"),
+                 uiOutput("gen_demo_label2"),
+                 tableOutput("meta_gen_demo_table"),
 
-                 plotOutput("meta_gen_demo_plot2"),
-                 downloadButton("download_meta_gen_demo_plot2", "Download Plot"),
+                 # plotOutput("meta_gen_demo_plot3"),
+                 # downloadButton("download_meta_gen_demo_plot3", "Download Plot"),
 
-                 plotOutput("meta_gen_demo_plot3"),
-                 downloadButton("download_meta_gen_demo_plot3", "Download Plot"),
-
+                 uiOutput("gen_demo_label_race"),
                  plotOutput("meta_gen_demo_plot4"),
                  downloadButton("download_meta_gen_demo_plot4", "Download Plot"),
 
+                 uiOutput("gen_demo_label_disability"),
                  plotOutput("meta_gen_demo_plot5"),
                  downloadButton("download_meta_gen_demo_plot5", "Download Plot"),
 
@@ -968,6 +968,29 @@ server <- function(input, output, session) {
 
                  plotOutput("meta_gen_demo_plot7"),
                  downloadButton("download_meta_gen_demo_plot7", "Download Plot"),
+
+                 uiOutput("gen_demo_label1"),
+
+                 plotOutput("meta_gen_demo_plot1"),
+                 downloadButton("download_meta_gen_demo_plot1", "Download Plot"),
+
+                 plotOutput("meta_gen_demo_plot2"),
+                 downloadButton("download_meta_gen_demo_plot2", "Download Plot"),
+
+                 # plotOutput("meta_gen_demo_plot3"),
+                 # downloadButton("download_meta_gen_demo_plot3", "Download Plot"),
+                 #
+                 # plotOutput("meta_gen_demo_plot4"),
+                 # downloadButton("download_meta_gen_demo_plot4", "Download Plot"),
+                 #
+                 # plotOutput("meta_gen_demo_plot5"),
+                 # downloadButton("download_meta_gen_demo_plot5", "Download Plot"),
+                 #
+                 # plotOutput("meta_gen_demo_plot6"),
+                 # downloadButton("download_meta_gen_demo_plot6", "Download Plot"),
+                 #
+                 # plotOutput("meta_gen_demo_plot7"),
+                 # downloadButton("download_meta_gen_demo_plot7", "Download Plot"),
                  ),
 
         tabPanel("Difference Scores",
@@ -1038,6 +1061,8 @@ server <- function(input, output, session) {
                  ),
         tabPanel("Post-Secondary Enrollment",
                  uiOutput("post_secondary_text"),
+                 tableOutput("post_secondary_table")
+
                  )
       )
     }
@@ -1426,26 +1451,150 @@ server <- function(input, output, session) {
 
 
   ## METADATA text outputs
-  output$cultural_barriers_text <- renderUI({
+  # output$cultural_barriers_text <- renderUI({
+  output$social_variables_text <- renderUI({
     req(selected_data())  # Ensure data is loaded
 
     cult_bar_col <- grep("(?i)(cult).*?(barrier)(?!.*(?i)_desc)",
                      names(data), value = TRUE, perl = TRUE)
 
     # Check if a matching column was found
-    if (length(cult_var) > 0) {
+    if (length(cult_bar_col) > 0) {
       cultural_count <- sum(selected_data()[[cult_bar_col]] == 1, na.rm = TRUE)
     } else {
       cultural_count <- 0  # Fallback if no matching column is found
     }
 
+    eng_learn_col <- grep("(?i)(english).*?(learn)(?!.*(?i)_desc)",
+                          names(metadata), value = TRUE, perl = TRUE)
+    if (length(eng_learn_col) > 0) {
+      eng_learn_count <- sum(selected_data()[[eng_learn_col]] == 1,
+                             na.rm = TRUE)
+    } else {
+      eng_learn_count <- 0  # Fallback if no matching column is found
+    }
+
+    any_cled <- cultural_count + eng_learn_count
+
+
+    skills_def_col <- grep("(?i)(skills).*?(def)(?!.*(?i)_desc)",
+                           names(data), value = TRUE, perl = TRUE)
+
+    skills_def_count <- sum(selected_data()[[skills_def_col]] == 1, na.rm = TRUE)
+
+    if (length(skills_def_col) > 0) {
+      skills_def_count <- sum(selected_data()[[skills_def_col]] == 1,
+                              na.rm = TRUE)
+    } else {
+      skills_def_count <- 0  # Fallback if no matching column is found
+    }
+
+
+    low_inc_col <- grep("(?i)(low).*?(inc)(?!.*(?i)_desc)",
+                           names(data), value = TRUE, perl = TRUE)
+    if (length(low_inc_col) > 0) {
+      low_inc_count <- sum(selected_data()[[low_inc_col]] == 1,
+                              na.rm = TRUE)
+    } else {
+      low_inc_count <- 0  # Fallback if no matching column is found
+    }
+
+    homeless_col <- grep("(?i)(homeless)(?!.*(?i)_desc)",
+                         names(data), value = TRUE, perl = TRUE)
+    if (length(homeless_col) > 0) {
+      homeless_count <- sum(selected_data()[[homeless_col]] == 1,
+                           na.rm = TRUE)
+    } else {
+      homeless_count <- 0  # Fallback if no matching column is found
+    }
+
+    tanf_col <- grep("(?i)(tanf.*?plan|plan.*?tanf)(?!.*(?i)_desc)",
+                     names(data), value = TRUE, perl = TRUE)
+    if (length(tanf_col) > 0) {
+      tanf_count <- sum(selected_data()[[tanf_col]] == 1,
+                            na.rm = TRUE)
+    } else {
+      tanf_count <- 0  # Fallback if no matching column is found
+    }
+
+
+    econ_marginalized <- low_inc_count + homeless_count + tanf_count
+
+
+    foster_col <- grep("(?i)(foster)(?!.*(?i)_desc)",
+                       names(metadata), value = TRUE, perl = TRUE)
+    if (length(foster_col) > 0) {
+      foster_count <- sum(selected_data()[[foster_col]] == 1,
+                        na.rm = TRUE)
+    } else {
+      foster_count <- 0  # Fallback if no matching column is found
+    }
+
+    # HTML(paste(
+    #   "<div style='padding: 10px; background-color: #f9f9f9; border-left: 5px solid #007bff;'>",
+    #   "<h3 style='color: #007bff;'>Social Variables Summary</h3>",
+    #   "<p style='font-size: 18px;'>There are <strong>", cultural_count,
+    #   "</strong> participants in this data facing cultural barriers.</p>",
+    #   "</div>"
+    # ))
+
     HTML(paste(
       "<div style='padding: 10px; background-color: #f9f9f9; border-left: 5px solid #007bff;'>",
-      "<h3 style='color: #007bff;'>Demographics Summary</h3>",
-      "<p style='font-size: 18px;'>There are <strong>", cultural_count,
-      "</strong> participants in this data facing cultural barriers.</p>",
+      "<h3 style='color: #007bff;'>Social Factors Summary</h3>",
+      "<p style='font-size: 18px;'> <strong>", any_cled,
+      "</strong> participants are facing cultural barriers.</p>",
+      "<p style='font-size: 18px;'> <strong>", skills_def_count,
+      "</strong> participants have skill deficiencies.</p>",
+      "<p style='font-size: 18px;'> <strong>", econ_marginalized,
+      "</strong> participants are facing economic challenges.</p>",
       "</div>"
     ))
+
+  })
+
+
+  output$gen_demo_label1 <- renderUI({
+
+    HTML(paste(
+      "<div style='padding: 10px; background-color: #f9f9f9; border-left: 5px solid #007bff;'>",
+      "<h3 style='color: #007bff;'>Time Summary</h3>",
+      "</ul>",
+      "</div>"
+    ))
+
+  })
+
+  output$gen_demo_label2 <- renderUI({
+
+    HTML(paste(
+      "<div style='padding: 10px; background-color: #f9f9f9; border-left: 5px solid #007bff;'>",
+      "<h3 style='color: #007bff;'>Gender Summary</h3>",
+      "</ul>",
+      "</div>"
+    ))
+
+  })
+
+  output$gen_demo_label_race <- renderUI({
+
+    HTML(paste(
+      "<div style='padding: 10px; background-color: #f9f9f9; border-left: 5px solid #007bff;'>",
+      "<h3 style='color: #007bff;'>Race Summary</h3>",
+      "</ul>",
+      "</div>"
+    ))
+
+  })
+
+  output$gen_demo_label_disability <- renderUI({
+
+    HTML(paste(
+      "<div style='padding: 10px; background-color: #f9f9f9; border-left: 5px solid #007bff;'>",
+      "<h3 style='color: #007bff;'>Disability Summary</h3>",
+      "</ul>",
+      "</div>"
+    ))
+
   })
 
 
@@ -1465,17 +1614,102 @@ server <- function(input, output, session) {
     HTML(paste(
       "<div style='padding: 10px; background-color: #f9f9f9; border-left: 5px solid #007bff;'>",
       "<h3 style='color: #007bff;'>Post-Secondary Enrollment Summary</h3>",
-      "<p style='font-size: 18px;'>Participants by enrollment status:</p>",
-      "<ul style='font-size: 16px;'>",
-      "<li><strong>0:</strong> Not enrolled — ", post_sec_counts["0"], " participants</li>",
-      "<li><strong>1:</strong> Enrolled in some post-secondary education — ", post_sec_counts["1"], " participants</li>",
-      "<li><strong>2:</strong> Enrolled in vocational/technical training — ", post_sec_counts["2"], " participants</li>",
-      "<li><strong>3:</strong> Enrolled in higher education (university/college) — ", post_sec_counts["3"], " participants</li>",
+      # "<p style='font-size: 18px;'>Participants by enrollment status:</p>",
+      # "<ul style='font-size: 16px;'>",
+      # "<li><strong>0:</strong> Not enrolled — ", post_sec_counts["0"], " participants</li>",
+      # "<li><strong>1:</strong> Enrolled in some post-secondary education — ", post_sec_counts["1"], " participants</li>",
+      # "<li><strong>2:</strong> Enrolled in vocational/technical training — ", post_sec_counts["2"], " participants</li>",
+      # "<li><strong>3:</strong> Enrolled in higher education (university/college) — ", post_sec_counts["3"], " participants</li>",
       "</ul>",
       "</div>"
     ))
 
   })
+
+  output$meta_gen_demo_table <- renderTable({
+    req(selected_data())  # Ensure data is loaded
+    data <- selected_data()
+
+    # Identify the column for gender/sex dynamically
+    sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
+                    value = TRUE, perl = TRUE)
+
+    if (length(sex_col) > 0) {
+      gender_data <- as.character(data[[sex_col]])  # Convert to character for proper mapping
+    } else {
+      gender_data <- character(0)  # If no column found, empty dataset
+    }
+
+    # Define the mapping of numeric values to labels
+    gender_labels <- c(
+      "1" = "Male",
+      "2" = "Female",
+      "3" = "Other",
+      "9" = "Did not identify"
+    )
+
+    # Replace numeric values with labels
+    labeled_gender_data <- factor(gender_data, levels = names(gender_labels),
+                                  labels = gender_labels)
+
+    # Calculate counts
+    gender_counts <- table(labeled_gender_data)
+
+    # Get total participants for percentage calculation
+    total <- sum(gender_counts)
+
+    # Ensure proper percentage calculation
+    percentages <- if (total > 0) {
+      round((as.numeric(gender_counts) / total) * 100, 1)
+    } else {
+      rep(0, length(gender_labels))  # Avoid division by zero
+    }
+
+    # Create a data frame for the table
+    data.frame(
+      `Gender` = names(gender_counts),
+      `Number of Participants` = as.integer(gender_counts),
+      `Percentage` = paste0(percentages, "%"),
+      check.names = FALSE  # Prevents R from modifying column names
+    )
+  }, striped = TRUE, bordered = TRUE, spacing = "m")
+
+
+  output$post_secondary_table <- renderTable({
+    req(selected_data())  # Ensure data is loaded
+
+    post_sec_col <- grep("(?i)(post).*?(sec).*?(enroll)(?!.*(?i)(_desc|completion))",
+                         names(selected_data()), value = TRUE, perl = TRUE)
+
+    if (length(post_sec_col) > 0) {
+      post_sec_counts <- table(factor(selected_data()[[post_sec_col]], levels = 0:3))
+    } else {
+      post_sec_counts <- setNames(rep(0, 4), 0:3)
+    }
+
+    total <- sum(post_sec_counts)  # Get the total number of participants
+
+    # Ensure percentages are calculated correctly
+    percentages <- if (total > 0) {
+      round((as.numeric(post_sec_counts) / total) * 100, 1)
+    } else {
+      rep(0, 4)  # Avoid division by zero
+    }
+
+    # Create a data frame for the table
+    data.frame(
+      `Enrollment Status` = c("Not enrolled",
+                              "Enrolled in some post-secondary education",
+                              "Enrolled in vocational/technical training",
+                              "Enrolled in higher education (university/college)"),
+      `Number of Participants` = as.integer(post_sec_counts),  # Ensure whole numbers
+      `Percentage` = paste0(percentages, "%"),  # Format as percentages
+      check.names = FALSE  # Prevents R from changing column names
+    )
+  }, striped = TRUE, bordered = TRUE, spacing = "m")
+
+
+
 
 
   ## METADATA plots
@@ -1536,79 +1770,131 @@ server <- function(input, output, session) {
 
 
   # Gender
-  output$meta_gen_demo_plot3 <- renderPlot({
-    req(selected_data())
-    data <- selected_data()
+  # output$meta_gen_demo_plot3 <- renderPlot({
+  #   req(selected_data())
+  #   data <- selected_data()
+  #
+  #   # Identify the column for gender/sex dynamically
+  #   sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
+  #                   value = TRUE, perl = TRUE)
+  #
+  #   # Define the mapping of numeric values to labels
+  #   gender_labels <- c(
+  #     "1" = "Male",
+  #     "2" = "Female",
+  #     "3" = "Other",
+  #     "9" = "Did not identify"
+  #   )
+  #
+  #   # Extract the gender column
+  #   gender_data <- data[[sex_col]]
+  #
+  #   # Replace numeric values with labels
+  #   labeled_gender_data <- factor(gender_data, levels = names(gender_labels),
+  #                                 labels = gender_labels)
+  #
+  #   # Create the barplot
+  #   barplot(table(labeled_gender_data),
+  #           main = "Distribution of Genders",
+  #           xlab = "Gender",
+  #           col = c("steelblue", "lightsteelblue", "darkblue", "gray"))
+  # })
 
-    # Identify the column for gender/sex dynamically
-    sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
-                    value = TRUE, perl = TRUE)
 
-    # Define the mapping of numeric values to labels
-    gender_labels <- c(
-      "1" = "Male",
-      "2" = "Female",
-      "3" = "Other",
-      "9" = "Did not identify"
-    )
-
-    # Extract the gender column
-    gender_data <- data[[sex_col]]
-
-    # Replace numeric values with labels
-    labeled_gender_data <- factor(gender_data, levels = names(gender_labels),
-                                  labels = gender_labels)
-
-    # Create the barplot
-    barplot(table(labeled_gender_data),
-            main = "Distribution of Genders",
-            xlab = "Gender",
-            col = c("steelblue", "lightsteelblue", "darkblue", "gray"))
-  })
-
-
-  # Download handler for Gender Distribution Plot
-  output$download_meta_gen_demo_plot3 <- downloadHandler(
-    filename = function() { "gender_distribution_plot.png" },
-    content = function(file) {
-      png(file)
-
-      # Access the selected data
-      data <- selected_data()
-
-      # Identify the column for gender/sex dynamically
-      sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
-                      value = TRUE, perl = TRUE)
-
-      # Define the mapping of numeric values to labels
-      gender_labels <- c(
-        "1" = "Male",
-        "2" = "Female",
-        "3" = "Other",
-        "9" = "Did not identify"
-      )
-
-      # Extract the gender column
-      gender_data <- data[[sex_col]]
-
-      # Replace numeric values with labels
-      labeled_gender_data <- factor(gender_data, levels = names(gender_labels),
-                                    labels = gender_labels)
-
-      # Create the barplot
-      barplot(table(labeled_gender_data),
-              main = "Distribution of Genders",
-              xlab = "Gender",
-              col = c("steelblue", "lightsteelblue", "darkblue", "gray"))
-
-      dev.off()
-    }
-  )
+  # # Download handler for Gender Distribution Plot
+  # output$download_meta_gen_demo_plot3 <- downloadHandler(
+  #   filename = function() { "gender_distribution_plot.png" },
+  #   content = function(file) {
+  #     png(file)
+  #
+  #     # Access the selected data
+  #     data <- selected_data()
+  #
+  #     # Identify the column for gender/sex dynamically
+  #     sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
+  #                     value = TRUE, perl = TRUE)
+  #
+  #     # Define the mapping of numeric values to labels
+  #     gender_labels <- c(
+  #       "1" = "Male",
+  #       "2" = "Female",
+  #       "3" = "Other",
+  #       "9" = "Did not identify"
+  #     )
+  #
+  #     # Extract the gender column
+  #     gender_data <- data[[sex_col]]
+  #
+  #     # Replace numeric values with labels
+  #     labeled_gender_data <- factor(gender_data, levels = names(gender_labels),
+  #                                   labels = gender_labels)
+  #
+  #     # Create the barplot
+  #     barplot(table(labeled_gender_data),
+  #             main = "Distribution of Genders",
+  #             xlab = "Gender",
+  #             col = c("steelblue", "lightsteelblue", "darkblue", "gray"))
+  #
+  #     dev.off()
+  #   }
+  # )
 
 
 
 
   # Race
+  # output$meta_gen_demo_plot4 <- renderPlot({
+  #   req(selected_data())
+  #   data <- selected_data()
+  #
+  #   race_cols <- grep("(?i)(_indian|_asian|_black|_hawaiian|_islander|_white|hispanic)(?!.*(?i)_desc)",
+  #                     names(data),
+  #                     value = TRUE, perl = TRUE)
+  #
+  #   # Find the column for final employment status
+  #   final_employ_col <- grep("(?i)(final).*?(employ)(?!.*(?i)_desc)",
+  #                            names(data), value = TRUE, perl = TRUE)
+  #
+  #   data_subset <- data[, .SD, .SDcols = c(final_employ_col,
+  #                                          race_cols)]
+  #
+  #   # Create a long-format data.table
+  #   long_data <- melt(data_subset,
+  #                     id.vars = final_employ_col,
+  #                     measure.vars = race_cols,
+  #                     variable.name = "Race",
+  #                     value.name = "Has_Race")
+  #   # Filter rows where Has_Race is 1
+  #   filtered_data <- long_data[Has_Race == 1]
+  #
+  #
+  #   # Create a contingency table of Final_Employment by Gender
+  #   race_table <- table(filtered_data$Race)
+  #
+  #   # Create the bar plot based on the contingency table
+  #   par(oma = c(0, 0, 0, 0) + 0.6)
+  #   barplot_heights <- barplot(race_table, beside = TRUE,
+  #                              ylab = "Count",
+  #                              xaxt = "n",   # Disable default x-axis labels
+  #                              yaxt = "n",   # Disable default y-axis labels
+  #                              xlab = "",
+  #                              main = "Distribution of Race", las = 2,
+  #                              col = "steelblue")
+  #
+  #   # Add the y-axis
+  #   axis(side = 2, las = 2, mgp = c(3, 0.75, 0))
+  #
+  #   # Add diagonal labels
+  #   text(x = barplot_heights, # Center labels based on barplot positions
+  #        y = par("usr")[3] - 0.45,
+  #        labels = gsub("^E[0-9]+_|_911$", "", race_cols),
+  #        xpd = NA,
+  #        srt = 45,  # Rotate the labels by 45 degrees
+  #        cex = .8,
+  #        adj = c(1, 1))  # Adjust text alignment to center under bars
+  #
+  #   })
+
   output$meta_gen_demo_plot4 <- renderPlot({
     req(selected_data())
     data <- selected_data()
@@ -1617,27 +1903,26 @@ server <- function(input, output, session) {
                       names(data),
                       value = TRUE, perl = TRUE)
 
-    # Find the column for final employment status
     final_employ_col <- grep("(?i)(final).*?(employ)(?!.*(?i)_desc)",
                              names(data), value = TRUE, perl = TRUE)
 
-    data_subset <- data[, .SD, .SDcols = c(final_employ_col,
-                                           race_cols)]
+    data_subset <- data[, .SD, .SDcols = c(final_employ_col, race_cols)]
 
-    # Create a long-format data.table
     long_data <- melt(data_subset,
                       id.vars = final_employ_col,
                       measure.vars = race_cols,
                       variable.name = "Race",
                       value.name = "Has_Race")
-    # Filter rows where Has_Race is 1
+
     filtered_data <- long_data[Has_Race == 1]
 
-
-    # Create a contingency table of Final_Employment by Gender
+    # Create contingency table and order by count (descending)
     race_table <- table(filtered_data$Race)
+    race_table <- sort(race_table, decreasing = TRUE)
 
-    # Create the bar plot based on the contingency table
+    # Order race_cols based on the sorted race_table names
+    ordered_race_cols <- names(race_table)
+
     par(oma = c(0, 0, 0, 0) + 0.6)
     barplot_heights <- barplot(race_table, beside = TRUE,
                                ylab = "Count",
@@ -1653,13 +1938,13 @@ server <- function(input, output, session) {
     # Add diagonal labels
     text(x = barplot_heights, # Center labels based on barplot positions
          y = par("usr")[3] - 0.45,
-         labels = gsub("^E[0-9]+_|_911$", "", race_cols),
+         labels = gsub("^E[0-9]+_|_911$", "", ordered_race_cols),
          xpd = NA,
          srt = 45,  # Rotate the labels by 45 degrees
          cex = .8,
          adj = c(1, 1))  # Adjust text alignment to center under bars
+  })
 
-    })
 
   # Download handler for Race Distribution Plot
   output$download_meta_gen_demo_plot4 <- downloadHandler(
