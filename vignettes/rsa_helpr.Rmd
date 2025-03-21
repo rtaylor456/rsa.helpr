@@ -314,7 +314,7 @@ errors and clutter.
 ```{r clean_ID}
 
 scores_clean <- clean_scores(scores_simulated, state_filter = "Utah", 
-                             clean_ID = TRUE)
+                             clean_id = TRUE)
 sum(is.na(scores_clean$Participant_ID))
 
 ```
@@ -343,7 +343,7 @@ variable, "X", as our ID column.
 
 ```{r ID_col, eval=FALSE}
 
-scores_clean <- clean_scores(scores_simulated, ID_col = "X")
+scores_clean <- clean_scores(scores_simulated, id_col = "X")
 
 ```
 
@@ -449,7 +449,7 @@ selected type of analysis in order to generate a series of exploratory plots.
 A select set of commonly-examined variables are used in these visualizations.
 
 #### visualize_metadata
-```{r visualize_metadata, eval = FALSE}
+```{r visualize_metadata}
 visualize_metadata(metadata, option = "general_demo",
                               one_window = TRUE)
 
@@ -470,7 +470,7 @@ rsa.helpr::visualize_metadata(metadata, option = "investigate_wage",
 ```
 
 
-```{r visualize_metadata4, eval = FALSE}
+```{r visualize_metadata4}
 rsa.helpr::visualize_metadata(metadata, option = "investigate_employment",
                               one_window = TRUE)
 

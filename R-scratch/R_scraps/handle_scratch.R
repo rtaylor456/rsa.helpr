@@ -1,3 +1,22 @@
+# handle_impairment_group <- function(x) {
+#   fifelse(x == 0, "None",
+#           fifelse(x %in% c(1, 2, 8), "Visual",
+#                   fifelse(x %in% c(3, 4, 5, 6, 7, 9), "Aud_Comm",
+#                           fifelse(x %in% c(10, 11, 12, 13, 14, 15, 16),
+#                                   "Physical",
+#                                   fifelse(x == 17, "Intell_Learn",
+#                                           fifelse(x %in% c(18, 19), "Psych",
+#                                                   NA_character_)
+#                                   )
+#                           )
+#                   )
+#           )
+#   )
+# }
+
+
+
+
 convert_mixed_dates <- function(x) {
   sapply(x, function(val) {
     if (is.na(val) || val %in% c("NULL", "")) {

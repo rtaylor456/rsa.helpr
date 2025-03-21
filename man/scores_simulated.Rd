@@ -10,8 +10,8 @@
 A data frame with 1800 rows and 518 columns:
 \describe{
 \item{variables}{For an understanding of the 32 variables, check the
-publication, Enhancing transition outcomes: A toolkit to facilitate data-driven
-pre-employment transition services.}
+publication, Enhancing transition outcomes: A toolkit to facilitate
+data-driven pre-employment transition services.}
 ...
 }
 }

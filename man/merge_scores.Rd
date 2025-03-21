@@ -7,8 +7,8 @@
 merge_scores(
   quarterly_data,
   scores_data,
-  quarterly_ID = "Participant_ID",
-  scores_ID = "Participant_ID"
+  quarterly_id = "Participant_ID",
+  scores_id = "Participant_ID"
 )
 }
 \arguments{
@@ -16,11 +16,11 @@ merge_scores(
 
 \item{scores_data}{The cleaned scores dataset.}
 
-\item{quarterly_ID}{A string for the variable name corresponding to
+\item{quarterly_id}{A string for the variable name corresponding to
 participant ID in the cleaned RSA-911 dataset. Defaults to
 "Participant_ID".}
 
-\item{scores_ID}{A string for the variable name corresponding to
+\item{scores_id}{A string for the variable name corresponding to
 participant ID in the cleaned scores dataset. Defaults to "Participant_ID".}
 }
 \value{

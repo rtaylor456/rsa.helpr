@@ -1455,6 +1455,8 @@ server <- function(input, output, session) {
   output$social_variables_text <- renderUI({
     req(selected_data())  # Ensure data is loaded
 
+    data <- selected_data()
+
     cult_bar_col <- grep("(?i)(cult).*?(barrier)(?!.*(?i)_desc)",
                      names(data), value = TRUE, perl = TRUE)
 
@@ -1466,7 +1468,7 @@ server <- function(input, output, session) {
     }
 
     eng_learn_col <- grep("(?i)(english).*?(learn)(?!.*(?i)_desc)",
-                          names(metadata), value = TRUE, perl = TRUE)
+                          names(data), value = TRUE, perl = TRUE)
     if (length(eng_learn_col) > 0) {
       eng_learn_count <- sum(selected_data()[[eng_learn_col]] == 1,
                              na.rm = TRUE)
@@ -1522,7 +1524,7 @@ server <- function(input, output, session) {
 
 
     foster_col <- grep("(?i)(foster)(?!.*(?i)_desc)",
-                       names(metadata), value = TRUE, perl = TRUE)
+                       names(data), value = TRUE, perl = TRUE)
     if (length(foster_col) > 0) {
       foster_count <- sum(selected_data()[[foster_col]] == 1,
                         na.rm = TRUE)

@@ -40,10 +40,13 @@ clean_provider <- function(data, state_filter = NULL, id_col = NULL,
   if (!is.null(state_filter) && length(state) > 0) {
     # then filter by state(s) provided by user
     data <- data[get(state) %in% state_filter]
-    # Else if user identifies states to filter by but there is no state variable,
+    # Else if user identifies states to filter by but there is no state
+    #   variable,
   } else if (!is.null(state_filter) && length(state) < 1) {
     # then return a warning, but continue with cleaning process
-    warning("There is no state-identifying variable in this dataset. Cleaning process will continue on.")
+    message <- paste0("There is no state-identifying variable in this ",
+                      "dataset. Cleaning process will continue on.")
+    warning(message)
   } # Else carry on (without warning message)
 
 
@@ -56,7 +59,9 @@ clean_provider <- function(data, state_filter = NULL, id_col = NULL,
   }
 
   if (length(participant) < 1) {
-    stop("No participant ID column found. Data must include an ID column for this cleaning process.")
+    message <- paste0("No participant ID column found. Data must include an ",
+                      "ID column for this cleaning process.")
+    stop(message)
   }
 
   # Process the Participant ID variable
@@ -116,7 +121,9 @@ clean_provider <- function(data, state_filter = NULL, id_col = NULL,
     # Else if user identifies to remove question items and there are none,
   } else if (remove_questions && length(question_cols) < 1) {
     # then return a warning, but continue with cleaning process
-    warning("There are no question item variables in this dataset. Cleaning process will continue on.")
+    message <- paste0("There are no question item variables in this dataset. ",
+                      "Cleaning process will continue on.")
+    warning(message)
   } # Else carry on (without warning message)
 
 

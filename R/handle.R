@@ -255,3 +255,81 @@ separate_disability <- function(df) {
 
   df
 }
+
+
+#' Create Primary Impairment and Secondary Impairment grouping columns in
+#'  RSA-911 dataset.
+#'
+#' This function groups impairments (values 0-19) by the codebook definitions
+#'   (visual, auditory/communicative, physical, intellectual/learning,
+#'   psychological). This process
+#'
+#' @param x An RSA-911 impairment (or cause) variable to be grouped.
+#' @returns The new variable with grouped character values Visual, Aud_Comm,
+#'   Physical, Intell_Learn, and Psych, rather than values 0-19.
+#' @export
+handle_impairment_group <- function(x) {
+  factor(
+    fifelse(x == 0, "None",
+      fifelse(x %in% c(1, 2, 8), "Visual",
+        fifelse(x %in% c(3, 4, 5, 6, 7, 9), "Aud_Comm",
+          fifelse(x %in% c(10, 11, 12, 13, 14, 15, 16), "Physical",
+            fifelse(x == 17, "Intell_Learn",
+              fifelse(x %in% c(18, 19), "Psych",
+                      NA_character_)
+            )
+          )
+        )
+      )
+    ),
+    levels = c("None", "Visual", "Aud_Comm", "Physical", "Intell_Learn",
+               "Psych")
+  )
+}
+
+
+#' Create age group column in RSA-911 dataset.
+#'
+#' This function groups variable Age at Application into ordered levels:
+#'   <5
+#'   5-7
+#'   8-10
+#'   11-13
+#'   14-16
+#'   17-19
+#'   20-22
+#'   23-25
+#'   26-30
+#'   31-40
+#'   41+
+#'
+#' @param x An RSA-911 age at application variable to be grouped.
+#' @returns The new age group values, see above list.
+#' @export
+handle_age_group <- function(x) {
+  factor(
+    fifelse(x < 5, "<5",
+      fifelse(x >= 5 & x < 8, "5-7",
+        fifelse(x >= 8 & x < 11, "8-10",
+          fifelse(x >= 11 & x < 14, "11-13",
+            fifelse(x >= 14 & x < 17, "14-16",
+              fifelse(x >= 17 & x < 20, "17-19",
+                fifelse(x >= 20 & x < 23, "20-22",
+                  fifelse(x >= 23 & x < 26, "23-25",
+                    fifelse(x >= 26 & x < 31, "26-30",
+                      fifelse(x >= 31 & x <= 40, "31-40",
+                        fifelse(x > 40, "41+", NA_character_)
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        )
+      )
+    ),
+    levels = c("<5", "5-7", "8-10", "11-13", "14-16", "17-19", "20-22", "23-25",
+               "26-30", "31-40", "41+")
+  )
+}

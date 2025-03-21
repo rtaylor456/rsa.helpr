@@ -38,14 +38,20 @@ clean_scores <- function(data, state_filter = NULL, clean_id = TRUE,
   if (!is.null(state_filter) && length(state) > 0) {
     # then filter by state(s) provided by user
     data <- data[get(state) %in% state_filter]
-    # Else if user identifies states to filter by but there is no state variable,
+    # Else if user identifies states to filter by but there is no state
+    #   variable,
   } else if (!is.null(state_filter) && length(state) < 1) {
     # then return a warning, but continue with cleaning process
-    warning("There is no state-identifying variable in this dataset. Cleaning process will continue on.")
+    message <- paste0("There is no state-identifying variable in this dataset.",
+                      " Cleaning process will continue on.")
+    warning(message)
   } else if (is.null(state_filter) && length(state) > 0) {
     unique_states <- unique(na.omit(data[[state]]))
     if (length(unique_states) > 1) {
-      warning("There are multiple states with overlapping Participant IDs. State abbreviations will be appended to Participant ID")
+      message <- paste0("There are multiple states with overlapping ",
+                        "Participant IDs. State abbreviations will be ",
+                        "appended to Participant ID")
+      warning(message)
     }
     # Save the rest for AFTER we clean Participant ID. I don't want to put
     #   the cleaning of ID before this code, because if the user chooses to
@@ -63,7 +69,9 @@ clean_scores <- function(data, state_filter = NULL, clean_id = TRUE,
   }
 
   if (length(participant) == 0) {
-    stop("No participant ID column found. Data must include an ID column for this cleaning process.")
+    message <- paste0("No participant ID column found. Data must include an ",
+                      "ID column for this cleaning process.")
+    stop(message)
   }
 
   # Process the Participant ID variable
@@ -280,9 +288,9 @@ clean_scores <- function(data, state_filter = NULL, clean_id = TRUE,
   # Calculate Time_Passed_Days, the number of days between the Pre_Date and
   #   Post_Date for each participant's tests.
   final_data[, Time_Passed_Days := as.numeric(difftime(Post_Date,
-                                                 Pre_Date,
-                                                 units = "days")),
-       by = .(Participant_ID, Service)]
+                                                       Pre_Date,
+                                                       units = "days")),
+             by = .(Participant_ID, Service)]
   # round to the nearest day
   final_data[, Time_Passed_Days := round(Time_Passed_Days)]
 

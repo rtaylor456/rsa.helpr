@@ -7,7 +7,7 @@
 clean_provider(
   data,
   state_filter = NULL,
-  ID_col = NULL,
+  id_col = NULL,
   remove_questions = TRUE,
   condense = FALSE,
   clean_id = TRUE
@@ -19,7 +19,7 @@ clean_provider(
 \item{state_filter}{A character vector identifying the state(s) of interest.
 Defaults to NULL.}
 
-\item{ID_col}{Differing variable naming structure for participant ID.
+\item{id_col}{Differing variable naming structure for participant ID.
 (Eg. "X", or another name not similar to "participant" or "ID".)
 Defaults to NULL.}
 

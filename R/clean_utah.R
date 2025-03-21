@@ -98,7 +98,8 @@ clean_utah <- function(data,
   # AMT and TITLE columns (TITLEI columns are funds expended for different
   #   services)
   # WAGE columns
-  amt_cols <- grep("(?i)_amt|(?i)_title|(?i)_wage|(?i)_amount|(?i)_amnt(?!.*(?i)_desc)",
+  amt_cols <- grep(paste0("(?i)_amt|(?i)_title|(?i)_wage|(?i)_amount|",
+                          "(?i)_amnt(?!.*(?i)_desc)"),
                    names(data), value = TRUE, perl = TRUE)
 
   # HOURS columns
@@ -124,7 +125,8 @@ clean_utah <- function(data,
   ######################
   # DATE columns - in excel date format
   # start, extension, end
-  date_cols <- grep("(?i)_date|(?i)_skill_gain|(?i)_start|(?i)_end_|(?i)_extension(?!.*(?i)_desc)",
+  date_cols <- grep(paste0("(?i)_date|(?i)_skill_gain|(?i)_start|(?i)_end_|",
+                           "(?i)_extension(?!.*(?i)_desc)"),
                     names(data), value = TRUE,
                     perl = TRUE)
 
@@ -141,7 +143,8 @@ clean_utah <- function(data,
   ######################
   # CODE columns
   # different kinds of values--zip code, agency code, etc. -- all factors
-  code_cols <- grep("((?i)_code_|(?i)_plan_occ|(?i)_referral_source|(?i)_exit_occ)(?!.*(?i)_desc)",
+  code_cols <- grep(paste0("((?i)_code_|(?i)_plan_occ|(?i)_referral_source|",
+                           "(?i)_exit_occ)(?!.*(?i)_desc)"),
                     names(data), value = TRUE, perl = TRUE)
 
   data[, (code_cols) := lapply(.SD, handle_blanks),
@@ -162,37 +165,54 @@ clean_utah <- function(data,
                           names(data), value = TRUE, perl = TRUE)
 
   # DEMOGRAPHIC columns - 0, 1, 9
-  race_cols <- grep("(?i)(_indian|_asian|_black|_hawaiian|_islander|_white|hispanic)(?!.*(?i)_desc)",
+  race_cols <- grep(paste0("(?i)(_indian|_asian|_black|_hawaiian|_islander|",
+                           "_white|hispanic)(?!.*(?i)_desc)"),
                     names(data),
                     value = TRUE, perl = TRUE)
   # [1] "E10_Indian_Alaskan_911"            "E11_Asian_911"
   # [3] "E12_Black_African_911"             "E13_Hawaiian_Pacific_Islander_911"
   # [5] "E14_White_911"                     "E15_Hispanic_Latino_911"
 
-  veteran_col <- grep("(?i)veteran(?!.*(_desc|description|_amt|amount|amnt|vendor|title|comp))",
+  veteran_col <- grep(paste0("(?i)veteran(?!.*(_desc|description|_amt|amount|",
+                             "amnt|vendor|title|comp))"),
                       names(data), value = TRUE, perl = TRUE)
   # [1] "E16_Veteran_Status_911"
 
-  has_disability_col <- grep("(?i)(has_disability)(?!.*(_desc|description|_amt|amount|amnt|vendor|title|comp|hours|date|ext|wage))",
+  has_disability_col <- grep(paste0("(?i)(has_disability)(?!.*(_desc|",
+                                    "description|_amt|amount|amnt|vendor|title",
+                                    "|comp|hours|date|ext|wage))"),
                              names(data), value = TRUE, perl = TRUE)
   # [1] "E42_Has_Disability_911"
 
-  q1_q1_employ_col <- grep("(?i)(employer_match|q1_q2_match|q1_q2_employ)(?!.*(_desc|description|_amt|amount|amnt|vendor|title|comp|hours|date|ext|wage))",
+  q1_q1_employ_col <- grep(paste0("(?i)(employer_match|q1_q2_match|",
+                                  "q1_q2_employ)(?!.*(_desc|description|_amt|",
+                                  "amount|amnt|vendor|title|comp|hours|date|",
+                                  "ext|wage))"),
                            names(data), value = TRUE, perl = TRUE)
   # [1] "E392_Q2_Q4_Employer_Match_911"
 
-  adult_cols <- grep("(?i)adult(?!.*(_desc|description|_amt|amount|amnt|vendor|title|comp|hours|date|ext|wage))",
+  adult_cols <- grep(paste0("(?i)adult(?!.*(_desc|description|_amt|amount|amnt",
+                            "|vendor|title|comp|hours|date|ext|wage))"),
                      names(data), value = TRUE, perl = TRUE)
   # [1] "E54_Adult_911"           "E55_Adult_Education_911"
 
-  service_work_cols <- grep("(?i)(dislocated_worker|job_corps|voc_rehab|wagner_peyser|youth|equivalent|se_goal)(?!.*(_desc|description|_amt|amount|amnt|vendor|title|comp|hours|date|ext|wage))",
+  service_work_cols <- grep(paste0("(?i)(dislocated_worker|job_corps|voc_rehab",
+                                   "|wagner_peyser|youth|equivalent|se_goal)",
+                                   "(?!.*(_desc|description|_amt|amount|amnt|",
+                                   "vendor|title|comp|hours|date|ext|wage))"),
                             names(data), value = TRUE, perl = TRUE)
-  # [1] "E56_Dislocated_Worker_911"                "E57_Job_Corps_911"
-  # [3] "E58_Voc_Rehab_911"                        "E59_Wagner_Peyser_911"
-  # [5] "E60_Youth_911"                            "E61_YouthBuild_911"
-  # [7] "E400_Secondary_Equivalent_Enrollment_911"
+  # [1] "E49_SE_Goal_911"
+  # [2] "E56_Dislocated_Worker_911"
+  # [3] "E57_Job_Corps_911"
+  # [4] "E58_Voc_Rehab_911"
+  # [5] "E59_Wagner_Peyser_911"
+  # [6] "E60_Youth_911"
+  # [7] "E61_YouthBuild_911"
+  # [8] "E400_Secondary_Equivalent_Enrollment_911"
 
-  plan_cols <- grep("(?i)plan_(?!.*(_desc|description|_amt|amount|amnt|vendor|title|comp|hours|date|ext|wage|status|occ|grade|farm))",
+  plan_cols <- grep(paste0("(?i)plan_(?!.*(_desc|description|_amt|amount|amnt|",
+                           "vendor|title|comp|hours|date|ext|wage|status|occ|",
+                           "grade|farm))"),
                     names(data), value = TRUE, perl = TRUE)
   # [1] "E62_Plan_Long_Term_Unemployment_911" "E63_Plan_Exhaust_TANF_911"
   # [3] "E64_Plan_Foster_Care_911"            "E65_Plan_Homeless_911"
@@ -280,7 +300,8 @@ clean_utah <- function(data,
   # E397_Exit_Medical_911 - 0, 1-7 - limit of 3 types
   # E74_SWD_Age_911 - two values, ages
 
-  special_cols <- grep("((?i)_app_pub|(?i)_app_med|(?i)_exit_pub|(?i)_exit_med|(?i)_swd_age_)(?!.*(?i)_Desc)",
+  special_cols <- grep(paste0("((?i)_app_pub|(?i)_app_med|(?i)_exit_pub|",
+                              "(?i)_exit_med|(?i)_swd_age_)(?!.*(?i)_Desc)"),
                        names(data), value = TRUE, perl = TRUE)
 
   # COMP columns - can enter a max of 3 values
@@ -299,41 +320,16 @@ clean_utah <- function(data,
 
 
   # NEW VARIABLE: DISABILITY columns
+  # Separate disability columns into impairment and cause columns
   data <- separate_disability(data)
 
+  # Now, create a variable for impairment groupings
   impairment_vars <- c("Primary_Impairment", "Secondary_Impairment")
   group_vars <- paste0(impairment_vars, "_Group")
 
-  # Apply the same logic to both columns at once using lapply
-  data[, (group_vars) := lapply(.SD, function(x) {
-                                                  fifelse(x == 0, "None",
-                                                  fifelse(x %in% c(1, 2, 8),
-                    "Visual",
-                    fifelse(x %in% c(3, 4, 5, 6, 7,
-                                     9),
-                            "Aud_Comm",
-                            fifelse(x %in% c(10, 11, 12,
-                                             13, 14, 15,
-                                             16),
-                                    "Physical",
-                                    fifelse(x == 17,
-                                            "Intell_Learn",
-                                            fifelse(x %in% c(18, 19),
-                                                    "Psych",
-                                                    NA_character_)))))) }),
-    .SDcols = impairment_vars]
-
-  # Set factor levels for both columns
-  data[, (group_vars) := lapply(.SD, factor,
-                                levels = c("None",
-                                           "Visual",
-                                           "Aud_Comm",
-                                           "Physical",
-                                           "Intell_Learn",
-                                           "Psych")),
-       .SDcols = group_vars]
-
-
+  # Apply a grouping function to both columns at once using lapply
+  data[, (group_vars) := lapply(.SD, handle_impairment_group),
+       .SDcols = impairment_vars]
 
   ##############################################################################
   ########################
@@ -356,7 +352,8 @@ clean_utah <- function(data,
   #                                               than 0)
   # E78_Secondary_Enrollment_911 - 0, 1,2, NULL (Nulls --> 0)
 
-  other_factor_cols <- grep("((?i)_disability_priority|(?i)_secondary_enrollment)(?!.*(?i)_desc)",
+  other_factor_cols <- grep(paste0("((?i)_disability_priority|(?i)_secondary_",
+                                   "enrollment)(?!.*(?i)_desc)"),
                             names(data),
                             value = TRUE, perl = TRUE)
 
@@ -378,9 +375,6 @@ clean_utah <- function(data,
 
 
   # E354_Exit_Type_911
-  # exit_var_cols <- grep("((?i)_exit_type_|(?i)_exit_work_)(?!.*(?i)_desc|(?i)_date)",
-  #                       names(data), value = TRUE, perl = TRUE)
-
   exit_var_cols <- grep("((?i)_exit_type)(?!.*(?i)_desc|(?i)_date)",
                         names(data), value = TRUE, perl = TRUE)
 
@@ -407,35 +401,9 @@ clean_utah <- function(data,
 
 
   # NEW VARIABLE: Age_Group
-  data[, Age_Group := fifelse(Age_At_Application < 5, "<5",
-                              fifelse((Age_At_Application >= 5 &
-                                         Age_At_Application < 8), "5-7",
-                              fifelse((Age_At_Application >= 8 &
-                                         Age_At_Application < 11), "8-10",
-                              fifelse((Age_At_Application >= 11 &
-                                         Age_At_Application < 14), "11-13",
-                              fifelse((Age_At_Application >= 14 &
-                                         Age_At_Application < 17), "14-16",
-                              fifelse((Age_At_Application >= 17 &
-                                         Age_At_Application < 20), "17-19",
-                              fifelse((Age_At_Application >= 20 &
-                                         Age_At_Application < 23), "20-22",
-                              fifelse((Age_At_Application >= 23 &
-                                         Age_At_Application < 26), "23-25",
-                              fifelse((Age_At_Application >= 26 &
-                                         Age_At_Application < 31), "26-30",
-                              fifelse((Age_At_Application >= 31 &
-                                         Age_At_Application <= 50), "31-50",
-                              fifelse(Age_At_Application > 50, "40+",
-                                         NA_character_)))))))))))]
-
-  # Convert Age_Group to an ordered factor
-  data[, Age_Group := factor(Age_Group,
-                             levels = c("<5", "5-7", "8-10", "11-13",
-                                        "14-16", "17-19", "20-22",
-                                        "23-25", "26-30", "31-50",
-                                        "40+"),
-                             ordered = TRUE)]
+  # Apply a grouping function to create a new column (includes factor
+  #   conversion step)
+  data[, Age_Group := handle_age_group(Age_At_Application)]
 
 
   ##############################################################################
@@ -448,8 +416,9 @@ clean_utah <- function(data,
     ## FIRST, run some checks
     # Make sure we have necessary columns for cleaning processes
 
-    participant_col <- grep("(?i)^(?=.*participant)|(?=.*\\bid\\b)(?!.*\\bid\\B)",
-                        names(data), value = TRUE, perl = TRUE)
+    participant_col <- grep(paste0("(?i)^(?=.*participant)|(?=.*\\bid\\b)",
+                                   "(?!.*\\bid\\B)"),
+                            names(data), value = TRUE, perl = TRUE)
 
     year_col <- grep("(?i)_year|(?i)_yr_(?!.*(?i)_desc)", names(data),
                      value = TRUE, perl = TRUE)
@@ -469,9 +438,9 @@ clean_utah <- function(data,
 
     ## CHECK 1: Ensure all required columns were found
     if (length(participant_col) < 1 ||
-        length(year_col) < 1 ||
-        length(quarter_col) < 1 ||
-        length(app_date_col) < 1) {
+          length(year_col) < 1 ||
+          length(quarter_col) < 1 ||
+          length(app_date_col) < 1) {
 
       warning("Skipping aggregation. Missing required columns: ",
               paste(c(
@@ -544,4 +513,3 @@ clean_utah <- function(data,
   return(data)
 
 }
-
