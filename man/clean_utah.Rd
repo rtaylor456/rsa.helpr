@@ -20,6 +20,10 @@ clean_utah(
 aggregated to include only unique combinations of participants, year,
 and quarter.}
 
+\item{unidentified_to_0}{TRUE or FALSE. Defaults to TRUE, when TRUE,
+variables where unidentified is represented by 9,
+values are converted to 0.}
+
 \item{remove_desc}{TRUE or FALSE. Defaults to TRUE, when TRUE, description
 variables are removed to minimize redundancy.}
 
@@ -32,10 +36,6 @@ be appended to end of dataset with the the following naming convention:
 original_variable_name_Place1, original_variable_name_Place2, etc.
 Defaults to NULL. Note that if many are listed, cleaning process will be
 very slow.}
-
-\item{unidentified_to_O}{TRUE or FALSE. Defaults to TRUE, when TRUE,
-variables where unidentified is represented by 9,
-values are converted to 0.}
 }
 \value{
 A cleaned data frame, with incorrect, blank, messy values replaced,

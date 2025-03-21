@@ -1,5 +1,5 @@
 # Install the rsa.helpr package
-# devtools::install_github("rtaylor456/rsa.helpr")
+devtools::install_github("rtaylor456/rsa.helpr")
 
 ## Load RSA data
 # Mac directory:

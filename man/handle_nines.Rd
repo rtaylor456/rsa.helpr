@@ -2,17 +2,22 @@
 % Please edit documentation in R/handle.R
 \name{handle_nines}
 \alias{handle_nines}
-\title{Convert date variable.}
+\title{Convert missing values to 9s or 0s}
 \usage{
 handle_nines(x, unidentified_to_0 = TRUE)
 }
 \arguments{
-\item{x}{A date variable, written as a numeric YYYYMMDD.}
+\item{x}{An RSA-911 variable to be cleaned, containing missings and/or 9s.}
+
+\item{unidentified_to_0}{TRUE or FALSE. Defaults to TRUE, when TRUE,
+variables where unidentified is represented by 9,
+values are converted to 0.}
 }
 \value{
 The converted date variable.
 }
 \description{
-This function converts a RSA-911 date variable written in order YYYYMMDD as
-one number to the appropriate date.
+This function cleans a RSA-911 date variable containing missing values,
+converting missings to 9s. If specified by the user, it additionally
+converts 9s to 0s.
 }

@@ -7,7 +7,7 @@
 #' @param aggregate TRUE or FALSE. Defaults to TRUE, when TRUE, rows are
 #'   aggregated to include only unique combinations of participants, year,
 #'   and quarter.
-#' @param unidentified_to_O TRUE or FALSE. Defaults to TRUE, when TRUE,
+#' @param unidentified_to_0 TRUE or FALSE. Defaults to TRUE, when TRUE,
 #'   variables where unidentified is represented by 9,
 #'   values are converted to 0.
 #' @param remove_desc TRUE or FALSE. Defaults to TRUE, when TRUE, description

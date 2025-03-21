@@ -5,7 +5,9 @@ Authors@R:
     person("Ruth", "Taylor", , "ruth.eloisa.456@gmail.com", 
     role = c("aut", "cre"),
     comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: description
+Description: This package provides RSA researchers with user-friendly tools to
+    clean and analyze their data. It also delivers a specialized dashboard for
+    simplified analysis by RSA providers.
 License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
