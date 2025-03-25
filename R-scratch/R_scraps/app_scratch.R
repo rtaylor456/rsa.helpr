@@ -1,3 +1,183 @@
+# GENDER
+# output$meta_gen_demo_plot3 <- renderPlot({
+#   req(selected_data())
+#   data <- selected_data()
+#
+#   # Identify the column for gender/sex dynamically
+#   sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
+#                   value = TRUE, perl = TRUE)
+#
+#   # Define the mapping of numeric values to labels
+#   gender_labels <- c(
+#     "1" = "Male",
+#     "2" = "Female",
+#     "3" = "Other",
+#     "9" = "Did not identify"
+#   )
+#
+#   # Extract the gender column
+#   gender_data <- data[[sex_col]]
+#
+#   # Replace numeric values with labels
+#   labeled_gender_data <- factor(gender_data, levels = names(gender_labels),
+#                                 labels = gender_labels)
+#
+#   # Create the barplot
+#   barplot(table(labeled_gender_data),
+#           main = "Distribution of Genders",
+#           xlab = "Gender",
+#           col = c("steelblue", "lightsteelblue", "darkblue", "gray"))
+# })
+
+
+# # Download handler for Gender Distribution Plot
+# output$download_meta_gen_demo_plot3 <- downloadHandler(
+#   filename = function() { "gender_distribution_plot.png" },
+#   content = function(file) {
+#     png(file)
+#
+#     # Access the selected data
+#     data <- selected_data()
+#
+#     # Identify the column for gender/sex dynamically
+#     sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
+#                     value = TRUE, perl = TRUE)
+#
+#     # Define the mapping of numeric values to labels
+#     gender_labels <- c(
+#       "1" = "Male",
+#       "2" = "Female",
+#       "3" = "Other",
+#       "9" = "Did not identify"
+#     )
+#
+#     # Extract the gender column
+#     gender_data <- data[[sex_col]]
+#
+#     # Replace numeric values with labels
+#     labeled_gender_data <- factor(gender_data, levels = names(gender_labels),
+#                                   labels = gender_labels)
+#
+#     # Create the barplot
+#     barplot(table(labeled_gender_data),
+#             main = "Distribution of Genders",
+#             xlab = "Gender",
+#             col = c("steelblue", "lightsteelblue", "darkblue", "gray"))
+#
+#     dev.off()
+#   }
+# )
+
+
+
+
+
+# RACE
+# output$meta_gen_demo_plot4 <- renderPlot({
+#   req(selected_data())
+#   data <- selected_data()
+#
+#   race_cols <- grep("(?i)(_indian|_asian|_black|_hawaiian|_islander|_white|hispanic)(?!.*(?i)_desc)",
+#                     names(data),
+#                     value = TRUE, perl = TRUE)
+#
+#   # Find the column for final employment status
+#   final_employ_col <- grep("(?i)(final).*?(employ)(?!.*(?i)_desc)",
+#                            names(data), value = TRUE, perl = TRUE)
+#
+#   data_subset <- data[, .SD, .SDcols = c(final_employ_col,
+#                                          race_cols)]
+#
+#   # Create a long-format data.table
+#   long_data <- melt(data_subset,
+#                     id.vars = final_employ_col,
+#                     measure.vars = race_cols,
+#                     variable.name = "Race",
+#                     value.name = "Has_Race")
+#   # Filter rows where Has_Race is 1
+#   filtered_data <- long_data[Has_Race == 1]
+#
+#
+#   # Create a contingency table of Final_Employment by Gender
+#   race_table <- table(filtered_data$Race)
+#
+#   # Create the bar plot based on the contingency table
+#   par(oma = c(0, 0, 0, 0) + 0.6)
+#   barplot_heights <- barplot(race_table, beside = TRUE,
+#                              ylab = "Count",
+#                              xaxt = "n",   # Disable default x-axis labels
+#                              yaxt = "n",   # Disable default y-axis labels
+#                              xlab = "",
+#                              main = "Distribution of Race", las = 2,
+#                              col = "steelblue")
+#
+#   # Add the y-axis
+#   axis(side = 2, las = 2, mgp = c(3, 0.75, 0))
+#
+#   # Add diagonal labels
+#   text(x = barplot_heights, # Center labels based on barplot positions
+#        y = par("usr")[3] - 0.45,
+#        labels = gsub("^E[0-9]+_|_911$", "", race_cols),
+#        xpd = NA,
+#        srt = 45,  # Rotate the labels by 45 degrees
+#        cex = .8,
+#        adj = c(1, 1))  # Adjust text alignment to center under bars
+#
+#   })
+
+# output$meta_gen_demo_race <- renderPlot({
+#   req(selected_data())
+#   data <- selected_data()
+#
+#   race_cols <- grep("(?i)(_indian|_asian|_black|_hawaiian|_islander|_white|hispanic)(?!.*(?i)_desc)",
+#                     names(data),
+#                     value = TRUE, perl = TRUE)
+#
+#   final_employ_col <- grep("(?i)(final).*?(employ)(?!.*(?i)_desc)",
+#                            names(data), value = TRUE, perl = TRUE)
+#
+#   data_subset <- data[, .SD, .SDcols = c(final_employ_col, race_cols)]
+#
+#   long_data <- melt(data_subset,
+#                     id.vars = final_employ_col,
+#                     measure.vars = race_cols,
+#                     variable.name = "Race",
+#                     value.name = "Has_Race")
+#
+#   filtered_data <- long_data[Has_Race == 1]
+#
+#   # Create contingency table and order by count (descending)
+#   race_table <- table(filtered_data$Race)
+#   race_table <- sort(race_table, decreasing = TRUE)
+#
+#   # Order race_cols based on the sorted race_table names
+#   ordered_race_cols <- names(race_table)
+#
+#   par(oma = c(0, 0, 0, 0) + 0.6)
+#   barplot_heights <- barplot(race_table, beside = TRUE,
+#                              ylab = "Count",
+#                              xaxt = "n",   # Disable default x-axis labels
+#                              yaxt = "n",   # Disable default y-axis labels
+#                              xlab = "",
+#                              main = "Distribution of Race", las = 2,
+#                              col = "steelblue")
+#
+#   # Add the y-axis
+#   axis(side = 2, las = 2, mgp = c(3, 0.75, 0))
+#
+#   # Add diagonal labels
+#   text(x = barplot_heights, # Center labels based on barplot positions
+#        y = par("usr")[3] - 0.45,
+#        labels = gsub("^E[0-9]+_|_911$", "", ordered_race_cols),
+#        xpd = NA,
+#        srt = 45,  # Rotate the labels by 45 degrees
+#        cex = .8,
+#        adj = c(1, 1))  # Adjust text alignment to center under bars
+# })
+
+
+
+
 # old dataset-type validation function
 # validate_uploaded_dataset <- function(data, dataset_type) {
 #   if (dataset_type == "scores") {

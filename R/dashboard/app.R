@@ -4,6 +4,9 @@ library(readxl)
 library(DT)
 library(bit64)
 
+library(DiagrammeR) # for flowchart
+
+
 if (!requireNamespace("rsa.helpr", quietly = TRUE)) {
   # devtools::install_github("rtaylor456/rsa.helpr")
   remotes::install_github("rtaylor456/rsa.helpr")
@@ -361,9 +364,9 @@ server <- function(input, output, session) {
 
       cleaned_scores <- clean_scores(data = df_scores_combined,
                                      state_filter = states_of_interest,
-                                     clean_ID = input$clean_ID,
+                                     clean_id = input$clean_ID,
                                      aggregate = input$aggregate_scores,
-                                     ID_col = id_col)
+                                     id_col = id_col)
 
       # Check for required provider-related columns
       required_cols <- c(
@@ -397,7 +400,7 @@ server <- function(input, output, session) {
         cleaned_provider <- clean_provider(
           data = df_scores_combined,
           state_filter = states_of_interest,
-          ID_col = id_col
+          id_col = id_col
         )
         rv$provider_data_cleaned <- cleaned_provider
       }
@@ -422,8 +425,8 @@ server <- function(input, output, session) {
 
       incProgress(1/2, detail = "Merging data...")
       merged <- merge_scores(rsa_data, scores_data,
-                             quarterly_ID = input$quarterly_ID,
-                             scores_ID = input$scores_ID)
+                             quarterly_id = input$quarterly_ID,
+                             scores_id = input$scores_ID)
 
       incProgress(1/2, detail = "Finalizing...")
       rv$merged_data <- merged
@@ -947,35 +950,69 @@ server <- function(input, output, session) {
         tabPanel("General Demographics",
                  # textOutput("cultural_barriers_text"),  # Add this line for your text
                  # uiOutput("cultural_barriers_text"),
-                 uiOutput("social_variables_text"),
 
-                 uiOutput("gen_demo_label2"),
-                 tableOutput("meta_gen_demo_table"),
+                 uiOutput("gen_demo_title"),
+
+                 uiOutput("gen_demo_participants"),
+
+                 uiOutput("gen_demo_label_time"),
+
+                 fluidRow(
+                   column(6,
+                          plotOutput("meta_gen_demo_time"),  # First plot
+                          downloadButton("download_meta_gen_demo_time", "Download Plot")  # Download button for the first plot
+                   ),
+                   column(6,
+                          plotOutput("meta_gen_demo_enrollment"),  # Second plot
+                          downloadButton("download_meta_gen_demo_enrollment", "Download Plot")  # Download button for the second plot
+                   )
+                 ),
+
+                 uiOutput("gen_demo_label_gender"),
+                 tableOutput("meta_gen_demo_gender"),
+
 
                  # plotOutput("meta_gen_demo_plot3"),
                  # downloadButton("download_meta_gen_demo_plot3", "Download Plot"),
 
                  uiOutput("gen_demo_label_race"),
-                 plotOutput("meta_gen_demo_plot4"),
-                 downloadButton("download_meta_gen_demo_plot4", "Download Plot"),
+                 plotOutput("meta_gen_demo_race"),
+                 downloadButton("download_meta_gen_demo_race", "Download Plot"),
+
+                 uiOutput("social_variables_text"),
+
+                 # grVizOutput("social_variables_flowchart"),
+                 uiOutput("social_variables_flowchart"),
 
                  uiOutput("gen_demo_label_disability"),
-                 plotOutput("meta_gen_demo_plot5"),
-                 downloadButton("download_meta_gen_demo_plot5", "Download Plot"),
+                 # plotOutput("meta_gen_demo_severity"),
+                 uiOutput("meta_gen_demo_severity"),
+                 # downloadButton("download_meta_gen_demo_severity", "Download Plot"),
 
-                 plotOutput("meta_gen_demo_plot6"),
-                 downloadButton("download_meta_gen_demo_plot6", "Download Plot"),
+                 plotOutput("meta_gen_demo_prim_impair"),
+                 downloadButton("download_meta_gen_demo_prim_impair", "Download Plot"),
 
-                 plotOutput("meta_gen_demo_plot7"),
-                 downloadButton("download_meta_gen_demo_plot7", "Download Plot"),
+                 # plotOutput("meta_gen_demo_plot7"),
+                 # downloadButton("download_meta_gen_demo_plot7", "Download Plot"),
 
-                 uiOutput("gen_demo_label1"),
+                 # uiOutput("gen_demo_label_time"),
 
-                 plotOutput("meta_gen_demo_plot1"),
-                 downloadButton("download_meta_gen_demo_plot1", "Download Plot"),
-
-                 plotOutput("meta_gen_demo_plot2"),
-                 downloadButton("download_meta_gen_demo_plot2", "Download Plot"),
+                 # plotOutput("meta_gen_demo_time"),
+                 # downloadButton("download_meta_gen_demo_time", "Download Plot"),
+                 #
+                 # plotOutput("meta_gen_demo_enrollment"),
+                 # downloadButton("download_meta_gen_demo_enrollment", "Download Plot"),
+                 #
+                 # fluidRow(
+                 #   column(6,
+                 #          plotOutput("meta_gen_demo_time"),  # First plot
+                 #          downloadButton("download_meta_gen_demo_time", "Download Plot")  # Download button for the first plot
+                 #   ),
+                 #   column(6,
+                 #          plotOutput("meta_gen_demo_enrollment"),  # Second plot
+                 #          downloadButton("download_meta_gen_demo_enrollment", "Download Plot")  # Download button for the second plot
+                 #   )
+                 # )
 
                  # plotOutput("meta_gen_demo_plot3"),
                  # downloadButton("download_meta_gen_demo_plot3", "Download Plot"),
@@ -1449,8 +1486,62 @@ server <- function(input, output, session) {
   })
 
 
-
   ## METADATA text outputs
+
+  output$gen_demo_title <- renderUI({
+
+    HTML(paste(
+      "<div style='padding: 15px;'>",
+      "<h1 style='color: #007bff;font-size: 36px; font-weight: bold; margin-bottom: 10px;'>Here is a breakdown of your data...</h3>",
+      "</ul>",
+      "</div>"
+    ))
+
+  })
+
+
+  output$gen_demo_participants <- renderUI({
+    req(selected_data())  # Ensure data is loaded
+
+    data <- selected_data()
+
+    unique_ids <- length(unique(data$Participant_ID))
+
+    HTML(paste(
+      "<div style='padding: 10px; background-color: #f9f9f9;'>",
+      "<p style='font-size: 18px;'> <strong>", unique_ids,
+      "</strong> unique participants.</p>",
+      "</div>"
+    ))
+
+  })
+  # Summaries for variables
+  # Gender, race,
+  # Majority:
+
+  output$gen_demo_label_gender <- renderUI({
+
+    HTML(paste(
+      "<div style='padding: 10px;'>",
+      "<h3 style='color: #007bff;'>Gender Summary</h3>",
+      "</ul>",
+      "</div>"
+    ))
+
+  })
+
+
+  output$gen_demo_label_race <- renderUI({
+
+    HTML(paste(
+      "<div style='padding: 10px; '>",
+      "<h3 style='color: #007bff;'>Race Summary</h3>",
+      "</ul>",
+      "</div>"
+    ))
+
+  })
+
   # output$cultural_barriers_text <- renderUI({
   output$social_variables_text <- renderUI({
     req(selected_data())  # Ensure data is loaded
@@ -1555,33 +1646,200 @@ server <- function(input, output, session) {
   })
 
 
-  output$gen_demo_label1 <- renderUI({
+  output$social_variables_flowchart <- renderUI({
+
+    social_count <- 239
+    social_percent <- 49.5
+    economic_count <- 210
+    economic_percent <- 43.5
+    cultural_count <- 49
+    cultural_percent <- 10.1
+    circumstances_count <- 190
+    circumstances_percent <- 39.3
+    cultural_barriers_count <- 30
+    cultural_barriers_percent <- 6.2
+    english_language_learner_count <- 19
+    english_language_learner_percent <- 3.9
+    foster_youth_count <- 35
+    foster_youth_percent <- 7.2
+    offender_count <- 14
+    offender_percent <- 2.9
+    skills_deficient_count <- 141
+    skills_deficient_percent <- 29.2
+    low_ses_count <- 193
+    low_ses_percent <- 40
+    homeless_count <- 3
+    homeless_percent <- 0.6
+    tanf_count <- 14
+    tanf_percent <- 2.9
+
+    # Building the flowchart as HTML within renderUI
+    div(
+      style = "display: flex; flex-direction: column; align-items: center; font-family: Helvetica, sans-serif;",
+
+      # Socioeconomic Barriers box
+      div(
+        style = "background-color: lightblue; padding: 20px; width: 300px; text-align: center; font-size: 18px; border: 2px solid black; margin: 20px;",
+        "Socioeconomic Barriers"
+      ),
+
+      # Row for Social and Economic boxes
+      div(
+        style = "display: flex; justify-content: center; width: 100%; margin: 20px 0;",
+        div(
+          style = "background-color: lightblue; padding: 15px; width: 150px; text-align: center; font-size: 16px; border: 2px solid black; margin-right: 20px;",
+          paste("Social", social_count, "(", sprintf("%.1f", social_percent), "%)")
+        ),
+        div(
+          style = "background-color: lightblue; padding: 15px; width: 150px; text-align: center; font-size: 16px; border: 2px solid black;",
+          paste("Economic", economic_count, "(", sprintf("%.1f", economic_percent), "%)")
+        )
+      ),
+
+      # Row for Cultural and Circumstances under Social
+      div(
+        style = "display: flex; justify-content: center; width: 100%; margin: 20px 0;",
+        div(
+          style = "background-color: lightblue; padding: 15px; width: 150px; text-align: center; font-size: 14px; border: 2px solid black; margin-right: 20px;",
+          paste("Cultural", cultural_count, "(", sprintf("%.1f", cultural_percent), "%)")
+        ),
+        div(
+          style = "background-color: lightblue; padding: 15px; width: 150px; text-align: center; font-size: 14px; border: 2px solid black;",
+          paste("Circumstances", circumstances_count, "(", sprintf("%.1f", circumstances_percent), "%)")
+        )
+      ),
+
+      # Row for Low SES, Homeless, and TANF under Economic
+      div(
+        style = "display: flex; justify-content: center; width: 100%; margin: 20px 0;",
+        div(
+          style = "background-color: lightblue; padding: 15px; width: 150px; text-align: center; font-size: 12px; border: 2px solid black; margin-right: 20px;",
+          paste("Low SES", low_ses_count, "(", sprintf("%.1f", low_ses_percent), "%)")
+        ),
+        div(
+          style = "background-color: lightblue; padding: 15px; width: 150px; text-align: center; font-size: 12px; border: 2px solid black; margin-right: 20px;",
+          paste("Homeless", homeless_count, "(", sprintf("%.1f", homeless_percent), "%)")
+        ),
+        div(
+          style = "background-color: lightblue; padding: 15px; width: 150px; text-align: center; font-size: 12px; border: 2px solid black;",
+          paste("TANF", tanf_count, "(", sprintf("%.1f", tanf_percent), "%)")
+        )
+      ),
+
+      # Row for Cultural Barriers and English Language Learner boxes
+      div(
+        style = "display: flex; justify-content: center; width: 100%; margin: 20px 0;",
+        div(
+          style = "background-color: lightblue; padding: 15px; width: 150px; text-align: center; font-size: 12px; border: 2px solid black; margin-right: 20px;",
+          paste("Cultural Barriers", cultural_barriers_count, "(", sprintf("%.1f", cultural_barriers_percent), "%)")
+        ),
+        div(
+          style = "background-color: lightblue; padding: 15px; width: 150px; text-align: center; font-size: 12px; border: 2px solid black;",
+          paste("English Language Learner", english_language_learner_count, "(", sprintf("%.1f", english_language_learner_percent), "%)")
+        )
+      ),
+
+      # Row for Foster Youth and Offender boxes
+      div(
+        style = "display: flex; justify-content: center; width: 100%; margin: 20px 0;",
+        div(
+          style = "background-color: lightblue; padding: 15px; width: 150px; text-align: center; font-size: 12px; border: 2px solid black; margin-right: 20px;",
+          paste("Foster Youth", foster_youth_count, "(", sprintf("%.1f", foster_youth_percent), "%)")
+        ),
+        div(
+          style = "background-color: lightblue; padding: 15px; width: 150px; text-align: center; font-size: 12px; border: 2px solid black;",
+          paste("Offender", offender_count, "(", sprintf("%.1f", offender_percent), "%)")
+        )
+      ),
+
+      # Row for Skills Deficient box
+      div(
+        style = "display: flex; justify-content: center; width: 100%; margin: 20px 0;",
+        div(
+          style = "background-color: lightblue; padding: 15px; width: 150px; text-align: center; font-size: 12px; border: 2px solid black; margin-right: 20px;",
+          paste("Skills Deficient", skills_deficient_count, "(", sprintf("%.1f", skills_deficient_percent), "%)")
+        )
+      )
+    )
+  })
+
+
+  # output$social_variables_flowchart <- renderGrViz({
+  #   # Define variables for counts and percentages
+  #   social_count <- 239
+  #   social_percent <- 49.5
+  #   economic_count <- 210
+  #   economic_percent <- 43.5
+  #   cultural_count <- 49
+  #   cultural_percent <- 10.1
+  #   circumstances_count <- 190
+  #   circumstances_percent <- 39.3
+  #   cultural_barriers_count <- 30
+  #   cultural_barriers_percent <- 6.2
+  #   english_language_learner_count <- 19
+  #   english_language_learner_percent <- 3.9
+  #   foster_youth_count <- 35
+  #   foster_youth_percent <- 7.2
+  #   offender_count <- 14
+  #   offender_percent <- 2.9
+  #   skills_deficient_count <- 141
+  #   skills_deficient_percent <- 29.2
+  #   low_ses_count <- 193
+  #   low_ses_percent <- 40
+  #   homeless_count <- 3
+  #   homeless_percent <- 0.6
+  #   tanf_count <- 14
+  #   tanf_percent <- 2.9
+  #
+  #   # Build the Graph code with the variables
+  #   flowchart_code <- paste0("digraph TD {\n",
+  #                            "  graph [rankdir=TB, splines=false]\n",
+  #                            "  node [fontname=Helvetica, shape=rectangle, style=filled, fillcolor=lightblue, width=2]\n\n",
+  #                            "  A [label='Socioeconomic Barriers ", social_count, " (", sprintf("%.1f", social_percent), "%)', fontsize=18]\n",
+  #                            "  B [label='Social ", social_count, " (", sprintf("%.1f", social_percent), "%)', fontsize=16]\n",
+  #                            "  C [label='Economic ", economic_count, " (", sprintf("%.1f", economic_percent), "%)', fontsize=16]\n\n",
+  #                            "  D [label='Cultural ", cultural_count, " (", sprintf("%.1f", cultural_percent), "%)', fontsize=14]\n",
+  #                            "  E [label='Circumstances ", circumstances_count, " (", sprintf("%.1f", circumstances_percent), "%)', fontsize=14]\n\n",
+  #                            "  F [label='Cultural Barriers ", cultural_barriers_count, " (", sprintf("%.1f", cultural_barriers_percent), "%)', fontsize=12]\n",
+  #                            "  G [label='English Language Learner ", english_language_learner_count, " (", sprintf("%.1f", english_language_learner_percent), "%)', fontsize=12]\n",
+  #                            "  H [label='Foster Youth ", foster_youth_count, " (", sprintf("%.1f", foster_youth_percent), "%)', fontsize=12]\n",
+  #                            "  I [label='Offender ", offender_count, " (", sprintf("%.1f", offender_percent), "%)', fontsize=12]\n",
+  #                            "  J [label='Skills Deficient ", skills_deficient_count, " (", sprintf("%.1f", skills_deficient_percent), "%)', fontsize=12]\n",
+  #                            "  K [label='Low SES ", low_ses_count, " (", sprintf("%.1f", low_ses_percent), "%)', fontsize=12]\n",
+  #                            "  L [label='Homeless ", homeless_count, " (", sprintf("%.1f", homeless_percent), "%)', fontsize=12]\n",
+  #                            "  M [label='TANF ", tanf_count, " (", sprintf("%.1f", tanf_percent), "%)', fontsize=12]\n\n",
+  #
+  #                            "  { rank=same; B; C }\n",
+  #                            "  { rank=same; K; L; M; I; J }\n\n",
+  #
+  #                            "  A -> B;\n",
+  #                            "  A -> C;\n",
+  #                            "  B -> D;\n",
+  #                            "  B -> E;\n",
+  #                            "  D -> F;\n",
+  #                            "  D -> G;\n",
+  #                            "  E -> H;\n",
+  #                            "  E -> I;\n",
+  #                            "  E -> J;\n",
+  #                            "  C -> K;\n",
+  #                            "  C -> L;\n",
+  #                            "  C -> M;\n\n",
+  #
+  #                            "  edge [style=dashed, arrowhead=none]\n",
+  #                            "}\n")
+  #
+  #   # Generate the flowchart with updated values
+  #   DiagrammeR::grViz(flowchart_code)
+  #
+  # })
+
+
+
+  output$gen_demo_label_time <- renderUI({
 
     HTML(paste(
-      "<div style='padding: 10px; background-color: #f9f9f9; border-left: 5px solid #007bff;'>",
+      "<div style='padding: 10px; '>",
       "<h3 style='color: #007bff;'>Time Summary</h3>",
-      "</ul>",
-      "</div>"
-    ))
-
-  })
-
-  output$gen_demo_label2 <- renderUI({
-
-    HTML(paste(
-      "<div style='padding: 10px; background-color: #f9f9f9; border-left: 5px solid #007bff;'>",
-      "<h3 style='color: #007bff;'>Gender Summary</h3>",
-      "</ul>",
-      "</div>"
-    ))
-
-  })
-
-  output$gen_demo_label_race <- renderUI({
-
-    HTML(paste(
-      "<div style='padding: 10px; background-color: #f9f9f9; border-left: 5px solid #007bff;'>",
-      "<h3 style='color: #007bff;'>Race Summary</h3>",
       "</ul>",
       "</div>"
     ))
@@ -1591,7 +1849,7 @@ server <- function(input, output, session) {
   output$gen_demo_label_disability <- renderUI({
 
     HTML(paste(
-      "<div style='padding: 10px; background-color: #f9f9f9; border-left: 5px solid #007bff;'>",
+      "<div style='padding: 10px;'>",
       "<h3 style='color: #007bff;'>Disability Summary</h3>",
       "</ul>",
       "</div>"
@@ -1628,7 +1886,8 @@ server <- function(input, output, session) {
 
   })
 
-  output$meta_gen_demo_table <- renderTable({
+  # GENDER
+  output$meta_gen_demo_gender <- renderTable({
     req(selected_data())  # Ensure data is loaded
     data <- selected_data()
 
@@ -1716,23 +1975,46 @@ server <- function(input, output, session) {
 
   ## METADATA plots
   # Time passed in program
-  output$meta_gen_demo_plot1 <- renderPlot({
+  # output$meta_gen_demo_time <- renderPlot({
+  #   req(selected_data())
+  #   data <- selected_data()
+  #
+  #   median_time_passed <- grep("(?i)median.*time.*passed.*days", names(data),
+  #                              value = TRUE,
+  #                              perl = TRUE)
+  #
+  #   hist(as.numeric(data[[median_time_passed]]),
+  #        col = "steelblue",
+  #        main = "Distribution of Time in Programs",
+  #        xlab = "Median Time in Program (per individual)")
+  #
+  #   })
+
+  output$meta_gen_demo_time <- renderPlot({
     req(selected_data())
     data <- selected_data()
 
+    # Get the column name for the median time passed
     median_time_passed <- grep("(?i)median.*time.*passed.*days", names(data),
-                               value = TRUE,
-                               perl = TRUE)
+                               value = TRUE, perl = TRUE)
 
-    hist(as.numeric(data[[median_time_passed]]),
+    # Create the histogram
+    hist_data <- as.numeric(data[[median_time_passed]])
+
+    # Create the histogram and adjust xlim and ylim
+    hist(hist_data,
          col = "steelblue",
          main = "Distribution of Time in Programs",
-         xlab = "Median Time in Program (per individual)")
+         xlab = "Median Time in Program (per individual)",
+         xlim = c(0, max(hist_data, na.rm = TRUE)),  # Ensure x-axis starts at 0
+         ylim = c(0, max(table(cut(hist_data, breaks = 30))) * 1.15),  # Adjust y-axis height (15% extra space)
+         border = "white"
+    )
+  })
 
-    })
 
   # Download handler for Time in Programs Plot
-  output$download_meta_gen_demo_plot1 <- downloadHandler(
+  output$download_meta_gen_demo_time <- downloadHandler(
     filename = function() { "time_in_programs_plot.png" },
     content = function(file) {
       png(file)
@@ -1745,19 +2027,57 @@ server <- function(input, output, session) {
   )
 
   # Enrollment length
-  output$meta_gen_demo_plot2 <- renderPlot({
+  # output$meta_gen_demo_enrollment <- renderPlot({
+  #   req(selected_data())
+  #   data <- selected_data()
+  #
+  #   hist(data$Enroll_Length,
+  #        col = "steelblue",
+  #        main = "Distribution of Enrollment Lengths",
+  #        xlab = "Enrollment Length (Quarters)")
+  #
+  # })
+
+  output$meta_gen_demo_enrollment <- renderPlot({
     req(selected_data())
     data <- selected_data()
 
-    hist(data$Enroll_Length,
-         col = "steelblue",
-         main = "Distribution of Enrollment Lengths",
-         xlab = "Enrollment Length (Quarters)")
+    # Create the histogram for Enrollment Length
+    enroll_data <- data$Enroll_Length
 
+    # Adjust the breaks to ensure they span the range of the data
+    max_enroll <- max(enroll_data, na.rm = TRUE)
+    min_enroll <- min(enroll_data, na.rm = TRUE)
+
+    # Ensure that the breaks cover the full range, adjusting if necessary
+    breaks_seq <- seq(0, ceiling(max_enroll / 2) * 2, by = 2)
+
+    # Create histogram with customized breaks every 2 units
+    hist_data <- hist(enroll_data,
+                      col = "steelblue",
+                      main = "Distribution of Enrollment Lengths",
+                      xlab = "Enrollment Length (Quarters)",
+                      xlim = c(0, max_enroll),  # Ensure x-axis starts at 0
+                      breaks = breaks_seq,  # Set breaks to every 2 quarters
+                      border = "white",  # Remove borders on bars
+                      ylim = c(0, max(table(cut(enroll_data, breaks = breaks_seq))) * 1.15),  # Adjust y-axis height (15% extra space)
+                      axes = FALSE  # Disable default axes to prevent overlapping ticks
+    )
+
+    # Add the x-axis manually
+    axis(1, at = breaks_seq, labels = breaks_seq, las = 2)  # las=2 to rotate labels vertically
+
+    # Add the y-axis manually
+    axis(2, las = 2)  # las=2 to rotate y-axis labels vertically
   })
 
+
+
+
+
+
   # Download handler for Enrollment Length Plot
-  output$download_meta_gen_demo_plot2 <- downloadHandler(
+  output$download_meta_gen_demo_enrollment <- downloadHandler(
     filename = function() { "enrollment_length_plot.png" },
     content = function(file) {
       png(file)
@@ -1772,136 +2092,16 @@ server <- function(input, output, session) {
 
 
   # Gender
-  # output$meta_gen_demo_plot3 <- renderPlot({
-  #   req(selected_data())
-  #   data <- selected_data()
-  #
-  #   # Identify the column for gender/sex dynamically
-  #   sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
-  #                   value = TRUE, perl = TRUE)
-  #
-  #   # Define the mapping of numeric values to labels
-  #   gender_labels <- c(
-  #     "1" = "Male",
-  #     "2" = "Female",
-  #     "3" = "Other",
-  #     "9" = "Did not identify"
-  #   )
-  #
-  #   # Extract the gender column
-  #   gender_data <- data[[sex_col]]
-  #
-  #   # Replace numeric values with labels
-  #   labeled_gender_data <- factor(gender_data, levels = names(gender_labels),
-  #                                 labels = gender_labels)
-  #
-  #   # Create the barplot
-  #   barplot(table(labeled_gender_data),
-  #           main = "Distribution of Genders",
-  #           xlab = "Gender",
-  #           col = c("steelblue", "lightsteelblue", "darkblue", "gray"))
-  # })
-
-
-  # # Download handler for Gender Distribution Plot
-  # output$download_meta_gen_demo_plot3 <- downloadHandler(
-  #   filename = function() { "gender_distribution_plot.png" },
-  #   content = function(file) {
-  #     png(file)
-  #
-  #     # Access the selected data
-  #     data <- selected_data()
-  #
-  #     # Identify the column for gender/sex dynamically
-  #     sex_col <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
-  #                     value = TRUE, perl = TRUE)
-  #
-  #     # Define the mapping of numeric values to labels
-  #     gender_labels <- c(
-  #       "1" = "Male",
-  #       "2" = "Female",
-  #       "3" = "Other",
-  #       "9" = "Did not identify"
-  #     )
-  #
-  #     # Extract the gender column
-  #     gender_data <- data[[sex_col]]
-  #
-  #     # Replace numeric values with labels
-  #     labeled_gender_data <- factor(gender_data, levels = names(gender_labels),
-  #                                   labels = gender_labels)
-  #
-  #     # Create the barplot
-  #     barplot(table(labeled_gender_data),
-  #             main = "Distribution of Genders",
-  #             xlab = "Gender",
-  #             col = c("steelblue", "lightsteelblue", "darkblue", "gray"))
-  #
-  #     dev.off()
-  #   }
-  # )
-
 
 
 
   # Race
-  # output$meta_gen_demo_plot4 <- renderPlot({
-  #   req(selected_data())
-  #   data <- selected_data()
-  #
-  #   race_cols <- grep("(?i)(_indian|_asian|_black|_hawaiian|_islander|_white|hispanic)(?!.*(?i)_desc)",
-  #                     names(data),
-  #                     value = TRUE, perl = TRUE)
-  #
-  #   # Find the column for final employment status
-  #   final_employ_col <- grep("(?i)(final).*?(employ)(?!.*(?i)_desc)",
-  #                            names(data), value = TRUE, perl = TRUE)
-  #
-  #   data_subset <- data[, .SD, .SDcols = c(final_employ_col,
-  #                                          race_cols)]
-  #
-  #   # Create a long-format data.table
-  #   long_data <- melt(data_subset,
-  #                     id.vars = final_employ_col,
-  #                     measure.vars = race_cols,
-  #                     variable.name = "Race",
-  #                     value.name = "Has_Race")
-  #   # Filter rows where Has_Race is 1
-  #   filtered_data <- long_data[Has_Race == 1]
-  #
-  #
-  #   # Create a contingency table of Final_Employment by Gender
-  #   race_table <- table(filtered_data$Race)
-  #
-  #   # Create the bar plot based on the contingency table
-  #   par(oma = c(0, 0, 0, 0) + 0.6)
-  #   barplot_heights <- barplot(race_table, beside = TRUE,
-  #                              ylab = "Count",
-  #                              xaxt = "n",   # Disable default x-axis labels
-  #                              yaxt = "n",   # Disable default y-axis labels
-  #                              xlab = "",
-  #                              main = "Distribution of Race", las = 2,
-  #                              col = "steelblue")
-  #
-  #   # Add the y-axis
-  #   axis(side = 2, las = 2, mgp = c(3, 0.75, 0))
-  #
-  #   # Add diagonal labels
-  #   text(x = barplot_heights, # Center labels based on barplot positions
-  #        y = par("usr")[3] - 0.45,
-  #        labels = gsub("^E[0-9]+_|_911$", "", race_cols),
-  #        xpd = NA,
-  #        srt = 45,  # Rotate the labels by 45 degrees
-  #        cex = .8,
-  #        adj = c(1, 1))  # Adjust text alignment to center under bars
-  #
-  #   })
-
-  output$meta_gen_demo_plot4 <- renderPlot({
+  output$meta_gen_demo_race <- renderPlot({
     req(selected_data())
     data <- selected_data()
 
-    race_cols <- grep("(?i)(_indian|_asian|_black|_hawaiian|_islander|_white|hispanic)(?!.*(?i)_desc)",
+    race_cols <- grep(paste0("(?i)(_indian|_asian|_black|_hawaiian|_islander",
+                             "|_white|hispanic)(?!.*(?i)_desc)"),
                       names(data),
                       value = TRUE, perl = TRUE)
 
@@ -1922,8 +2122,14 @@ server <- function(input, output, session) {
     race_table <- table(filtered_data$Race)
     race_table <- sort(race_table, decreasing = TRUE)
 
+    # Calculate total count for percentage calculations
+    total_count <- sum(race_table)
+
     # Order race_cols based on the sorted race_table names
     ordered_race_cols <- names(race_table)
+
+    # Set y-axis limits to accommodate labels (adding 15% space above max value)
+    y_limit <- max(race_table) * 1.15
 
     par(oma = c(0, 0, 0, 0) + 0.6)
     barplot_heights <- barplot(race_table, beside = TRUE,
@@ -1931,8 +2137,10 @@ server <- function(input, output, session) {
                                xaxt = "n",   # Disable default x-axis labels
                                yaxt = "n",   # Disable default y-axis labels
                                xlab = "",
-                               main = "Distribution of Race", las = 2,
-                               col = "steelblue")
+                               main = "Distribution of Race",
+                               las = 2,
+                               col = "steelblue",
+                               ylim = c(0, y_limit))  # Set y-axis limit
 
     # Add the y-axis
     axis(side = 2, las = 2, mgp = c(3, 0.75, 0))
@@ -1945,136 +2153,307 @@ server <- function(input, output, session) {
          srt = 45,  # Rotate the labels by 45 degrees
          cex = .8,
          adj = c(1, 1))  # Adjust text alignment to center under bars
+
+    # Add count and percentage labels above bars
+    text(x = barplot_heights,
+         # Adjust positioning slightly above bars
+         y = race_table + max(race_table) * 0.05,
+         labels = paste0(race_table, " (",
+                         round((race_table / total_count) * 100, 1), "%)"),
+         cex = 0.9,
+         pos = 3)  # Position above bars
+
   })
 
-
   # Download handler for Race Distribution Plot
-  output$download_meta_gen_demo_plot4 <- downloadHandler(
+  output$download_meta_gen_demo_race <- downloadHandler(
     filename = function() { "race_distribution_plot.png" },
     content = function(file) {
       png(file)
-      race_cols <- grep("(?i)(_indian|_asian|_black|_hawaiian|_islander|_white|hispanic)(?!.*(?i)_desc)",
-                        names(selected_data()),
+      req(selected_data())
+      data <- selected_data()
+
+      race_cols <- grep(paste0("(?i)(_indian|_asian|_black|_hawaiian|_islander",
+                               "|_white|hispanic)(?!.*(?i)_desc)"),
+                        names(data),
                         value = TRUE, perl = TRUE)
 
-      data_subset <- selected_data()[, .SD, .SDcols = c("Final_Employment", race_cols)]
-      long_data <- melt(data_subset, id.vars = "Final_Employment", measure.vars = race_cols,
-                        variable.name = "Race", value.name = "Has_Race")
-      filtered_data <- long_data[Has_Race == 1]
-      race_table <- table(filtered_data$Race)
+      final_employ_col <- grep("(?i)(final).*?(employ)(?!.*(?i)_desc)",
+                               names(data), value = TRUE, perl = TRUE)
 
+      data_subset <- data[, .SD, .SDcols = c(final_employ_col, race_cols)]
+
+      long_data <- melt(data_subset,
+                        id.vars = final_employ_col,
+                        measure.vars = race_cols,
+                        variable.name = "Race",
+                        value.name = "Has_Race")
+
+      filtered_data <- long_data[Has_Race == 1]
+
+      # Create contingency table and order by count (descending)
+      race_table <- table(filtered_data$Race)
+      race_table <- sort(race_table, decreasing = TRUE)
+
+      # Calculate total count for percentage calculations
+      total_count <- sum(race_table)
+
+      # Order race_cols based on the sorted race_table names
+      ordered_race_cols <- names(race_table)
+
+      # Set y-axis limits to accommodate labels (adding 15% space above max
+      #   value)
+      y_limit <- max(race_table) * 1.15
+
+      par(oma = c(0, 0, 0, 0) + 0.6)
       barplot_heights <- barplot(race_table, beside = TRUE,
                                  ylab = "Count",
-                                 xaxt = "n",
-                                 yaxt = "n",
+                                 xaxt = "n",   # Disable default x-axis labels
+                                 yaxt = "n",   # Disable default y-axis labels
                                  xlab = "",
-                                 main = "Distribution of Race", las = 2,
-                                 col = "steelblue")
+                                 main = "Distribution of Race",
+                                 las = 2,
+                                 col = "steelblue",
+                                 ylim = c(0, y_limit))  # Set y-axis limit
+
+      # Add the y-axis
       axis(side = 2, las = 2, mgp = c(3, 0.75, 0))
-      text(x = barplot_heights, y = par("usr")[3] - 0.45,
-           labels = gsub("^E[0-9]+_|_911$", "", race_cols),
+
+      # Add diagonal labels
+      text(x = barplot_heights, # Center labels based on barplot positions
+           y = par("usr")[3] - 0.45,
+           labels = gsub("^E[0-9]+_|_911$", "", ordered_race_cols),
            xpd = NA,
-           srt = 45,
+           srt = 45,  # Rotate the labels by 45 degrees
            cex = .8,
-           adj = c(1, 1))
+           adj = c(1, 1))  # Adjust text alignment to center under bars
+
+      # Add count and percentage labels above bars
+      text(x = barplot_heights,
+           # Adjust positioning slightly above bars
+           y = race_table + max(race_table) * 0.05,
+           labels = paste0(race_table, " (",
+                           round((race_table / total_count) * 100, 1), "%)"),
+           cex = 0.9,
+           pos = 3)  # Position above bars
       dev.off()
     }
   )
 
 
   # Severity
-  output$meta_gen_demo_plot5 <- renderPlot({
-    req(selected_data())
+  # output$meta_gen_demo_severity <- renderPlot({
+  #   req(selected_data())
+  #   data <- selected_data()
+  #
+  #   severity_col <- grep("((?i)_priority|(?i)_severity)(?!.*(?i)_desc|_age)",
+  #                        names(data), value = TRUE, perl = TRUE)
+  #
+  #   barplot(table(data[[severity_col]]),
+  #           main = "Distribution of Disability Severity",
+  #           xlab = "Severity",
+  #           names = c("Non-significant", "Significant", "Most significant"),
+  #           col = c("lightsteelblue", "steelblue", "darkblue"))
+  #
+  #   })
+
+  # Priority/severity
+  output$meta_gen_demo_severity <- renderUI({
+    req(selected_data())  # Ensure data is loaded
+
     data <- selected_data()
 
     severity_col <- grep("((?i)_priority|(?i)_severity)(?!.*(?i)_desc|_age)",
                          names(data), value = TRUE, perl = TRUE)
 
-    barplot(table(data[[severity_col]]),
-            main = "Distribution of Disability Severity",
-            xlab = "Severity",
-            names = c("Non-significant", "Significant", "Most significant"),
-            col = c("lightsteelblue", "steelblue", "darkblue"))
+    # Get counts for severity levels
+    severity_counts <- table(data[[severity_col]])
 
-    })
+    # Calculate percentages
+    severity_percentages <- prop.table(severity_counts) * 100
+
+    # Prepare text for the UI
+    severity_text <- paste(
+      "<div style='padding: 10px; '>",
+      # "<h3 style='color: #007bff;'>Disability Severity Summary</h3>",
+      # "<p style='font-size: 18px;'> <strong>", severity_counts[1],
+      # "</strong> participants with <strong>Non-significant</strong> priority (",
+      # round(severity_percentages[1], 2), "%).</p>",
+      "<p style='font-size: 18px;'> <strong>", severity_counts[3],
+      "</strong> participants with <strong>Most significant</strong> priority 1 (",
+      round(severity_percentages[3], 2), "%).</p>",
+      "<p style='font-size: 18px;'> <strong>", severity_counts[2],
+      "</strong> participants with <strong>Significant</strong> priority 2 (",
+      round(severity_percentages[2], 2), "%).</p>",
+      "</div>"
+    )
+
+    # Return the HTML text
+    HTML(severity_text)
+  })
+
+
 
   # Download handler for Severity Distribution Plot
-  output$download_meta_gen_demo_plot5 <- downloadHandler(
-    filename = function() { "severity_distribution_plot.png" },
-    content = function(file) {
-      png(file)
-      req(selected_data())
-      data <- selected_data()
-
-      severity_col <- grep("((?i)_priority|(?i)_severity)(?!.*(?i)_desc|_age)",
-                           names(data), value = TRUE, perl = TRUE)
-
-      barplot(table(data[[severity_col]]),
-              main = "Distribution of Disability Severity",
-              xlab = "Severity",
-              names = c("Non-significant", "Significant", "Most significant"),
-              col = c("lightsteelblue", "steelblue", "darkblue"))
-      dev.off()
-    }
-  )
+  # output$download_meta_gen_demo_severity <- downloadHandler(
+  #   filename = function() { "severity_distribution_plot.png" },
+  #   content = function(file) {
+  #     png(file)
+  #     req(selected_data())
+  #     data <- selected_data()
+  #
+  #     severity_col <- grep("((?i)_priority|(?i)_severity)(?!.*(?i)_desc|_age)",
+  #                          names(data), value = TRUE, perl = TRUE)
+  #
+  #     barplot(table(data[[severity_col]]),
+  #             main = "Distribution of Disability Severity",
+  #             xlab = "Severity",
+  #             names = c("Non-significant", "Significant", "Most significant"),
+  #             col = c("lightsteelblue", "steelblue", "darkblue"))
+  #     dev.off()
+  #   }
+  # )
 
 
   # Primary impairment
-  output$meta_gen_demo_plot6 <- renderPlot({
-    req(selected_data())
+  # output$meta_gen_demo_plot6 <- renderPlot({
+  #   req(selected_data())
+  #   data <- selected_data()
+  #
+  #   barplot(table(data$Primary_Impairment_Group),
+  #           main = "Distribution of Primary Impairments",
+  #           xlab = "Primary Impairment",
+  #           col = "steelblue")
+  #
+  # })
+
+  output$meta_gen_demo_prim_impair <- renderPlot({
+    req(selected_data())  # Ensure data is loaded
     data <- selected_data()
 
-    barplot(table(data$Primary_Impairment_Group),
-            main = "Distribution of Primary Impairments",
-            xlab = "Primary Impairment",
-            col = "steelblue")
+    # Create contingency table for Primary_Impairment_Group and order by count (descending)
+    impairment_table <- table(data$Primary_Impairment_Group)
+    impairment_table <- sort(impairment_table, decreasing = TRUE)
 
+    # Calculate total count for percentage calculations
+    total_count <- sum(impairment_table)
+
+    # Set y-axis limits to accommodate labels (adding 15% space above max value)
+    y_limit <- max(impairment_table) * 1.15
+
+    # Create the barplot with custom y-axis limit and main title
+    barplot_heights <- barplot(impairment_table, beside = TRUE,
+                               ylab = "Count",
+                               xaxt = "n",   # Disable default x-axis labels
+                               yaxt = "n",   # Disable default y-axis labels
+                               xlab = "",
+                               main = "Distribution of Primary Impairments",
+                               las = 2,
+                               col = "steelblue",
+                               ylim = c(0, y_limit))  # Set y-axis limit
+
+    # Add the y-axis with custom settings
+    axis(side = 2, las = 2, mgp = c(3, 0.75, 0))
+
+    # Add x-axis labels with proper positioning and rotation
+    text(x = barplot_heights,  # Center labels based on barplot positions
+         y = par("usr")[3] - 0.45,
+         labels = names(impairment_table),
+         xpd = NA,
+         srt = 45,  # Rotate the labels by 45 degrees
+         cex = 0.8,
+         adj = c(1, 1))  # Adjust text alignment to center under bars
+
+    # Add count and percentage labels above bars
+    text(x = barplot_heights,
+         y = impairment_table + max(impairment_table) * 0.05,
+         labels = paste0(impairment_table, " (",
+                         round((impairment_table / total_count) * 100, 1), "%)"),
+         cex = 0.9,
+         pos = 3)  # Position the text slightly above the bars
   })
 
+
   # Download handler for Primary Impairment Distribution Plot
-  output$download_meta_gen_demo_plot6 <- downloadHandler(
+  output$download_meta_gen_demo_prim_impair <- downloadHandler(
     filename = function() { "primary_impairment_distribution_plot.png" },
     content = function(file) {
       png(file)
-      req(selected_data())
+      req(selected_data())  # Ensure data is loaded
       data <- selected_data()
 
-      barplot(table(data$Primary_Impairment_Group),
-              main = "Distribution of Primary Impairments",
-              xlab = "Primary Impairment",
-              col = "steelblue")
+      # Create contingency table for Primary_Impairment_Group and order by count (descending)
+      impairment_table <- table(data$Primary_Impairment_Group)
+      impairment_table <- sort(impairment_table, decreasing = TRUE)
+
+      # Calculate total count for percentage calculations
+      total_count <- sum(impairment_table)
+
+      # Set y-axis limits to accommodate labels (adding 15% space above max value)
+      y_limit <- max(impairment_table) * 1.15
+
+      # Create the barplot with custom y-axis limit and main title
+      barplot_heights <- barplot(impairment_table, beside = TRUE,
+                                 ylab = "Count",
+                                 xaxt = "n",   # Disable default x-axis labels
+                                 yaxt = "n",   # Disable default y-axis labels
+                                 xlab = "",
+                                 main = "Distribution of Primary Impairments",
+                                 las = 2,
+                                 col = "steelblue",
+                                 ylim = c(0, y_limit))  # Set y-axis limit
+
+      # Add the y-axis with custom settings
+      axis(side = 2, las = 2, mgp = c(3, 0.75, 0))
+
+      # Add x-axis labels with proper positioning and rotation
+      text(x = barplot_heights,  # Center labels based on barplot positions
+           y = par("usr")[3] - 0.45,
+           labels = names(impairment_table),
+           xpd = NA,
+           srt = 45,  # Rotate the labels by 45 degrees
+           cex = 0.8,
+           adj = c(1, 1))  # Adjust text alignment to center under bars
+
+      # Add count and percentage labels above bars
+      text(x = barplot_heights,
+           y = impairment_table + max(impairment_table) * 0.05,
+           labels = paste0(impairment_table, " (",
+                           round((impairment_table / total_count) * 100, 1), "%)"),
+           cex = 0.9,
+           pos = 3)  # Position the text slightly above the bars
       dev.off()
     }
   )
 
 
-  # Primary impairment
-  output$meta_gen_demo_plot7 <- renderPlot({
-    req(selected_data())
-    data <- selected_data()
-
-    barplot(table(data$Secondary_Impairment_Group),
-            main = "Distribution of Secondary Impairments",
-            xlab = "Secondary Impairment",
-            col = "steelblue")
-
-  })
+  # Secondary impairment
+  # output$meta_gen_demo_plot7 <- renderPlot({
+  #   req(selected_data())
+  #   data <- selected_data()
+  #
+  #   barplot(table(data$Secondary_Impairment_Group),
+  #           main = "Distribution of Secondary Impairments",
+  #           xlab = "Secondary Impairment",
+  #           col = "steelblue")
+  #
+  # })
 
   # Download handler for Secondary Impairment Distribution Plot
-  output$download_meta_gen_demo_plot7 <- downloadHandler(
-    filename = function() { "secondary_impairment_distribution_plot.png" },
-    content = function(file) {
-      png(file)
-      req(selected_data())
-      data <- selected_data()
-
-      barplot(table(data$Secondary_Impairment_Group),
-              main = "Distribution of Secondary Impairments",
-              xlab = "Secondary Impairment",
-              col = "steelblue")
-      dev.off()
-    }
-  )
+  # output$download_meta_gen_demo_plot7 <- downloadHandler(
+  #   filename = function() { "secondary_impairment_distribution_plot.png" },
+  #   content = function(file) {
+  #     png(file)
+  #     req(selected_data())
+  #     data <- selected_data()
+  #
+  #     barplot(table(data$Secondary_Impairment_Group),
+  #             main = "Distribution of Secondary Impairments",
+  #             xlab = "Secondary Impairment",
+  #             col = "steelblue")
+  #     dev.off()
+  #   }
+  # )
 
 
 
