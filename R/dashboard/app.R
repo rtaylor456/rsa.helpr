@@ -256,7 +256,38 @@ ui <- fluidPage(
                        mainPanel(
                          uiOutput("models_main")
                        )
+              ),
+
+              tabPanel('Profile Comparisons',
+
+                       uiOutput("profile_topbar"),
+                       # uiOutput("profile_main")
+
+                       # fluidRow(
+                       #   column(12, h4("Filtered Data - Profile 1", style = "margin-bottom: 10px;")),
+                       #   column(12, verbatimTextOutput("filtered_data_profile1_summary"))
+                       # ),
+                       #
+                       # fluidRow(
+                       #   column(12, h4("Filtered Data - Profile 2", style = "margin-bottom: 10px;")),
+                       #   column(12, verbatimTextOutput("filtered_data_profile2_summary"))
+                       # )
+
+                       fluidRow(
+                         column(6, h4("Profile 1 Summary"), verbatimTextOutput("summary_profile1")),
+                         column(6, h4("Profile 2 Summary"), verbatimTextOutput("summary_profile2"))
                        )
+
+
+
+
+                       # sidebarPanel(
+                       #   uiOutput("profile_sidebar")
+                       # ),
+                       # mainPanel(
+                       #   uiOutput("profile_main")
+                       # )
+              )
   )
 )
 
@@ -1075,8 +1106,9 @@ server <- function(input, output, session) {
                  downloadButton("download_meta_wage_plot7", "Download Plot")
                  ),
         tabPanel("Employment",
-                 plotOutput("meta_employ_plot1"),
-                 downloadButton("download_meta_employ_plot1", "Download Plot"),
+                 # plotOutput("meta_employ_plot1"),
+                 uiOutput("meta_employ_text"),
+                 # downloadButton("download_meta_employ_plot1", "Download Plot"),
 
                  plotOutput("meta_employ_plot2"),
                  downloadButton("download_meta_employ_plot2", "Download Plot"),
@@ -3543,32 +3575,75 @@ server <- function(input, output, session) {
 
 
 
-  output$meta_employ_plot1 <- renderPlot({
-    req(selected_data())
+  # output$meta_employ_plot1 <- renderPlot({
+  #   req(selected_data())
+  #   data <- selected_data()
+  #
+  #   barplot(table(data$Final_Employment),
+  #           main = "Distribution of Exit Employment",
+  #           names = c("Non-competitive", "Competitive"),
+  #           xlab = "Exit Employment Status",
+  #           col = c("lightsteelblue", "steelblue"))
+  #
+  # })
+
+  output$meta_employ_text <- renderUI({
+    req(selected_data())  # Ensure data is loaded
     data <- selected_data()
 
-    barplot(table(data$Final_Employment),
-            main = "Distribution of Exit Employment",
-            names = c("Non-competitive", "Competitive"),
-            xlab = "Exit Employment Status",
-            col = c("lightsteelblue", "steelblue"))
+    unique_ids <- length(unique(data$Participant_ID))
 
+    final_employ_col <- grep("(?i)(final).*?(employ)(?!.*(?i)_desc)",
+                         names(data), value = TRUE, perl = TRUE)
+
+    # Check if a matching column was found
+    if (length(final_employ_col) > 0) {
+      final_employ_count <- sum(data[[final_employ_col]] == 1, na.rm = TRUE)
+    } else {
+      final_employ_count <- 0  # Fallback if no matching column is found
+    }
+
+    final_employ_percent <- round(final_employ_count / unique_ids, 2) * 100
+
+    # Prepare text for the UI
+    # employment_text <- paste(
+    #   "<div style='padding: 10px;'>",
+    #   "<p style='font-size: 18px;'> <strong>", final_employ_count,
+    #   "</strong> participants are <strong> competitively employed at exit</strong> (",
+    #   final_employ_percent, "%).</p>",
+    #   "</div>"
+    # )
+
+    # Prepare text for the UI with matching style
+    employment_text <- paste(
+      "<div style='padding: 10px;'>",
+      "<p style='font-size: 22px; color: #007bff; font-weight: bold;'>",
+      final_employ_count, " participants are competitively employed at exit (",
+      final_employ_percent, "%).</p>",
+      "</div>"
+    )
+
+
+
+    # Return the HTML text
+    HTML(employment_text)
   })
 
-  output$download_meta_employ_plot1 <- downloadHandler(
-    filename = function() { "exit_employment_distribution_plot.png" },
-    content = function(file) {
-      png(file)
-      data <- selected_data()
 
-      barplot(table(data$Final_Employment),
-              main = "Distribution of Exit Employment",
-              names = c("Non-competitive", "Competitive"),
-              xlab = "Exit Employment Status",
-              col = c("lightsteelblue", "steelblue"))
-      dev.off()
-    }
-  )
+  # output$download_meta_employ_plot1 <- downloadHandler(
+  #   filename = function() { "exit_employment_distribution_plot.png" },
+  #   content = function(file) {
+  #     png(file)
+  #     data <- selected_data()
+  #
+  #     barplot(table(data$Final_Employment),
+  #             main = "Distribution of Exit Employment",
+  #             names = c("Non-competitive", "Competitive"),
+  #             xlab = "Exit Employment Status",
+  #             col = c("lightsteelblue", "steelblue"))
+  #     dev.off()
+  #   }
+  # )
 
 
   output$meta_employ_plot2 <- renderPlot({
@@ -4010,6 +4085,9 @@ server <- function(input, output, session) {
                                 "ANOVA across Providers")
         )
       )
+
+
+
     } else if ((data_choice == "Use Generated Metadata") ||
                 (data_choice == "Upload New Dataset" &&
                  dataset_type == "metadata")) {
@@ -4751,7 +4829,8 @@ server <- function(input, output, session) {
 
         # Plot 3 with its explanation above it, only for specific responses
         conditionalPanel(
-          condition = "input.response === 'Predict Ending Wage' || input.response === 'Predict Median Difference Score'",
+          condition = "input.response === 'Predict Ending Wage' ||
+          input.response === 'Predict Median Difference Score'",
           column(12,
                  uiOutput("residuals_explanation"),
                  plotOutput("metadata_residuals3")
@@ -4767,6 +4846,448 @@ server <- function(input, output, session) {
 
     }
   })
+
+
+  output$profile_topbar <- renderUI({
+    # req(selected_data())
+    # req(input$data_choice())
+    # req(input$dataset_type())
+
+    data <- selected_data()
+    data_choice <- input$data_choice
+    dataset_type <- input$dataset_type
+
+    if (data_choice == "Upload New Dataset") {
+      validation <- validate_uploaded_dataset(data, dataset_type)
+      if (!validation$valid) {
+        return(tags$p(validation$message, style = "color: red; font-weight: bold;"))
+      }
+    }
+
+    if ((data_choice == "Use Generated Metadata") ||
+        (data_choice == "Upload New Dataset" && dataset_type == "metadata")) {
+
+      div(style = "padding-left: 10px; padding-right: 10px;",  # Prevents left-side cutoff
+          fluidRow(
+            column(12, h4("Metadata Profile Comparison Options", style = "margin-bottom: 10px;"))
+          ),
+
+          # Response Variable on its own row
+          fluidRow(
+            column(12,
+                   selectInput("response", "Select Variable of Interest",
+                               choices = c(" ", "Median Difference Score",
+                                           "Ending Wage", "Employment Outcome",
+                                           "Post-secondary Enrollment"))
+            )
+          ),
+
+          # Profile 1 Heading (Aligned Properly)
+          fluidRow(
+            column(12, h5("Profile 1 Filters", style = "margin-top: 15px;"))
+          ),
+
+          # Profile 1 Filters - Fixed Alignment
+          fluidRow(
+            column(2, selectInput("gender_filter", "Gender",
+                                  choices = c("Male", "Female", "Other", "Did not identify"),
+                                  multiple = TRUE, selected = NULL)),
+            column(2, selectInput("race_filter", "Race",
+                                  choices = c("Asian", "Black African", "Hawaiian Pacific Islander",
+                                              "Hispanic Latino", "Indian Alaskan", "White"),
+                                  multiple = TRUE, selected = NULL)),
+            column(2, selectInput("severity_filter", "Disability Severity",
+                                  choices = c("Non-significant", "Significant", "Most significant"),
+                                  multiple = TRUE, selected = NULL)),
+            column(2, selectInput("age_group_filter", "Age Group",
+                                  choices = c("<5", "5-7", "8-10", "11-13", "14-16",
+                                              "17-19", "20-22", "23-25", "26-30",
+                                              "31-40", "41+"),
+                                  multiple = TRUE, selected = NULL)),
+            column(2, selectInput("prim_impairment_filter", "Primary Impairment",
+                                  choices = c("Visual", "Auditory/Communicative",
+                                              "Intellectual/Learning", "Physical",
+                                              "Psychological", "None"),
+                                  multiple = TRUE, selected = NULL))
+          ),
+
+          # Comparison Options (Properly Aligned)
+          fluidRow(
+            column(6, radioButtons("compare_method", "Comparison Method",
+                                   choices = c("Compare to Rest of Dataset" = "rest",
+                                               "Compare to Second Profile" = "profile"),
+                                   selected = "rest"))
+          ),
+
+          # Conditional Panel for Profile 2 (Proper Alignment)
+          conditionalPanel(
+            condition = "input.compare_method == 'profile'",
+
+            # Profile 2 Heading
+            fluidRow(
+              column(12, h5("Profile 2 Filters", style = "margin-top: 15px;"))
+            ),
+
+            # Profile 2 Filters - Fixed Alignment
+            fluidRow(
+              column(2, selectInput("gender_filter2", "Gender",
+                                    choices = c("Male", "Female", "Other", "Did not identify"),
+                                    multiple = TRUE, selected = NULL)),
+              column(2, selectInput("race_filter2", "Race",
+                                    choices = c("Asian", "Black African", "Hawaiian Pacific Islander",
+                                                "Hispanic Latino", "Indian Alaskan", "White"),
+                                    multiple = TRUE, selected = NULL)),
+              column(2, selectInput("severity_filter2", "Disability Severity",
+                                    choices = c("Non-significant", "Significant", "Most significant"),
+                                    multiple = TRUE, selected = NULL)),
+              column(2, selectInput("age_group_filter2", "Age Group",
+                                    choices = c("<5", "5-7", "8-10", "11-13", "14-16",
+                                                "17-19", "20-22", "23-25", "26-30",
+                                                "31-40", "41+"),
+                                    multiple = TRUE, selected = NULL)),
+              column(2, selectInput("prim_impairment_filter2", "Primary Impairment",
+                                    choices = c("Visual", "Auditory/Communicative",
+                                                "Intellectual/Learning", "Physical",
+                                                "Psychological", "None"),
+                                    multiple = TRUE, selected = NULL))
+            )
+          )
+      )
+
+
+    }
+  })
+
+
+  # profile1_filtered_data <- reactive({
+  #   req(selected_data())
+  #   req(input$gender_filter, input$race_filter, input$severity_filter,
+  #       input$age_group_filter, input$prim_impairment_filter)
+  #
+  #   data <- selected_data()
+  #
+  #   # Collect Profile 1 filter inputs
+  #   gender <- input$gender_filter
+  #   race <- input$race_filter
+  #   severity <- input$severity_filter
+  #   age_group <- input$age_group_filter
+  #   prim_impairment <- input$prim_impairment_filter
+  #
+  #   # Filter Profile 1 Data
+  #   filter_data(data,
+  #               gender = gender,
+  #               race = race,
+  #               severity = severity,
+  #               age_group = age_group,
+  #               prim_impairment = prim_impairment)
+  # })
+  #
+  # profile2_filtered_data <- reactive({
+  #   req(selected_data(), input$compare_method)
+  #
+  #   data <- selected_data()
+  #
+  #   if (input$compare_method == "rest") {
+  #     req(profile1_filtered_data())  # Ensure Profile 1 data is available
+  #
+  #     # Get Profile 1 inputs to create the "rest" group
+  #     gender_rest <- setdiff(c("Male", "Female", "Other",
+  #                              "Did not identify"), input$gender_filter)
+  #     race_rest <- setdiff(c("Asian", "Black African",
+  #                            "Hawaiian Pacific Islander",
+  #                            "Hispanic Latino", "Indian Alaskan", "White"),
+  #                          input$race_filter)
+  #     severity_rest <- setdiff(c("Non-significant", "Significant",
+  #                                "Most significant"), input$severity_filter)
+  #     age_group_rest <- setdiff(c("<5", "5-7", "8-10", "11-13", "14-16",
+  #                                 "17-19", "20-22",
+  #                                 "23-25", "26-30", "31-40", "41+"),
+  #                               input$age_group_filter)
+  #     prim_impairment_rest <- setdiff(c("Visual", "Auditory/Communicative",
+  #                                       "Intellectual/Learning", "Physical",
+  #                                       "Psychological", "None"),
+  #                                     input$prim_impairment_filter)
+  #
+  #     # Filter Profile 2 Data (Rest of the Dataset)
+  #     return(filter_data(data,
+  #                        gender = gender_rest,
+  #                        race = race_rest,
+  #                        severity = severity_rest,
+  #                        age_group = age_group_rest,
+  #                        prim_impairment = prim_impairment_rest))
+  #   } else if (input$compare_method == "profile") {
+  #     req(input$gender_filter2, input$race_filter2, input$severity_filter2,
+  #         input$age_group_filter2, input$prim_impairment_filter2)
+  #
+  #     # Collect Profile 2 filter inputs
+  #     gender2 <- input$gender_filter2
+  #     race2 <- input$race_filter2
+  #     severity2 <- input$severity_filter2
+  #     age_group2 <- input$age_group_filter2
+  #     prim_impairment2 <- input$prim_impairment_filter2
+  #
+  #     # Filter Profile 2 Data
+  #     return(filter_data(data,
+  #                        gender = gender2,
+  #                        race = race2,
+  #                        severity = severity2,
+  #                        age_group = age_group2,
+  #                        prim_impairment = prim_impairment2))
+  #   }
+  #
+  #   return(NULL)  # Return NULL if no valid comparison method is selected
+  # })
+
+  profile1_filtered_data <- reactive({
+    req(selected_data())
+
+    filter_data(
+      selected_data(),
+      gender = if (length(input$gender_filter) == 0) NULL else input$gender_filter,
+      race = if (length(input$race_filter) == 0) NULL else input$race_filter,
+      severity = if (length(input$severity_filter) == 0) NULL else input$severity_filter,
+      age_group = if (length(input$age_group_filter) == 0) NULL else input$age_group_filter,
+      prim_impairment = if (length(input$prim_impairment_filter) == 0) NULL else input$prim_impairment_filter,
+      response = if (length(input$response) == 0) NULL else input$response
+    )
+  })
+
+  # profile2_filtered_data <- reactive({
+  #   req(selected_data())
+  #   req(input$compare_method)
+  #
+  #   if (input$compare_method == "rest") {
+  #     gender_rest <- setdiff(c("Male", "Female", "Other", "Did not identify"),
+  #                            input$gender_filter)
+  #     race_rest <- setdiff(c("Asian", "Black African", "Hawaiian Pacific Islander",
+  #                            "Hispanic Latino", "Indian Alaskan", "White"),
+  #                          input$race_filter)
+  #     severity_rest <- setdiff(c("Non-significant", "Significant", "Most significant"),
+  #                              input$severity_filter)
+  #     age_group_rest <- setdiff(c("<5", "5-7", "8-10", "11-13", "14-16", "17-19", "20-22",
+  #                                 "23-25", "26-30", "31-40", "41+"), input$age_group_filter)
+  #     prim_impairment_rest <- setdiff(c("Visual", "Auditory/Communicative", "Intellectual/Learning",
+  #                                       "Physical", "Psychological", "None"), input$prim_impairment_filter)
+  #
+  #     filter_data(
+  #       selected_data(),
+  #       gender = if (length(gender_rest) == 0) NULL else gender_rest,
+  #       race = if (length(race_rest) == 0) NULL else race_rest,
+  #       severity = if (length(severity_rest) == 0) NULL else severity_rest,
+  #       age_group = if (length(age_group_rest) == 0) NULL else age_group_rest,
+  #       prim_impairment = if (length(prim_impairment_rest) == 0) NULL else prim_impairment_rest
+  #     )
+  #   } else if (input$compare_method == "profile") {
+  #     req(input$gender_filter2, input$race_filter2, input$severity_filter2, input$age_group_filter2, input$prim_impairment_filter2)
+  #
+  #     filter_data(
+  #       selected_data(),
+  #       gender = if (length(input$gender_filter2) == 0) NULL else input$gender_filter2,
+  #       race = if (length(input$race_filter2) == 0) NULL else input$race_filter2,
+  #       severity = if (length(input$severity_filter2) == 0) NULL else input$severity_filter2,
+  #       age_group = if (length(input$age_group_filter2) == 0) NULL else input$age_group_filter2,
+  #       prim_impairment = if (length(input$prim_impairment_filter2) == 0) NULL else input$prim_impairment_filter2
+  #     )
+  #   }
+  # })
+
+  profile2_filtered_data <- reactive({
+    req(selected_data())
+    req(input$compare_method)
+
+    if (input$compare_method == "rest") {
+      gender_rest <- if (!is.null(input$gender_filter)) setdiff(c("Male", "Female", "Other", "Did not identify"), input$gender_filter) else NULL
+      race_rest <- if (!is.null(input$race_filter)) setdiff(c("Asian", "Black African", "Hawaiian Pacific Islander",
+                                                              "Hispanic Latino", "Indian Alaskan", "White"), input$race_filter) else NULL
+      severity_rest <- if (!is.null(input$severity_filter)) setdiff(c("Non-significant", "Significant", "Most significant"), input$severity_filter) else NULL
+      age_group_rest <- if (!is.null(input$age_group_filter)) setdiff(c("<5", "5-7", "8-10", "11-13", "14-16", "17-19", "20-22",
+                                                                        "23-25", "26-30", "31-40", "41+"), input$age_group_filter) else NULL
+      prim_impairment_rest <- if (!is.null(input$prim_impairment_filter)) setdiff(c("Visual", "Auditory/Communicative", "Intellectual/Learning",
+                                                                                    "Physical", "Psychological", "None"), input$prim_impairment_filter) else NULL
+
+      filter_data(
+        selected_data(),
+        gender = gender_rest,
+        race = race_rest,
+        severity = severity_rest,
+        age_group = age_group_rest,
+        prim_impairment = prim_impairment_rest,
+        response = if (length(input$response) == 0) NULL else input$response
+      )
+
+    } else if (input$compare_method == "profile") {
+      filter_data(
+        selected_data(),
+        gender = if (length(input$gender_filter2) == 0) NULL else input$gender_filter2,
+        race = if (length(input$race_filter2) == 0) NULL else input$race_filter2,
+        severity = if (length(input$severity_filter2) == 0) NULL else input$severity_filter2,
+        age_group = if (length(input$age_group_filter2) == 0) NULL else input$age_group_filter2,
+        prim_impairment = if (length(input$prim_impairment_filter2) == 0) NULL else input$prim_impairment_filter2,
+        response = if (length(input$response) == 0) NULL else input$response
+      )
+    }
+  })
+
+
+
+  # output$filtered_data_profile1_summary <- renderPrint({
+  #   req(profile1_filtered_data())
+  #   summary(profile1_filtered_data())
+  # })
+  #
+  # output$filtered_data_profile2_summary <- renderPrint({
+  #   req(profile2_filtered_data())
+  #   summary(profile2_filtered_data())
+  # })
+
+  profile1_summary <- reactive({
+    req(profile1_filtered_data())
+    req(input$response)
+
+    if (input$response %in% c("Wage", "Median Difference Score")) {
+      data <- profile1_filtered_data()[[1]]
+      if (is.numeric(data)) {
+        return(summary(data))  # Min, Q1, Median, Mean, Q3, Max
+      } else {
+        return("Response variable is not numeric.")
+      }
+    } else {
+      return(NULL)  # If response is not "Wage" or "Median Difference Score", return nothing
+    }
+  })
+
+  profile2_summary <- reactive({
+    req(profile2_filtered_data())
+    req(input$response)
+
+    if (input$response %in% c("Wage", "Median Difference Score")) {
+      data <- profile2_filtered_data()[[1]]
+      if (is.numeric(data)) {
+        return(summary(data))
+      } else {
+        return("Response variable is not numeric.")
+      }
+    } else {
+      return(NULL)
+    }
+  })
+
+
+  output$summary_profile1 <- renderPrint({
+    profile1_summary()
+  })
+
+  output$summary_profile2 <- renderPrint({
+    profile2_summary()
+  })
+
+
+
+  # output$profile_main <- renderUI({
+  #   data_choice <- input$data_choice
+  #   dataset_type <- input$dataset_type
+  #   data <- selected_data()
+  #
+  #
+  #   if (data_choice == "Upload New Dataset") {
+  #     validation <- validate_uploaded_dataset(data, dataset_type)
+  #     if (!validation$valid) {
+  #       return(tags$p(validation$message, style = "color: red;
+  #                     font-weight: bold;"))
+  #     }
+  #   }
+  #
+  #   if (data_choice == "Use Cleaned Scores Data" ||
+  #       (data_choice == "Upload New Dataset" &&
+  #        input$dataset_type == "scores")) {
+  #
+  #
+  #   } else if ((data_choice == "Use Generated Metadata") ||
+  #              (data_choice == "Upload New Dataset" &&
+  #               input$dataset_type == "metadata")) {
+  #
+  #     # Collect Profile 1 filter inputs
+  #     gender <- input$gender_filter
+  #     race <- input$race_filter
+  #     severity <- input$severity_filter
+  #     age_group <- input$age_group_filter
+  #     prim_impairment <- input$prim_impairment_filter
+  #     # response <- input$response
+  #
+  #     # Filter Profile 1 Data
+  #     filtered_data_profile1 <- filter_data(data,
+  #                                           gender = gender,
+  #                                           race = race,
+  #                                           severity = severity,
+  #                                           age_group = age_group,
+  #                                           prim_impairment = prim_impairment)
+  #
+  #     # Determine Profile 2 Filters (Comparison Dataset)
+  #     comparison_option <- input$compare_method
+  #     if (comparison_option == "rest") {
+  #       # Create complement for Profile 1 filters (e.g., if women are selected in profile 1, use men, other, and did not identify for profile 2)
+  #       gender_rest <- setdiff(c("Male", "Female", "Other", "Did not identify"), gender)
+  #       race_rest <- setdiff(c("Asian", "Black African", "Hawaiian Pacific Islander",
+  #                              "Hispanic Latino", "Indian Alaskan", "White"), race)
+  #       severity_rest <- setdiff(c("Non-significant", "Significant", "Most significant"), severity)
+  #       age_group_rest <- setdiff(c("<5", "5-7", "8-10", "11-13", "14-16", "17-19", "20-22",
+  #                                   "23-25", "26-30", "31-40", "41+"), age_group)
+  #       prim_impairment_rest <- setdiff(c("Visual", "Auditory/Communicative", "Intellectual/Learning",
+  #                                         "Physical", "Psychological", "None"), prim_impairment)
+  #
+  #       # Filter Profile 2 Data (Rest of the Dataset)
+  #       filtered_data_profile2 <- filter_data(data,
+  #                                             gender = gender_rest,
+  #                                             race = race_rest,
+  #                                             severity = severity_rest,
+  #                                             age_group = age_group_rest,
+  #                                             prim_impairment = prim_impairment_rest,
+  #                                             response = response)
+  #     } else if (comparison_option == "profile") {
+  #       # If "Compare to Second Profile" is selected, use Profile 2 filters (could be Profile 2's inputs like gender_filter2, etc.)
+  #       gender2 <- input$gender_filter2
+  #       race2 <- input$race_filter2
+  #       severity2 <- input$severity_filter2
+  #       age_group2 <- input$age_group_filter2
+  #       prim_impairment2 <- input$prim_impairment_filter2
+  #
+  #       # Filter Profile 2 Data
+  #       filtered_data_profile2 <- filter_data(data,
+  #                                             gender = gender2,
+  #                                             race = race2,
+  #                                             severity = severity2,
+  #                                             age_group = age_group2,
+  #                                             prim_impairment = prim_impairment2,
+  #                                             response = response)
+  #     }
+  #
+  #     # Return UI for displaying both datasets
+  #     return(
+  #       div(style = "padding-left: 10px; padding-right: 10px;",
+  #           fluidRow(
+  #             column(12, h4("Filtered Data - Profile 1", style = "margin-bottom: 10px;")),
+  #             column(12, verbatimTextOutput("filtered_data_profile1_summary"))
+  #           ),
+  #           fluidRow(
+  #             column(12, h4("Filtered Data - Profile 2", style = "margin-bottom: 10px;")),
+  #             column(12, verbatimTextOutput("filtered_data_profile2_summary"))
+  #           )
+  #       )
+  #     )
+  #   }
+  # })
+
+
+
+#
+#   # Show summaries of filtered datasets
+#   output$filtered_data_profile1_summary <- renderPrint({
+#     summary(filtered_data_profile1)
+#   })
+#
+#   output$filtered_data_profile2_summary <- renderPrint({
+#     summary(filtered_data_profile2)
+#   })
 
 
 
