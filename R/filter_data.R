@@ -40,7 +40,7 @@ filter_data <- function(data,
                      "Post-secondary Enrollment" = "E84_PostSecondary_Enrollment_911")
 
   # Convert data to data.table for efficient filtering
-  data <- as.data.table(data)
+  data <- data.table::as.data.table(data)
 
   # Apply filters only if the corresponding argument is not NULL
   if (!is.null(gender)) {

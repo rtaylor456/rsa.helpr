@@ -3,6 +3,7 @@ library(data.table)
 library(readxl)
 library(DT)
 library(bit64)
+library(ggplot2)
 
 library(DiagrammeR) # for flowchart
 
@@ -276,7 +277,9 @@ ui <- fluidPage(
                        fluidRow(
                          column(6, h4("Profile 1 Summary"), verbatimTextOutput("summary_profile1")),
                          column(6, h4("Profile 2 Summary"), verbatimTextOutput("summary_profile2"))
-                       )
+                       ),
+
+                       plotOutput("profile_comparison_plot")
 
 
 
@@ -1532,21 +1535,41 @@ server <- function(input, output, session) {
   })
 
 
+  # output$gen_demo_participants <- renderUI({
+  #   req(selected_data())  # Ensure data is loaded
+  #
+  #   data <- selected_data()
+  #
+  #   unique_ids <- length(unique(data$Participant_ID))
+  #
+  #   HTML(paste(
+  #     "<div style='padding: 10px; background-color: #f9f9f9;'>",
+  #     "<p style='font-size: 18px;'> <strong>", unique_ids,
+  #     "</strong> unique participants.</p>",
+  #     "</div>"
+  #   ))
+  #
+  # })
+
+
   output$gen_demo_participants <- renderUI({
     req(selected_data())  # Ensure data is loaded
-
     data <- selected_data()
 
     unique_ids <- length(unique(data$Participant_ID))
+    mean_enrollment <- mean(data$Enroll_Length, na.rm = TRUE)  # Calculate mean
+    sd_enrollment <- sd(data$Enroll_Length, na.rm = TRUE)  # Calculate standard deviation
 
     HTML(paste(
       "<div style='padding: 10px; background-color: #f9f9f9;'>",
-      "<p style='font-size: 18px;'> <strong>", unique_ids,
-      "</strong> unique participants.</p>",
+      "<p style='font-size: 18px;'> <strong>", unique_ids, "</strong> unique participants.</p>",
+      "<p style='font-size: 18px;'>Participants spent an average of <strong>", round(mean_enrollment, 2),
+      "</strong> quarters in a program, give or take <strong>", round(sd_enrollment, 2), "</strong> quarters.</p>",
       "</div>"
     ))
-
   })
+
+
   # Summaries for variables
   # Gender, race,
   # Majority:
@@ -5048,7 +5071,8 @@ server <- function(input, output, session) {
       severity = if (length(input$severity_filter) == 0) NULL else input$severity_filter,
       age_group = if (length(input$age_group_filter) == 0) NULL else input$age_group_filter,
       prim_impairment = if (length(input$prim_impairment_filter) == 0) NULL else input$prim_impairment_filter,
-      response = if (length(input$response) == 0) NULL else input$response
+      # response = if (length(input$response) == 0) NULL else input$response
+      response = input$response
     )
   })
 
@@ -5112,7 +5136,7 @@ server <- function(input, output, session) {
         severity = severity_rest,
         age_group = age_group_rest,
         prim_impairment = prim_impairment_rest,
-        response = if (length(input$response) == 0) NULL else input$response
+        response = if (input$response == " ") NULL else input$response
       )
 
     } else if (input$compare_method == "profile") {
@@ -5123,7 +5147,7 @@ server <- function(input, output, session) {
         severity = if (length(input$severity_filter2) == 0) NULL else input$severity_filter2,
         age_group = if (length(input$age_group_filter2) == 0) NULL else input$age_group_filter2,
         prim_impairment = if (length(input$prim_impairment_filter2) == 0) NULL else input$prim_impairment_filter2,
-        response = if (length(input$response) == 0) NULL else input$response
+        response = if (input$response == " ") NULL else input$response
       )
     }
   })
@@ -5140,19 +5164,73 @@ server <- function(input, output, session) {
   #   summary(profile2_filtered_data())
   # })
 
+  # profile1_summary <- reactive({
+  #   req(profile1_filtered_data())
+  #   req(input$response)
+  #
+  #   if (input$response %in% c("Ending Wage", "Median Difference Score")) {
+  #     data <- profile1_filtered_data()[[1]]
+  #     if (is.numeric(data)) {
+  #       return(summary(data))  # Min, Q1, Median, Mean, Q3, Max
+  #     } else {
+  #       return("Response variable is not numeric.")
+  #     }
+  #   } else {
+  #     return(NULL)  # If response is not "Wage" or "Median Difference Score", return nothing
+  #   }
+  # })
+  #
+  # profile2_summary <- reactive({
+  #   req(profile2_filtered_data())
+  #   req(input$response)
+  #
+  #   if (input$response %in% c("Ending Wage", "Median Difference Score")) {
+  #     data <- profile2_filtered_data()[[1]]
+  #     if (is.numeric(data)) {
+  #       return(summary(data))
+  #     } else {
+  #       return("Response variable is not numeric.")
+  #     }
+  #   } else {
+  #     return(NULL)
+  #   }
+  # })
+
+
   profile1_summary <- reactive({
     req(profile1_filtered_data())
     req(input$response)
 
-    if (input$response %in% c("Wage", "Median Difference Score")) {
-      data <- profile1_filtered_data()[[1]]
+    data <- profile1_filtered_data()[[1]]
+
+    if (input$response %in% c("Ending Wage", "Median Difference Score")) {
       if (is.numeric(data)) {
         return(summary(data))  # Min, Q1, Median, Mean, Q3, Max
       } else {
         return("Response variable is not numeric.")
       }
+    } else if (input$response == "Employment Outcome") {
+      if (!is.numeric(data)) {
+        count_competitive <- sum(data == 1, na.rm = TRUE)
+        total_count <- length(data[!is.na(data)])
+        percentage <- ifelse(total_count > 0, (count_competitive / total_count) * 100, 0)
+        return(paste(count_competitive,
+                     "are competitively employed at exit (", round(percentage, 2), "%)", sep = " "))
+      } else {
+        return("Response variable should be categorical.")
+      }
+    } else if (input$response == "Post-secondary Enrollment") {
+      if (!is.numeric(data)) {
+        count_table <- table(data)
+        percent_table <- prop.table(count_table) * 100
+        return(data.frame(Category = names(count_table),
+                          Count = as.numeric(count_table),
+                          Percentage = round(as.numeric(percent_table), 2)))
+      } else {
+        return("Response variable should be categorical.")
+      }
     } else {
-      return(NULL)  # If response is not "Wage" or "Median Difference Score", return nothing
+      return(NULL)
     }
   })
 
@@ -5160,12 +5238,32 @@ server <- function(input, output, session) {
     req(profile2_filtered_data())
     req(input$response)
 
-    if (input$response %in% c("Wage", "Median Difference Score")) {
-      data <- profile2_filtered_data()[[1]]
+    data <- profile2_filtered_data()[[1]]
+
+    if (input$response %in% c("Ending Wage", "Median Difference Score")) {
       if (is.numeric(data)) {
         return(summary(data))
       } else {
         return("Response variable is not numeric.")
+      }
+    } else if (input$response == "Employment Outcome") {
+      if (!is.numeric(data)) {
+        count_competitive <- sum(data == 1, na.rm = TRUE)
+        total_count <- length(data[!is.na(data)])
+        percentage <- ifelse(total_count > 0, (count_competitive / total_count) * 100, 0)
+        return(paste(count_competitive, "are competitively employed at exit (", round(percentage, 2), "%)", sep = " "))
+      } else {
+        return("Response variable should be categorical.")
+      }
+    } else if (input$response == "Post-secondary Enrollment") {
+      if (!is.numeric(data)) {
+        count_table <- table(data)
+        percent_table <- prop.table(count_table) * 100
+        return(data.frame(Category = names(count_table),
+                          Count = as.numeric(count_table),
+                          Percentage = round(as.numeric(percent_table), 2)))
+      } else {
+        return("Response variable should be categorical.")
       }
     } else {
       return(NULL)
@@ -5173,6 +5271,8 @@ server <- function(input, output, session) {
   })
 
 
+
+  # numerical summaries
   output$summary_profile1 <- renderPrint({
     profile1_summary()
   })
@@ -5180,6 +5280,106 @@ server <- function(input, output, session) {
   output$summary_profile2 <- renderPrint({
     profile2_summary()
   })
+
+  # graphical summaries
+  output$profile_comparison_plot <- renderPlot({
+    req(profile1_filtered_data(), profile2_filtered_data())
+    req(input$response)
+
+    data1 <- profile1_filtered_data()[[1]]
+    data2 <- profile2_filtered_data()[[1]]
+
+    if (input$response %in% c("Ending Wage", "Median Difference Score")) {
+      # Boxplot comparison for numerical values
+      combined_data <- data.frame(
+        Value = c(data1, data2),
+        Profile = rep(c("Profile 1", "Profile 2"), c(length(data1), length(data2)))
+      )
+
+      ggplot(combined_data, aes(x = Profile, y = Value, fill = Profile)) +
+        geom_boxplot() +
+        theme_minimal() +
+        scale_fill_manual(values = c("#1A6A8D", "#A4C6E7")) +
+        labs(title = paste("Comparison of", input$response),
+             y = input$response,
+             x = "Profile") +
+        theme(legend.position = "none")
+
+    } else if (input$response == "Employment Outcome") {
+      # Bar chart for employment comparison
+      count1 <- sum(data1 == 1, na.rm = TRUE)
+      total1 <- sum(!is.na(data1))
+      percent1 <- ifelse(total1 > 0, (count1 / total1) * 100, 0)
+
+      count2 <- sum(data2 == 1, na.rm = TRUE)
+      total2 <- sum(!is.na(data2))
+      percent2 <- ifelse(total2 > 0, (count2 / total2) * 100, 0)
+
+      employment_data <- data.frame(
+        Profile = c("Profile 1", "Profile 2"),
+        Count = c(count1, count2),
+        Percentage = c(percent1, percent2)
+      )
+
+      ggplot(employment_data, aes(x = Profile, y = Percentage, fill = Profile)) +
+        geom_col() +
+        geom_text(aes(label = paste0(Count, " (", round(Percentage, 2), "%)")), vjust = -0.5) +
+        theme_minimal() +
+        scale_fill_manual(values = c("#1A6A8D", "#A4C6E7")) +
+        labs(title = "Competitive Employment at Exit",
+             y = "Percentage",
+             x = "Profile") +
+        theme(legend.position = "none")
+
+    } else if (input$response == "Post-secondary Enrollment") {
+      # Convert tables to data frames
+      table1 <- as.data.frame(table(data1))
+      table2 <- as.data.frame(table(data2))
+
+      # Ensure both have the same column names
+      colnames(table1) <- c("Status", "Count")
+      colnames(table2) <- c("Status", "Count")
+
+      # Add profile labels
+      table1$Profile <- "Profile 1"
+      table2$Profile <- "Profile 2"
+
+      # Define category labels
+      category_labels <- c("0" = "Not Enrolled",
+                           "1" = "Enrolled in Post-sec Ed",
+                           "2" = "Enrolled in Tech Training",
+                           "3" = "Enrolled in Higher Ed")
+
+      # Replace numeric values with labels
+      table1$Status <- factor(table1$Status, levels = names(category_labels), labels = category_labels)
+      table2$Status <- factor(table2$Status, levels = names(category_labels), labels = category_labels)
+
+      # Ensure both tables have all possible categories
+      all_categories <- unique(c(table1$Status, table2$Status))
+      table1 <- merge(data.frame(Status = all_categories), table1, by = "Status", all.x = TRUE)
+      table2 <- merge(data.frame(Status = all_categories), table2, by = "Status", all.x = TRUE)
+
+      # Replace NA counts with 0
+      table1$Count[is.na(table1$Count)] <- 0
+      table2$Count[is.na(table2$Count)] <- 0
+
+      # Combine data frames
+      combined_table <- rbind(table1, table2)
+
+      # Create bar chart
+      ggplot(combined_table, aes(x = Status, y = Count, fill = Profile)) +
+        geom_bar(stat = "identity", position = "dodge") +
+        theme_minimal() +
+        scale_fill_manual(values = c("#1A6A8D", "#A4C6E7")) +
+        labs(title = "Post-secondary Enrollment Comparison",
+             y = "Count",
+             x = "Status") +
+        theme(legend.position = "top") +
+        scale_x_discrete(labels = category_labels)  # Ensure proper labels on x-axis
+
+    }
+  })
+
 
 
 
