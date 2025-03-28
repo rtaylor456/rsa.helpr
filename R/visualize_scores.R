@@ -15,6 +15,7 @@
 #' @returns The appropriate plots for the chosen visual analysis.
 #'
 #' @export
+#' @import graphics
 #'
 visualize_scores <- function(data, option = c("overview", "across_service",
                                               "across_provider"),

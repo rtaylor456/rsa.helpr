@@ -19,7 +19,8 @@
 #' @returns A density plot of the inputted variables.
 #'
 #' @export
-#'
+#' @import graphics
+#' @importFrom grDevices adjustcolor rainbow
 
 visualize_densities <- function(cat_var, num_var,
                                 cat_var_name = "Categorical Variable",

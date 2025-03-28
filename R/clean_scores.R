@@ -19,6 +19,7 @@
 #'
 #' @export
 #' @import data.table
+#' @import stats
 
 clean_scores <- function(data, state_filter = NULL, clean_id = TRUE,
                          aggregate = TRUE, id_col = NULL) {

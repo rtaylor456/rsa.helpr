@@ -15,6 +15,7 @@
 #' @export
 #' @import data.table
 #' @import readxl
+#' @importFrom utils write.csv
 
 load_data <- function(directory, files = NULL, download_csv = FALSE) {
   # Define the pattern to match the files

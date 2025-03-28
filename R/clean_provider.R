@@ -21,7 +21,6 @@
 #'
 #' @export
 #' @import data.table
-
 clean_provider <- function(data, state_filter = NULL, id_col = NULL,
                            remove_questions = TRUE, condense = FALSE,
                            clean_id = TRUE) {

@@ -16,6 +16,7 @@
 #' @returns The appropriate plots for the chosen visual analysis.
 #'
 #' @export
+#' @import graphics
 #'
 
 visualize_metadata <- function(data, option = c("general_demo",
