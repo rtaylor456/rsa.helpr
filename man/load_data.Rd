@@ -9,7 +9,7 @@ load_data(directory, files = NULL, download_csv = FALSE)
 \arguments{
 \item{directory}{The directory containing the files}
 
-\item{files}{Optional character vectore of file names to extract,
+\item{files}{Optional character vector of file names to extract,
 eg. c("PY21Q2", "PY22Q3"). Otherwise, NULL, and all appropriate files
 from directory will be extracted.}
 

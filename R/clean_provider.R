@@ -12,7 +12,8 @@
 #' @param remove_questions Defaults to TRUE. When TRUE, removes question item
 #'   variables.
 #' @param condense Defaults to FALSE. When true, take medians across
-#'  participants.
+#'  participants in order to keep only unique combinations of provider and
+#'  service.
 #' @param clean_id TRUE or FALSE. Defaults to TRUE, when TRUE, rows where
 #'   participant ID is missing are removed.
 #'

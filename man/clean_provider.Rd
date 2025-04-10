@@ -27,7 +27,8 @@ Defaults to NULL.}
 variables.}
 
 \item{condense}{Defaults to FALSE. When true, take medians across
-participants.}
+participants in order to keep only unique combinations of provider and
+service.}
 
 \item{clean_id}{TRUE or FALSE. Defaults to TRUE, when TRUE, rows where
 participant ID is missing are removed.}

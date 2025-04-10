@@ -3,7 +3,7 @@
 #' This function reads in and combines sensitive data from a directory.
 #'
 #' @param directory The directory containing the files
-#' @param files Optional character vectore of file names to extract,
+#' @param files Optional character vector of file names to extract,
 #'     eg. c("PY21Q2", "PY22Q3"). Otherwise, NULL, and all appropriate files
 #'     from directory will be extracted.
 #' @param download_csv Defaults to FALSE. If TRUE, will write a csv file

@@ -17,12 +17,6 @@ knitr::opts_chunk$set(
 ```
 
 ## Motivation
-<!-- Since its development in 1973, the U.S. Rehabilitation Services Agency (RSA) has the main goal of improving the employment opportunities for citizens with disabilities. As part of this focus, the RSA works with agencies in each state to provide services for students with disabilities to improve employment readiness, expose them to career and higher education opportunities, and increase their earning potential. Each state collects administrative data on participants' outcomes in a specific structure, called a Case Services Report, which is often abbreviated as “RSA-911” data. These RSA-911 datasets contain information on participant demographics, as well as enrolled services combinations and employment and education outcomes. The RSA-911 datasets capture a wealth of critical information; however, the structure of the data is not in a practical format for classical statistical, machine learning, or visualization techniques. Due to this complicated format, much of the potential for analysis and modeling remains untapped. Currently, most of the existing research is devoted to predicting categorical or binary outcome variables, such as employment status at exit from VR service. More notably, many studies focus investigation on a small, overlapping subset of predictor variables.  -->
-
-<!-- With the existing methods for analysis being limited, and many of the features in the data overlooked in past research, there is a push for more efficient and reproducible data preparation, allowing for new explorations. This motivation has only become more charged by the recent development of an additional success metric. Beginning in 2020, the VR researchers and providers in the state of Utah have started collecting pre and post test scores for evaluating skill improvement in each offered service. The hope is that these new score variables will help VR researchers identify the most effective services and advocate for more strategic funding. The VR researchers leading this effort are ready to start examining the worth of these novel pre-post-difference scores, find appropriate methods for analysis, and explore the relationship of these scores with a wide array of demographic variables. Beyond their own analysis, the researchers desire more accessibility to basic analysis for the collaborating VR providers who collect this data.   -->
-
-<!-- This project attempts to address the needs presented by the industry. The first task is to alleviate the burden of data preparation, through the development of an R package geared toward specialized cleaning and analysis for any RSA-911 dataset, as well as the recently collected scores data. The second task is the first ever analysis of relationships between RSA-911 demographics and the novel pre-post-difference scores. The final task is developing a user-friendly \texttt{rshiny} interface that provides a VR professional with limited data analysis experience to easily gain insight into the data they work hard to collect.  -->
-
 
 Since 1973, the U.S. Rehabilitation Services Administration (RSA) has partnered with state vocational rehabilitation (VR) agencies to help individuals with disabilities achieve meaningful employment and independence. RSA-911 datasets play a crucial role in this effort by capturing detailed participant data, but their complexity can hinder effective analysis.
 
@@ -66,6 +60,56 @@ To achieve the standardization and simplification of data cleaning, our R packag
 `rsa.helpr`, has been developed alongside the process of data preparation. This package provides the opportunity to not only bypass the tedious process of data cleaning, but also to create directly reproducible results.
 
 ### Helper Functions
+#### `load_data`
+This function reads in and combines RSA-911 datasets from a user-inputted 
+directory, preparing them for cleaning steps. All the user must do is identify
+the file path in which the data are stored, `load_data` does the rest by automatically searching for appropriate datasets based on common naming
+structures. Not only does this process cut down the steps and time required to
+individually load and combine many datasets in R, it also provides the option 
+for the user to load data directly from a Box-protected storage folder. 
+This may be relevant to maintain security of IRB-protected datasets.
+
+
+Additionally, `load_data` allows the user to specify any of data 
+files to be excluded, using the optional function argument `files`. Once 
+`load_data` captures all correct data files, it merges the datasets based on 
+common variables. (For variables not common to all datasets, the columns are
+retained and created as NULL columns for datasets without overlap.)
+
+The following example depicts a usage of the function with default settings.
+Here, the user has now stored the large, combined dataset in R called `data`.
+```{r load_data, eval = FALSE}
+
+data <- load_data("C:\\Users\\Some Username\\Optional Box Folder\\Folder name")
+
+```
+
+The next example demonstrates how to use the `files` argument to specifically
+bypass select data file(s).
+```{r load_data2, eval = FALSE}
+
+data <- load_data("C:\\Users\\Some Username\\Optional Box Folder\\Folder name",
+                  files = c("PY2020Q1.csv", "PY2020Q3.csv"))
+
+```
+
+Lastly, the following code provides an example of using the third function
+argument, `download_csv`. When set to `TRUE`, `download_csv` results in the 
+function outputting a csv file of the new, combined dataset to the working
+directory. This is a good option when the user plans to reload the reload the
+large, combined dataset in many sessions, without a concern for keeping the
+data on Box.
+
+```{r load_data3, eval = FALSE}
+
+data <- load_data("C:\\Users\\Some Username\\Optional Box Folder\\Folder name",
+                  download_csv = TRUE)
+
+```
+
+
+
+### Helper Functions
 Through the process of data cleaning, small functions were created to handle specific variable
 cleaning problems. These functions serve as helper functions for repeated cleaning tasks within larger functions in `rsa.helpr`. However, all of these helper cleaning functions can be used individually, as demonstrated in the proceeding sections. Some examples of the 
 helper functions are shown below:
@@ -76,10 +120,6 @@ value represented by a 9. This function replaces ensures missing values are
 represented by 9s, and when `unidentified_to_0` = TRUE, it combines the 9s with
 0s.
 ```{r handle_nines}
-
-# rsa_subset <- rsa_simulated[, c("E10_Indian_Alaskan_911", "E11_Asian_911", 
-#                       "E14_White_911", "E16_Veteran_Status_911", 
-#                       "E42_Has_Disability_911")]
 
 head(rsa_simulated$E14_White_911, 10)
 
@@ -109,13 +149,6 @@ to represent a missing value, through the `blank_value` parameter. The following
 example involves a variable which allows values 1, 2, 3, 4, where blanks should
 be 0s. (`blank_value` defaults to NA.)
 ```{r handle_values}
-# head(rsa_simulated$E356_Exit_Work_Status_911, 20)
-# 
-# work_clean <- handle_values(rsa_simulated$E356_Exit_Work_Status_911, 
-#                               c(0, 1, 2, 3, 4, 9), 
-#                               blank_value = 0)
-# 
-# head(work_clean, 20)
 
 head(rsa_simulated$E99_JobExploration_Vendor_911, 20)
 
@@ -335,7 +368,7 @@ dim(scores_clean)
 ```
 
 
-###### `ID_col` 
+###### `id_col` 
 This parameter allows for the user to specify an ID column with a different 
 naming structure than expected. We will not run the following code, as our data
 do have appropriate ID column names, but below is an example of identifying a 
@@ -346,6 +379,44 @@ variable, "X", as our ID column.
 scores_clean <- clean_scores(scores_simulated, id_col = "X")
 
 ```
+
+
+#### clean_provider
+Beyond preparing the TRT scores data for a successful merge with RSA-911 data,
+we can restructure TRT scores datasets for independent analysis. Newly collected
+variables containing provider information are of interest to researchers. With
+these variables, the focus is examining trends across providers, not individual
+participants. 
+
+The following code demonstrates applying `clean_provider` using function 
+arguments that are also seen and discussed in the previous `clean_scores`
+examples.
+
+```{r clean_provider, eval=FALSE}
+
+provider_data <- clean_provider(scores_simulated, state_filter = "Utah",
+                                clean_id = TRUE)
+
+```
+
+Below is an example of implementing additional function arguments in 
+`clean_provider`. The argument `remove_questions` allows the user to
+remove columns related to itemized score data, which are not pertinent to 
+provider analysis. `condense` is similar to the `aggregate` argument in
+`clean_scores`, as it involves retaining rows by unique values. Unlike 
+`aggregate`, `condense` retains the unique combinations of provider and service.
+In `clean_provider`, the new sorting column is Provider, rather than 
+Participant. 
+
+```{r clean_provider2, eval=FALSE}
+
+provider_data <- clean_provider(scores_simulated, state_filter = "Utah",
+                                clean_id = TRUE,
+                                remove_questions = TRUE,
+                                condense = TRUE)
+
+```
+
 
 
 ### Merge and Metadata Functions
