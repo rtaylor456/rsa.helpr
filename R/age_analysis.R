@@ -64,3 +64,34 @@ check <- metadata |> filter(Age_At_Application > 22) |>
          E74_SWD_Age_911, E77_Plan_Grade_Level_911,
          E22_SWD_911)
 check$Participant_ID
+
+################################################################################
+
+# temporary method for correcting age variable to only contain proper range
+data_corrected_age <- metadata[Age_At_Application >= 14 &
+                                 Age_At_Application <= 22, ]
+
+
+# temporary method for correcting non-integer ages (created from taking medians
+#   in metadata process)
+data_corrected_age$Age_At_Application <- ceiling(
+  data_corrected_age$Age_At_Application)
+
+
+
+# Compare distributions for ages
+age_14 <- data_corrected_age[Age_At_Application == 14]
+summary_age_14 <- summarize_scores_formatted(age_14,
+                                                   robust_measures = TRUE)
+summary_age_14
+
+
+age_summaries <- lapply(14:22, function(age) {
+  age_subset <- data_corrected_age[Age_At_Application == age]
+  summarize_scores_formatted(age_subset, robust_measures = TRUE)
+})
+
+# Optionally, name each list element by the age
+names(age_summaries) <- paste0("age_", 14:22)
+
+age_summaries
