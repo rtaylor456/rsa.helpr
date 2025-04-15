@@ -80,12 +80,12 @@ data_corrected_age$Age_At_Application <- ceiling(
 
 
 # Compare distributions for ages
-age_14 <- data_corrected_age[Age_At_Application == 14]
-summary_age_14 <- summarize_scores_formatted(age_14,
-                                                   robust_measures = TRUE)
-summary_age_14
+# age_14 <- data_corrected_age[Age_At_Application == 14]
+# summary_age_14 <- summarize_scores_formatted(age_14,
+#                                                    robust_measures = TRUE)
+# summary_age_14
 
-
+# To get summaries for each service across each age
 age_summaries <- lapply(14:22, function(age) {
   age_subset <- data_corrected_age[Age_At_Application == age]
   summarize_scores_formatted(age_subset, robust_measures = TRUE)
@@ -95,3 +95,50 @@ age_summaries <- lapply(14:22, function(age) {
 names(age_summaries) <- paste0("age_", 14:22)
 
 age_summaries
+
+
+# median_score_age_counts <- lapply(14:22, function(age) {
+#   age_subset <- data_corrected_age[Age_At_Application == age]
+#   length(age_subset$Median_Difference_Score)
+# })
+# names(median_score_age_counts) <- paste0("age_", 14:22)
+# median_score_age_counts
+
+
+# To get summaries for median difference score across each age
+median_diff_score_age <- lapply(14:22, function(age) {
+  age_subset <- data_corrected_age[Age_At_Application == age]
+  # summary(age_subset$Median_Difference_Score)
+
+  summarize_column(age_subset$Median_Difference_Score)
+})
+names(median_diff_score_age) <- paste0("age_", 14:22)
+median_diff_score_age
+
+
+# To get summaries for median pre score across each age
+median_pre_score_age <- lapply(14:22, function(age) {
+  age_subset <- data_corrected_age[Age_At_Application == age]
+  # summary(age_subset$Median_Pre_Score)
+
+  summarize_column(age_subset$Median_Pre_Score)
+})
+names(median_pre_score_age) <- paste0("age_", 14:22)
+median_pre_score_age
+
+
+# To get summaries for median post score across each age
+median_post_score_age <- lapply(14:22, function(age) {
+  age_subset <- data_corrected_age[Age_At_Application == age]
+  # summary(age_subset$Median_Post_Score)
+
+  summarize_column(age_subset$Median_Post_Score)
+})
+names(median_post_score_age) <- paste0("age_", 14:22)
+median_post_score_age
+
+# Compare to overall summaries
+summarize_column(data_corrected_age$Median_Difference_Score)
+summarize_column(data_corrected_age$Median_Pre_Score)
+summarize_column(data_corrected_age$Median_Post_Score)
+

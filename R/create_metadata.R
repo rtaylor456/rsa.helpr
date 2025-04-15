@@ -108,8 +108,11 @@ create_metadata <- function(data, includes_scores = TRUE) {
   if (includes_scores == TRUE) {
 
     ## CREATE NEW VARIABLES--new MEDIANS and DIFFERENCES
-    # Calculate differences and medians
+    # Identify scores and time passed
     difference_cols <- grep("^Difference_", names(data), value = TRUE)
+    pre_cols <- grep("^Pre_", names(data), value = TRUE)
+    post_cols <- grep("^Post_", names(data), value = TRUE)
+
     time_cols <- grep("^Time_Passed_Days", names(data), value = TRUE)
 
     # Calculate Differences_Available
@@ -122,6 +125,22 @@ create_metadata <- function(data, includes_scores = TRUE) {
            .SDcols = difference_cols, by = Participant_ID]
     } else {
       data[, Median_Difference_Score := NA_real_]
+    }
+
+    # Calculate Median_Pre_Score
+    if (length(pre_cols) > 0) {
+      data[, Median_Pre_Score := median(unlist(.SD), na.rm = TRUE),
+           .SDcols = pre_cols, by = Participant_ID]
+    } else {
+      data[, Median_Pre_Score := NA_real_]
+    }
+
+    # Calculate Median_Post_Score
+    if (length(post_cols) > 0) {
+      data[, Median_Post_Score := median(unlist(.SD), na.rm = TRUE),
+           .SDcols = post_cols, by = Participant_ID]
+    } else {
+      data[, Median_Post_Score := NA_real_]
     }
 
     # Calculate Median_Time_Passed_Days
