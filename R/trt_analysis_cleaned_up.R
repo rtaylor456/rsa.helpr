@@ -14,7 +14,8 @@ provider_data <- rsa.helpr::clean_provider(scores, state_filter = "Utah")
 
 merged <- rsa.helpr::merge_scores(data_clean, scores_clean)
 
-metadata <- rsa.helpr::create_metadata(merged)
+# metadata <- rsa.helpr::create_metadata(merged)
+metadata <- create_metadata(merged)
 
 
 metadata_corrected <- metadata[Age_At_Application >= 14 &
@@ -35,6 +36,78 @@ summary_table_metadata <- summarize_scores_formatted(metadata_corrected,
                                                      robust_measures = TRUE)
 summary_table_metadata
 
+
+# Per participant values
+table(scores_clean$Has_Multiple_Scores)
+
+summary(scores_clean$Differences_Available)
+sd(scores_clean$Differences_Available)
+
+# Identify the relevant columns for each type of score
+pre_score_cols <- grep("^Pre_Score", names(scores_clean), value = TRUE)
+post_score_cols <- grep("^Post_Score", names(scores_clean), value = TRUE)
+difference_cols <- grep("^Difference_", names(scores_clean), value = TRUE)
+
+# Initialize the Services_Present column to 0 for all participants
+scores_clean[, Services_Present := 0]
+
+# Loop over the services and check if any of the Pre, Post, or Difference scores are non-missing
+services <- unique(sub("^(Pre_Score_|Post_Score_|Difference_)", "",
+                       c(pre_score_cols, post_score_cols, difference_cols)))
+
+for(service in services) {
+  # Get the columns related to this service
+  service_cols <- c(
+    grep(paste0("^Pre_Score_", service), names(scores_clean), value = TRUE),
+    grep(paste0("^Post_Score_", service), names(scores_clean), value = TRUE),
+    grep(paste0("^Difference_", service), names(scores_clean), value = TRUE)
+  )
+
+  # Update Services_Present: Increment by 1 if any of the columns for the service are non-missing
+  scores_clean[, Services_Present := Services_Present +
+                 as.integer(rowSums(!is.na(.SD)) > 0), .SDcols = service_cols,
+               by = Participant_ID]
+}
+
+summary(scores_clean$Services_Present)
+sd(scores_clean$Services_Present)
+
+
+
+# Per participant values
+table(metadata_corrected$Has_Multiple_Scores)
+
+summary(metadata_corrected$Differences_Available)
+sd(metadata_corrected$Differences_Available)
+
+# Identify the relevant columns for each type of score
+pre_score_cols <- grep("^Pre_Score", names(metadata_corrected), value = TRUE)
+post_score_cols <- grep("^Post_Score", names(metadata_corrected), value = TRUE)
+difference_cols <- grep("^Difference_", names(metadata_corrected), value = TRUE)
+
+# Initialize the Services_Present column to 0 for all participants
+metadata_corrected[, Services_Present := 0]
+
+# Loop over the services and check if any of the Pre, Post, or Difference scores are non-missing
+services <- unique(sub("^(Pre_Score_|Post_Score_|Difference_)", "",
+                       c(pre_score_cols, post_score_cols, difference_cols)))
+
+for(service in services) {
+  # Get the columns related to this service
+  service_cols <- c(
+    grep(paste0("^Pre_Score_", service), names(metadata_corrected), value = TRUE),
+    grep(paste0("^Post_Score_", service), names(metadata_corrected), value = TRUE),
+    grep(paste0("^Difference_", service), names(metadata_corrected), value = TRUE)
+  )
+
+  # Update Services_Present: Increment by 1 if any of the columns for the service are non-missing
+  metadata_corrected[, Services_Present := Services_Present +
+                 as.integer(rowSums(!is.na(.SD)) > 0), .SDcols = service_cols,
+               by = Participant_ID]
+}
+
+summary(metadata_corrected$Services_Present)
+sd(metadata_corrected$Services_Present)
 
 ################################################################################
 ################
