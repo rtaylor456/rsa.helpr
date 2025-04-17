@@ -19,7 +19,10 @@
 
 load_data <- function(directory, files = NULL, download_csv = FALSE) {
   # Define the pattern to match the files
-  pattern <- ".*(PY.*Q|Q.*PY).*\\.xlsx$"
+  # pattern <- ".*(PY.*Q|Q.*PY).*\\.xlsx$"
+
+  pattern <- ".*(PY.*Q|Q.*PY).*\\.(xlsx|csv)$"
+
 
   # Get all files in the directory matching the pattern
   all_files <- list.files(directory, pattern = pattern, full.names = TRUE)
@@ -36,18 +39,41 @@ load_data <- function(directory, files = NULL, download_csv = FALSE) {
   # Initialize an empty list for data
   data_list <- list()
 
-  # Read files with error handling and exclusion
+  # # Read files with error handling and exclusion
+  # for (i in seq_along(file_list)) {
+  #   tryCatch({
+  #     # Ensure file is a valid Excel file
+  #     if (grepl("\\.xlsx$", file_list[i])) {
+  #       message("Reading: ", file_list[i])
+  #       data <- suppressWarnings(readxl::read_excel(file_list[i],
+  #                                                   col_names = TRUE))
+  #       data_list[[i]] <- data
+  #     } else {
+  #       message("Skipping non-Excel file: ", file_list[i])
+  #     }
+  #   }, error = function(e) {
+  #     message("Error reading file: ", file_list[i], " - ", e$message)
+  #   })
+  # }
+
+  # Loop through and read each file
   for (i in seq_along(file_list)) {
     tryCatch({
-      # Ensure file is a valid Excel file
-      if (grepl("\\.xlsx$", file_list[i])) {
-        message("Reading: ", file_list[i])
-        data <- suppressWarnings(readxl::read_excel(file_list[i],
-                                                    col_names = TRUE))
-        data_list[[i]] <- data
+      file <- file_list[i]
+      message("Reading: ", file)
+
+      # Read based on file extension
+      if (grepl("\\.xlsx$", file, ignore.case = TRUE)) {
+        data <- suppressWarnings(readxl::read_excel(file, col_names = TRUE))
+      } else if (grepl("\\.csv$", file, ignore.case = TRUE)) {
+        data <- suppressWarnings(read.csv(file, stringsAsFactors = FALSE))
       } else {
-        message("Skipping non-Excel file: ", file_list[i])
+        message("Skipping unsupported file type: ", file)
+        next
       }
+
+      data_list[[i]] <- data
+
     }, error = function(e) {
       message("Error reading file: ", file_list[i], " - ", e$message)
     })

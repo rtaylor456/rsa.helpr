@@ -27,7 +27,10 @@ devtools::install_github("rtaylor456/rsa.helpr")
 # data <- data.table::fread("data-raw/rsa_full_1_29_25.csv",
 #                           stringsAsFactors = FALSE)
 
-data <- data.table::fread("data-raw/data_load_2025-02-17.csv",
+# data <- data.table::fread("data-raw/data_load_2025-02-17.csv",
+#                           stringsAsFactors = FALSE)
+
+data <- data.table::fread("data-raw/data_load_2025-04-16.csv",
                           stringsAsFactors = FALSE)
 
 scores <- data.table::fread("data-raw/TRT Data_1.28.2025 at 12_00pm.csv",
