@@ -1,7 +1,7 @@
 ############
 # PREP DATA #
 ############
-data <- data.table::fread("data-raw/data_load_2025-02-17.csv",
+data <- data.table::fread("data-raw/data_load_2025-04-16.csv",
                           stringsAsFactors = FALSE)
 
 scores <- data.table::fread("data-raw/TRT Data_1.28.2025 at 12_00pm.csv",
@@ -31,6 +31,55 @@ metadata_corrected$Age_At_Application <- ceiling(
 ############
 # OVERVIEW #
 ############
+
+# Find the number of Utah TRT participants that overlap with the participants
+#  in RSA-911 data, before cleaning processes...
+
+# this doesn't capture idea correctly--because there are IDs for other states
+#   that overlap with RSA-911 out of coincidence
+# table(scores$State[scores$`Participant ID` %in% unique(data$Participant_ID)])
+
+
+data_unique_ids <- unique(as.factor(data$Participant_ID))
+length(data_unique_ids) # 46,529
+
+length(unique(scores$`Participant ID`[scores$State %in% c("Utah", "UT",
+                                                   "utah", "UTAH", "ut")]))
+
+
+overlap_ids <- as.factor(data$Participant_ID)[as.factor(data$Participant_ID) %in%
+                                     scores_clean$Participant_ID]
+
+## Missing Application Date is what is significantly reducing the overlap ids,
+#   since clean_utah aggregate = TRUE aggregates based on date and removes rows
+#   with missing dates.
+check <- data[is.na(E7_Application_Date_911),]
+dim(check)
+
+# find out how many columns contain NULLs, blanks or NAs for each participant in
+#   check
+check[, missing_count := apply(.SD, 1, function(x) sum(is.na(x) | x == "" |
+                                                         is.null(x)))]
+
+# check$missing_count is a vector of the number of columns per participant with
+#   missing values
+table(check$missing_count)
+
+
+## Find out if we have any data for WIOA variables (#62-73)
+# Get all E62–E73 variable names
+cols_to_check <- grep("^E(6[2-9]|7[0-3])_", names(check), value = TRUE)
+
+# Remove any that contain "desc" (case-insensitive)
+cols_to_check <- cols_to_check[!grepl("desc", cols_to_check,
+                                      ignore.case = TRUE)]
+
+lapply(check[, ..cols_to_check], table)
+## ALL are solely NULLs--keep this in mind when deciding if I want to include
+#   these rows
+
+################################################################################
+################################################################################
 
 summary_table_metadata <- summarize_scores_formatted(metadata_corrected,
                                                      robust_measures = TRUE)
