@@ -27,7 +27,7 @@
 #' @export
 #' @import data.table
 
-clean_utah <- function(data,
+clean_utah2 <- function(data,
                        aggregate = TRUE,
                        unidentified_to_0 = TRUE,
                        remove_desc = TRUE,
@@ -74,6 +74,25 @@ clean_utah <- function(data,
     data[, (existing_columns) := NULL]
   }
 
+
+  ##############################################################################
+  ######################
+  ## DATE             ##
+  ######################
+  # DATE columns - in excel date format
+  # start, extension, end
+  date_cols <- grep(paste0("(?i)_date|(?i)_skill_gain|(?i)_start|(?i)_end_|",
+                           "(?i)_extension(?!.*(?i)_desc)"),
+                    names(data), value = TRUE,
+                    perl = TRUE)
+
+  data[, (date_cols) := lapply(.SD, handle_excel_date), .SDcols = date_cols]
+
+  # When handling date transformations (like Excel dates), you might generate
+  #  intermediate results that can be garbage collected:
+  gc()
+
+
   ##############################################################################
   ######################
   ## NUMERIC          ##
@@ -89,10 +108,10 @@ clean_utah <- function(data,
                       value = TRUE, perl = TRUE)
 
   # AGE column
-  age_cols <- grep("(?i)^(?=.*age)(?=.*app)(?!.*(desc|amt))", names(data),
+  age_col <- grep("(?i)^(?=.*age)(?=.*app)(?!.*(desc|amt))", names(data),
                    value = TRUE, perl = TRUE)
   # Rename Age column
-  names(data)[names(data) %in% age_cols] <- "Age_At_Application"
+  names(data)[names(data) %in% age_col] <- "Age_At_Application"
 
 
   # AMT and TITLE columns (TITLEI columns are funds expended for different
@@ -114,26 +133,22 @@ clean_utah <- function(data,
          lapply(.SD, function(x) suppressWarnings(as.numeric(x))),
        .SDcols = numeric_cols]
 
+
+  ### Calculate Birth Year
+  app_date_col <- grep("(?i)(?=.*app)(?=.*date)(?!.*_desc)", names(data),
+                       value = TRUE, perl = TRUE)
+
+  if (length(app_date_col) == 1 && length(age_col) == 1) {
+    data[, Birth_Year := year(data[[app_date_col]]) -
+           data[["Age_At_Application"]]]
+  }
+
+  # add to numeric columns list, so that it doesn't get counted as a factor
+  #   later
+  numeric_cols <- c(numeric_cols, "Birth_Year")
+
   # Converting columns to numeric can generate intermediate objects, which may
   #   linger in memory.
-  gc()
-
-
-  ##############################################################################
-  ######################
-  ## DATE             ##
-  ######################
-  # DATE columns - in excel date format
-  # start, extension, end
-  date_cols <- grep(paste0("(?i)_date|(?i)_skill_gain|(?i)_start|(?i)_end_|",
-                           "(?i)_extension(?!.*(?i)_desc)"),
-                    names(data), value = TRUE,
-                    perl = TRUE)
-
-  data[, (date_cols) := lapply(.SD, handle_excel_date), .SDcols = date_cols]
-
-  # When handling date transformations (like Excel dates), you might generate
-  #  intermediate results that can be garbage collected:
   gc()
 
 
@@ -420,7 +435,10 @@ clean_utah <- function(data,
                                    "(?!.*\\bid\\B)"),
                             names(data), value = TRUE, perl = TRUE)
 
-    year_col <- grep("(?i)_year|(?i)_yr_(?!.*(?i)_desc)", names(data),
+#     year_col <- grep("(?i)_year|(?i)_yr_(?!.*(?i)_desc)", names(data),
+#                      value = TRUE, perl = TRUE)
+
+    year_col <- grep("(?i)(?<!birth)_year|_yr_(?!.*_desc)", names(data),
                      value = TRUE, perl = TRUE)
 
     quarter_col <- grep("(?i)_quarter|(?i)_qt_(?!.*(?i)_desc)", names(data),

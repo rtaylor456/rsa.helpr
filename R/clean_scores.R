@@ -194,9 +194,27 @@ clean_scores <- function(data, state_filter = NULL, clean_id = TRUE,
   setnames(pre_data, "Score", "Pre_Score")
   setnames(pre_data, "Completed", "Pre_Date")
 
+  # Add "State" and "Mode" if they exist in the dataset
+  if ("State" %in% names(pre_data)) {
+    setnames(pre_data, "State", "Pre_State")
+  }
+  if ("Mode" %in% names(pre_data)) {
+    setnames(pre_data, "Mode", "Pre_Mode")
+  }
+
+
   # Rename variables in post_data for less confusing merge later
   setnames(post_data, "Score", "Post_Score")
   setnames(post_data, "Completed", "Post_Date")
+
+  # Add "State" and "Mode" if they exist in the dataset
+  if ("State" %in% names(post_data)) {
+    setnames(post_data, "State", "Post_State")
+  }
+  if ("Mode" %in% names(post_data)) {
+    setnames(post_data, "Mode", "Post_Mode")
+  }
+
 
   if (aggregate) {
     # Aggregate Pre and Post data
@@ -217,13 +235,13 @@ clean_scores <- function(data, state_filter = NULL, clean_id = TRUE,
                           "Post_Score")
 
   # Add "State" and "Mode" if they exist in the dataset
-  if ("State" %in% names(pre_data) && "State" %in% names(post_data)) {
-    required_cols_pre <- c(required_cols_pre, "State")
-    required_cols_post <- c(required_cols_post, "State")
+  if ("Pre_State" %in% names(pre_data) && "Post_State" %in% names(post_data)) {
+    required_cols_pre <- c(required_cols_pre, "Pre_State")
+    required_cols_post <- c(required_cols_post, "Post_State")
   }
-  if ("Mode" %in% names(pre_data) && "State" %in% names(pre_data)) {
-    required_cols_pre <- c(required_cols_pre, "Mode")
-    required_cols_post <- c(required_cols_post, "Mode")
+  if ("Pre_Mode" %in% names(pre_data) && "Post_Mode" %in% names(post_data)) {
+    required_cols_pre <- c(required_cols_pre, "Pre_Mode")
+    required_cols_post <- c(required_cols_post, "Post_Mode")
   }
 
   # Extract needed columns from pre_data
@@ -253,22 +271,53 @@ clean_scores <- function(data, state_filter = NULL, clean_id = TRUE,
   # Identify the most common non-NA provider for each participant -- this
   #. should result in a dataframe with two columns, Participant_ID and
   #  Most_Common_Provider, with just one row per unique participant
-  mode_provider <- merged_data[!is.na(Provider.x) | !is.na(Provider.y),
+  common_provider <- merged_data[!is.na(Provider.x) | !is.na(Provider.y),
                                .(Most_Common_Provider =
                                    names(sort(table(c(Provider.x, Provider.y)),
                                               decreasing = TRUE)[1])),
                                by = Participant_ID]
 
+  # Do the same thing for State and Mode
+  # Most common State
+  common_state <- merged_data[!is.na(Pre_State) | !is.na(Post_State),
+                              .(Most_Common_State = names(sort(table(c(Pre_State, Post_State)), decreasing = TRUE)[1])),
+                              by = Participant_ID
+  ]
+
+  # Most common Mode
+  common_mode <- merged_data[!is.na(Pre_Mode) | !is.na(Post_Mode),
+                             .(Most_Common_Mode = names(sort(table(c(Pre_Mode, Post_Mode)), decreasing = TRUE)[1])),
+                             by = Participant_ID
+  ]
+
 
   # Merge back the most common provider into the dataset
-  merged_data <- merge(merged_data, mode_provider, by = "Participant_ID",
+  # merged_data <- merge(merged_data, common_provider, by = "Participant_ID",
+  #                      all.x = TRUE)
+  #
+  # # Remove redundant columns if necessary
+  # merged_data[, c("Provider.x", "Provider.y") := NULL]
+  #
+  # # Rename the 'Most_Common_Provider' as new Provider column
+  # setnames(merged_data, "Most_Common_Provider", "Provider")
+
+
+  # Merge all back into main dataset
+  merged_data <- merge(merged_data, common_provider, by = "Participant_ID",
+                       all.x = TRUE)
+  merged_data <- merge(merged_data, common_mode, by = "Participant_ID",
+                       all.x = TRUE)
+  merged_data <- merge(merged_data, common_state, by = "Participant_ID",
                        all.x = TRUE)
 
-  # Remove redundant columns if necessary
-  merged_data[, c("Provider.x", "Provider.y") := NULL]
+  # Drop old columns
+  merged_data[, c("Provider.x", "Provider.y", "Pre_Mode", "Post_Mode",
+                  "Pre_State", "Post_State") := NULL]
 
-  # Rename the 'Most_Common_Provider' as new Provider column
-  setnames(merged_data, "Most_Common_Provider", "Provider")
+  # Rename new columns
+  setnames(merged_data, c("Most_Common_Provider", "Most_Common_Mode",
+                          "Most_Common_State"),
+           c("Provider", "Mode", "State"))
 
 
   ## This is the new code to try to prevent an error in merge ##
@@ -303,8 +352,6 @@ clean_scores <- function(data, state_filter = NULL, clean_id = TRUE,
   cols_to_include <- c("Participant_ID", "Provider", "Has_Multiple_Scores")
 
   # Check if 'State' and 'Mode' columns exist in the dataset
-  cols_to_include <- c("Participant_ID", "Provider", "Has_Multiple_Scores")
-
   # Conditionally add 'State' and 'Mode' if they exist in the dataset
   if ("State" %in% names(final_data)) {
     cols_to_include <- c(cols_to_include, "State")
@@ -317,7 +364,8 @@ clean_scores <- function(data, state_filter = NULL, clean_id = TRUE,
   scores_final <- dcast(
     final_data,
     formula = paste(paste(cols_to_include, collapse = " + "), "~ Service"),
-    value.var = c("Pre_Score", "Post_Score", "Difference", "Time_Passed_Days"),
+    value.var = c("Pre_Score", "Post_Score", "Difference", "Time_Passed_Days",
+                  "Pre_Date", "Post_Date"),
     sep = "_"
   )
 
