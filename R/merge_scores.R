@@ -55,5 +55,37 @@ merge_scores <- function(quarterly_data, scores_data,
     stop(message)
   }
 
+
+  # ---- Compute Age Variables ----
+  # Create a birth date column using Jan 1 of birth year
+  if (!("Birth_Year" %in% colnames(merged_data))) {
+    warning("Birth_Year column not found in merged data. Age variables will not be created.")
+    return(merged_data)
+  }
+
+  # merged_data[, Birth_Date := as.Date(paste0(Birth_Year, "-01-01"))]
+  # # Identify all date columns to compute age
+  # date_cols <- grep("^(Pre|Post)_Date_", names(merged_data), value = TRUE)
+  #
+  # for (col in date_cols) {
+  #   age_col <- paste0("Age_at_", col)
+  #   merged_data[[age_col]] <- as.numeric(difftime(as.Date(merged_data[[col]]),
+  #                                                 merged_data$Birth_Date,
+  #                                                 units = "days")) / 365.25
+  # }
+  #
+  # ---- Compute Age Variables Using Year Only ----
+  date_cols <- grep("^(Pre|Post)_Date_", names(merged_data), value = TRUE)
+
+  for (col in date_cols) {
+    age_col <- paste0("Age_at_", col)
+    year_vals <- as.numeric(format(as.Date(merged_data[[col]]), "%Y"))
+    merged_data[[age_col]] <- year_vals - merged_data$Birth_Year
+  }
+
+  # Clean up temporary birth_date column
+  # merged_data[, Birth_Date := NULL]
+
+
   return(merged_data)
 }

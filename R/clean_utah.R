@@ -488,37 +488,72 @@ clean_utah <- function(data,
     ## RUN AGGREGATION PROCESS
     # If we pass these two checks, then run the aggregation code
 
+    # if (!skip_aggregation) {
+    #   # Rename the variables in the case that they don't match the codebook,
+    #   #  for easier referencing
+    #   names(data)[names(data) %in% participant_col] <- "Participant_ID"
+    #   names(data)[names(data) %in% year_col] <- "E1_Year_911"
+    #   names(data)[names(data) %in% quarter_col] <- "E2_Quarter_911"
+    #   names(data)[names(data) %in% app_date_col] <- "E7_Application_Date_911"
+    #
+    #   # Remove rows where application date is missing --these are typically
+    #   #   fully missing data rows anyway.
+    #   data <- data[!is.na(E7_Application_Date_911)]
+    #
+    #   # Order the data by Participant_ID, year, quarter, and reverse order
+    #   #   application date
+    #   setorder(data, Participant_ID, E1_Year_911, E2_Quarter_911,
+    #            -E7_Application_Date_911)
+    #
+    #
+    #   # Create a helper column to identify the first occurrence within each
+    #   #   group
+    #   data[, Occurrences_Per_Quarter := .N, by = .(Participant_ID,
+    #                                                E1_Year_911,
+    #                                                E2_Quarter_911)]
+    #   # Save only the first occurrence
+    #   data <- data[, .SD[1], by = .(Participant_ID,
+    #                                 E1_Year_911,
+    #                                 E2_Quarter_911)]
+    #
+    #   # Sort by year and quarter
+    #   setorder(data, E1_Year_911, E2_Quarter_911)
+    # }
+
     if (!skip_aggregation) {
-      # Rename the variables in the case that they don't match the codebook,
-      #  for easier referencing
+      # Rename for consistency
       names(data)[names(data) %in% participant_col] <- "Participant_ID"
       names(data)[names(data) %in% year_col] <- "E1_Year_911"
       names(data)[names(data) %in% quarter_col] <- "E2_Quarter_911"
       names(data)[names(data) %in% app_date_col] <- "E7_Application_Date_911"
 
-      # Remove rows where application date is missing --these are typically
-      #   fully missing data rows anyway.
-      data <- data[!is.na(E7_Application_Date_911)]
+      # Create a non-missing count per row
+      data[, NonMissingCount := rowSums(!is.na(.SD)),
+           .SDcols = setdiff(names(data), c("Participant_ID", "E1_Year_911",
+                                            "E2_Quarter_911",
+                                            "E7_Application_Date_911"))]
 
-      # Order the data by Participant_ID, year, quarter, and reverse order
-      #   application date
+      # Add a temporary column for ordering: application date if available, else
+      #   NA
+      data[, AppDateRank := fifelse(!is.na(E7_Application_Date_911),
+                                    as.numeric(E7_Application_Date_911),
+                                    NA_real_)]
+
+      # Apply ordering logic:
       setorder(data, Participant_ID, E1_Year_911, E2_Quarter_911,
-               -E7_Application_Date_911)
+               -AppDateRank, -NonMissingCount)
 
-
-      # Create a helper column to identify the first occurrence within each
-      #   group
-      data[, Occurrences_Per_Quarter := .N, by = .(Participant_ID,
-                                                   E1_Year_911,
-                                                   E2_Quarter_911)]
-      # Save only the first occurrence
-      data <- data[, .SD[1], by = .(Participant_ID,
-                                    E1_Year_911,
+      # Keep only the top row per group
+      data <- data[, .SD[1], by = .(Participant_ID, E1_Year_911,
                                     E2_Quarter_911)]
 
-      # Sort by year and quarter
+      # Final sort
       setorder(data, E1_Year_911, E2_Quarter_911)
+
+      # Clean up helper columns
+      data[, c("NonMissingCount", "AppDateRank") := NULL]
     }
+
   }
 
   # REMOVE COLUMNS WITH ONLY NAs when remove_strictly_na = TRUE
