@@ -27,7 +27,7 @@
 #' @export
 #' @import data.table
 
-clean_utah2 <- function(data,
+clean_utah <- function(data,
                        aggregate = TRUE,
                        unidentified_to_0 = TRUE,
                        remove_desc = TRUE,
