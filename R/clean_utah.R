@@ -41,6 +41,26 @@ clean_utah <- function(data,
   ######################
   ## REMOVABLE        ##
   ######################
+  # Rows where Participant_ID is missing
+  participant_col <- grep(
+    paste0("(?i)^(?=.*participant|.*\\bid\\b)(?!.*\\bid\\B)(?!.*ssn)"),
+    names(data),
+    value = TRUE,
+    perl = TRUE
+  )
+
+
+  # Clean rows where participant ID is missing, NULL, "NA", "NULL",
+  #   blank, or whitespace
+  data <- data[
+    !(
+      is.na(get(participant_col)) |
+        get(participant_col) %in% c("NA", "NULL") |
+        trimws(get(participant_col)) == ""
+    )
+  ]
+
+
   # DESCRIPTION columns - unnecessary for analysis
   if (remove_desc) {
     desc_cols <- grep("(?i)_desc", names(data), value = TRUE, perl = TRUE)
@@ -86,7 +106,9 @@ clean_utah <- function(data,
                     names(data), value = TRUE,
                     perl = TRUE)
 
-  data[, (date_cols) := lapply(.SD, handle_excel_date), .SDcols = date_cols]
+  # data[, (date_cols) := lapply(.SD, handle_excel_date), .SDcols = date_cols]
+
+  data[, (date_cols) := lapply(.SD, handle_mixed_date), .SDcols = date_cols]
 
   # When handling date transformations (like Excel dates), you might generate
   #  intermediate results that can be garbage collected:
@@ -431,9 +453,12 @@ clean_utah <- function(data,
     ## FIRST, run some checks
     # Make sure we have necessary columns for cleaning processes
 
-    participant_col <- grep(paste0("(?i)^(?=.*participant)|(?=.*\\bid\\b)",
-                                   "(?!.*\\bid\\B)"),
-                            names(data), value = TRUE, perl = TRUE)
+  participant_col <- grep(
+    paste0("(?i)^(?=.*participant|.*\\bid\\b)(?!.*\\bid\\B)(?!.*ssn)"),
+    names(data),
+    value = TRUE,
+    perl = TRUE
+  )
 
 #     year_col <- grep("(?i)_year|(?i)_yr_(?!.*(?i)_desc)", names(data),
 #                      value = TRUE, perl = TRUE)

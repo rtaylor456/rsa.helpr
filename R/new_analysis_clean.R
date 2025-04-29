@@ -21,8 +21,26 @@ overlap_data <- data[as.factor(data$Participant_ID) %in% overlap_ids, ]
 length(unique(overlap_data$Participant_ID)) # make sure we have the 2229 ids
 # 2229
 
+# clean_overlap <- clean_utah(overlap_data)
+
 overlap_data[, E7_Application_Date_911_NEW :=
                handle_mixed_date(E7_Application_Date_911)]
+
+
+overlap_data$Age <- ifelse(
+  is.na(overlap_data$`Age at Application`),
+  overlap_data$Age.at.Application,
+  overlap_data$`Age at Application`
+)
+
+overlap_data[, Age := as.numeric(Age)]
+
+overlap_data_corrected <- overlap_data[(Age >= 14 &
+                                      Age <= 22) |
+                                     is.na(Age), ]
+
+dim(overlap_data_corrected)
+
 
 # Overlapping data that have dates -- 525, which is already more than we had
 #   originally.
@@ -30,16 +48,86 @@ have_dates <- overlap_data[!is.na(E7_Application_Date_911_NEW), ]
 dim(have_dates)
 length(unique(have_dates$Participant_ID)) # 525
 
-have_dates[, Age := as.numeric(`Age at Application`)]
+
+# have_dates$Age <- ifelse(
+#   is.na(have_dates$`Age at Application`),
+#   have_dates$Age.at.Application,
+#   have_dates$`Age at Application`
+# )
+#
+# have_dates[, Age := as.numeric(Age)]
+
 
 have_dates_corrected <- have_dates[(Age >= 14 &
                                       Age <= 22) |
                                  is.na(Age), ]
 
 dim(have_dates_corrected)
-length(unique(have_dates_corrected$Participant_ID)) # 516
+length(unique(have_dates_corrected$Participant_ID)) # 506
 
-agecols_to_check <- c("Age at Application", "Age.at.Application")
+#######
+# Get the counts of missing dates per combination of year and quarter
+is_missing <- function(x) {
+  is.na(x) |
+    is.null(x) |
+    trimws(x) == "" |
+    tolower(trimws(x)) %in% c("na", "null")
+}
+
+setDT(overlap_data)  # if it's not already a data.table
+
+overlap_data[, missing_flag := is_missing(E7_Application_Date_911)]
+
+
+###
+table(have_dates$E1_Year_911, have_dates$E2_Quarter_911)
+
+setDT(have_dates)  # if it isn't already a data.table
+have_dates[, .N, by = .(E1_Year_911, E2_Quarter_911)]
+
+# instead, get ratios of full dates
+overlap_data[, .(
+  ratio_with_dates = sum(!missing_flag) / .N
+), by = .(E1_Year_911, E2_Quarter_911)]
+
+# ratios for missing dates
+overlap_data[, .(
+  ratio_without_dates = sum(missing_flag) / .N
+), by = .(E1_Year_911, E2_Quarter_911)]
+
+#########
+
+# Do the same for full dataset
+is_missing <- function(x) {
+  is.na(x) |
+    is.null(x) |
+    trimws(x) == "" |
+    tolower(trimws(x)) %in% c("na", "null")
+}
+
+setDT(data)  # if it's not already a data.table
+
+data[, missing_flag := is_missing(E7_Application_Date_911)]
+
+have_dates_full <- data[missing_flag == FALSE]
+dim(have_dates_full)
+
+have_dates_full[, .N, by = .(E1_Year_911, E2_Quarter_911)]
+
+# instead, get ratios of full dates
+data[, .(
+  ratio_with_dates = sum(!missing_flag) / .N
+), by = .(E1_Year_911, E2_Quarter_911)]
+
+# ratios for missing dates
+data[, .(
+  ratio_without_dates = sum(missing_flag) / .N
+), by = .(E1_Year_911, E2_Quarter_911)]
+
+#######
+
+
+# agecols_to_check <- c("Age at Application", "Age.at.Application")
 
 # Make sure the columns exist
 cols_present <- intersect(names(have_dates), agecols_to_check)
@@ -62,15 +150,20 @@ dim(check) # 14828   522 <-- remember, we haven't condensed/aggregated yet
 
 ## Of these quarterly rows, find out how many are missing analysis variables
 # Extract names for WIOA columns
-cols_to_check <- grep("^E(6[2-9]|7[0-3])_", names(data), value = TRUE)
+wioa_cols <- grep("^E(6[2-9]|7[0-3])_", names(overlap_data), value = TRUE)
 # Remove any that contain "desc" (case-insensitive)
-cols_to_check <- cols_to_check[!grepl("desc", cols_to_check,
+wioa_cols <- wioa_cols[!grepl("desc", wioa_cols,
                                       ignore.case = TRUE)]
+
+race_cols <- grep(paste0("(?i)(_indian|_asian|_black|_hawaiian|_islander|",
+                         "_white|hispanic)(?!.*(?i)_desc)"),
+                  names(overlap_data),
+                  value = TRUE, perl = TRUE)
 
 cols_to_check <- c("E7_Application_Date_911_NEW", "E9_Gender_911",
                    "E45_Disability_Priority_911",
-                   "Age at Application",
-                   cols_to_check)
+                   "Age", race_cols,
+                   wioa_cols)
 
 
 lapply(check[, ..cols_to_check], table)
