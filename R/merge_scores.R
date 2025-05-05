@@ -18,6 +18,9 @@ merge_scores <- function(quarterly_data, scores_data,
                          quarterly_id = "Participant_ID",
                          scores_id = "Participant_ID") {
 
+  setDT(quarterly_data)
+  setDT(scores_data)
+
   # Ensure ID columns exist
   if (!(quarterly_id %in% colnames(quarterly_data))) {
     stop(paste("Error: Column", quarterly_id, "not found in quarterly_data."))
@@ -44,6 +47,8 @@ merge_scores <- function(quarterly_data, scores_data,
                        by.y = scores_id,
                        all = FALSE)
 
+  setDT(merged_data)
+
   # Verify that only common IDs remain
   common_ids <- intersect(quarterly_data[[quarterly_id]],
                           scores_data[[scores_id]])
@@ -57,35 +62,94 @@ merge_scores <- function(quarterly_data, scores_data,
 
 
   # ---- Compute Age Variables ----
-  # Create a birth date column using Jan 1 of birth year
+  # Create a Birth Year column
   if (!("Birth_Year" %in% colnames(merged_data))) {
     warning("Birth_Year column not found in merged data. Age variables will not be created.")
     return(merged_data)
+  } else {
+    # ---- Compute Age Variables Using Year Only ----
+    date_cols <- grep("^(Pre|Post)_Date_", names(merged_data), value = TRUE)
+
+    for (col in date_cols) {
+      age_col <- paste0("Age_At_", col)
+      year_vals <- as.numeric(format(as.Date(merged_data[[col]]), "%Y"))
+      merged_data[[age_col]] <- year_vals - merged_data$Birth_Year
+    }
+
+    # ---- Round Age Columns to Whole Numbers ----
+    age_cols <- grep("^Age_At_", names(merged_data), value = TRUE)
+    merged_data[, (age_cols) := lapply(.SD, round), .SDcols = age_cols]
+
+    # ---- Filter Rows Where All Age Columns Are Between 14 and 22 ----
+    # merged_data <- merged_data[apply(merged_data[, age_cols, with = FALSE], 1,
+    #                                  function(row) {
+    #   all(row >= 14 & row <= 22, na.rm = TRUE)
+    # })]
+
+    # merged_data <- merged_data[
+    #   , .SD[any(apply(.SD[, age_cols, with = FALSE], 1, function(row) {
+    #     all(row >= 14 & row <= 22, na.rm = TRUE)
+    #   }))],
+    #   by = quarterly_id
+    # ]
+
+
+    ## GET AGE DIFF PER SERVICE FOR EACH PARTICIPANT
+    services <- c("CPSO", "CSS", "FL", "ILOM", "ISA", "JOBEX", "JS", "QWEX",
+                  "WBLE", "WSS")
+
+    for (service in services) {
+      pre_col <- paste0("Age_At_Pre_Date_", service)
+      post_col <- paste0("Age_At_Post_Date_", service)
+      diff_col <- paste0("Age_Diff_", service)
+
+      merged_data[, (diff_col) := get(post_col) - get(pre_col)]
+    }
+
+    merged_data[, (diff_col) := fifelse(!is.na(get(post_col)) &
+                                          !is.na(get(pre_col)),
+                               get(post_col) - get(pre_col),
+                               NA_real_)]
+
+    ## GET MEDIAN AGE DIFF (ACROSS ALL SERVICES) FOR EACH PARTICIPANT
+    diff_cols <- paste0("Age_Diff_", c("CPSO", "CSS", "FL", "ILOM", "ISA",
+                                       "JOBEX", "JS", "QWEX", "WBLE", "WSS"))
+
+    # Calculate per-row median of the Age_Diff_* columns, ignoring NA
+    merged_data[, Median_Age_Diff_TRT := apply(.SD, 1, function(x)
+      median(x, na.rm = TRUE)), .SDcols = diff_cols]
+
+
+    ## GET MIN AND MAX AGE FOR EACH PARTICIPANT
+    # Define pre and post column sets
+    pre_cols <- paste0("Age_At_Pre_Date_",
+                       c("CPSO", "CSS", "FL", "ILOM", "ISA", "JOBEX", "JS",
+                         "QWEX", "WBLE", "WSS"))
+    post_cols <- paste0("Age_At_Post_Date_",
+                        c("CPSO", "CSS", "FL", "ILOM", "ISA", "JOBEX", "JS",
+                          "QWEX", "WBLE", "WSS"))
+
+    # Calculate per-row min and max (ignoring NAs)
+    merged_data[, Min_Pre_Age := do.call(pmin, c(.SD, na.rm = TRUE)),
+                .SDcols = pre_cols]
+    merged_data[, Max_Post_Age := do.call(pmax, c(.SD, na.rm = TRUE)),
+                .SDcols = post_cols]
+
+    ## GET THE OVERALL TOTAL TIME BETWEEN EARLIEST PRE AND LATEST POST
+    merged_data[, Total_Age_Diff_TRT := Max_Post_Age - Min_Pre_Age]
+
+    return(merged_data)
   }
 
-  # merged_data[, Birth_Date := as.Date(paste0(Birth_Year, "-01-01"))]
-  # # Identify all date columns to compute age
+  # # ---- Compute Age Variables Using Year Only ----
   # date_cols <- grep("^(Pre|Post)_Date_", names(merged_data), value = TRUE)
   #
   # for (col in date_cols) {
-  #   age_col <- paste0("Age_at_", col)
-  #   merged_data[[age_col]] <- as.numeric(difftime(as.Date(merged_data[[col]]),
-  #                                                 merged_data$Birth_Date,
-  #                                                 units = "days")) / 365.25
+  #   age_col <- paste0("Age_At_", col)
+  #   year_vals <- as.numeric(format(as.Date(merged_data[[col]]), "%Y"))
+  #   merged_data[[age_col]] <- year_vals - merged_data$Birth_Year
   # }
   #
-  # ---- Compute Age Variables Using Year Only ----
-  date_cols <- grep("^(Pre|Post)_Date_", names(merged_data), value = TRUE)
-
-  for (col in date_cols) {
-    age_col <- paste0("Age_at_", col)
-    year_vals <- as.numeric(format(as.Date(merged_data[[col]]), "%Y"))
-    merged_data[[age_col]] <- year_vals - merged_data$Birth_Year
-  }
-
-  # Clean up temporary birth_date column
-  # merged_data[, Birth_Date := NULL]
-
-
-  return(merged_data)
+  #
+  # return(merged_data)
 }

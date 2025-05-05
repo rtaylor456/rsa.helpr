@@ -74,9 +74,11 @@ clean_utah <- function(data,
 
   # ADMIN columns
   # remove the extra administrative columns, not needed for analysis
-  extra_cols <- grep("(?i)_data_|(?i)VR_Case_Type_Flag(?!.*(?i)_desc)",
-                     names(data),
-                     value = TRUE, perl = TRUE)
+  # extra_cols <- grep("(?i)_data_|(?i)VR_Case_Type_Flag(?!.*(?i)_desc)",
+  #                    names(data),
+  #                    value = TRUE, perl = TRUE)
+
+  extra_cols <- grep("(?i)_data_", names(data), value = TRUE, perl = TRUE)
 
   if (length(extra_cols) > 0) {
     data[, (extra_cols) := NULL]
@@ -130,10 +132,21 @@ clean_utah <- function(data,
                       value = TRUE, perl = TRUE)
 
   # AGE column
-  age_col <- grep("(?i)^(?=.*age)(?=.*app)(?!.*(desc|amt))", names(data),
+  age_cols <- grep("(?i)^(?=.*age)(?=.*app)(?!.*(desc|amt))", names(data),
                    value = TRUE, perl = TRUE)
+  # Convert to numeric
+  data[, (age_cols) := lapply(.SD, function(x) suppressWarnings(as.numeric(x))),
+       .SDcols = age_cols]
+
+  # Combine the age columns into one
+  data[, Age_At_Application := round(do.call(fcoalesce, .SD)),
+       .SDcols = age_cols]
+
+  # Drop the original column names
+  data[, (age_cols) := NULL]
+
   # Rename Age column
-  names(data)[names(data) %in% age_col] <- "Age_At_Application"
+  # names(data)[names(data) %in% age_col] <- "Age_At_Application"
 
 
   # AMT and TITLE columns (TITLEI columns are funds expended for different
@@ -160,7 +173,7 @@ clean_utah <- function(data,
   app_date_col <- grep("(?i)(?=.*app)(?=.*date)(?!.*_desc)", names(data),
                        value = TRUE, perl = TRUE)
 
-  if (length(app_date_col) == 1 && length(age_col) == 1) {
+  if (length(app_date_col) == 1) {
     data[, Birth_Year := year(data[[app_date_col]]) -
            data[["Age_At_Application"]]]
   }
@@ -196,6 +209,7 @@ clean_utah <- function(data,
     handle_values(x, values = c(1, 2, 3, 4))
   }), .SDcols = vendor_cols]
 
+  #######################################
   ### 1, 0, 9 columns: ###
   # PROVIDER and PURCHASE columns
   prov_purch_cols <- grep("((?i)_provide|(?i)_purchase)(?!.*(?i)_desc)",
@@ -268,6 +282,63 @@ clean_utah <- function(data,
          lapply(.SD, function(x) handle_nines(x, unidentified_to_0)),
        .SDcols = binary_cols]
 
+
+  ## FARMWORKER --> BINARY
+  farm_work_col <- grep(paste0("(?i)plan_*(?i)_farm(?!.*(_desc|description|",
+                               "_amt|amount|amnt|vendor|title|comp|hours|date",
+                               "|ext|wage|status|occ|",
+                               "grade))"),
+                        names(data), value = TRUE, perl = TRUE)
+
+  data[, (farm_work_col) := lapply(.SD, function(x) {
+    handle_values(x, c(1:3, 9), blank_value = 0)
+  }),
+  .SDcols = farm_work_col]
+
+  # Convert farmworker to binary variable for analysis
+  data[, (farm_work_col) := lapply(.SD, function(x) ifelse(x %in% 1:3, 1, 0)),
+       .SDcols = farm_work_col]
+
+
+  ##############################################################################
+  #############################
+  ## BINARY GROUPING COLUMNS ##
+  ############################
+
+  income_cols <- grep(paste0("(?i)(unemployment|TANF|homeless|low_income|",
+                             "single_parent|displaced_homemaker|farmworker)",
+                             "(?!.*(_desc|_amt|amount|_title|_date))"),
+                      names(data), value = TRUE, perl = TRUE)
+
+  cultural_cols <- grep(paste0("(?i)(english_learner|skills_deficient|",
+                               "cultural_barriers|offender)",
+                             "(?!.*(_desc|_amt|amount|_title|_date))"),
+                      names(data), value = TRUE, perl = TRUE)
+
+  support_cols <- grep(paste0("(?i)(foster_care|low_income|single_parent|",
+                               "displaced_homemaker)",
+                               "(?!.*(_desc|_amt|amount|_title|_date))"),
+                        names(data), value = TRUE, perl = TRUE)
+
+  housing_cols <- grep(paste0("(?i)(foster_care|homeless)",
+                              "(?!.*(_desc|_amt|amount|_title|_date))"),
+                       names(data), value = TRUE, perl = TRUE)
+
+
+  data[, Income_Struggle := as.integer(rowSums(.SD, na.rm = TRUE) > 0),
+       .SDcols = income_cols]
+
+  data[, Cultural_Struggle := as.integer(rowSums(.SD, na.rm = TRUE) > 0),
+       .SDcols = cultural_cols]
+
+  data[, Support_Struggle := as.integer(rowSums(.SD, na.rm = TRUE) > 0),
+       .SDcols = support_cols]
+
+  data[, Housing_Struggle := as.integer(rowSums(.SD, na.rm = TRUE) > 0),
+       .SDcols = housing_cols]
+
+
+  ####################################
 
   # SEX column
   sex_cols <- grep("((?i)_sex|(?i)_gender)(?!.*(?i)_desc)", names(data),
@@ -453,12 +524,12 @@ clean_utah <- function(data,
     ## FIRST, run some checks
     # Make sure we have necessary columns for cleaning processes
 
-  participant_col <- grep(
-    paste0("(?i)^(?=.*participant|.*\\bid\\b)(?!.*\\bid\\B)(?!.*ssn)"),
-    names(data),
-    value = TRUE,
-    perl = TRUE
-  )
+    participant_col <- grep(
+      paste0("(?i)^(?=.*participant|.*\\bid\\b)(?!.*\\bid\\B)(?!.*ssn)"),
+      names(data),
+      value = TRUE,
+      perl = TRUE
+    )
 
 #     year_col <- grep("(?i)_year|(?i)_yr_(?!.*(?i)_desc)", names(data),
 #                      value = TRUE, perl = TRUE)
