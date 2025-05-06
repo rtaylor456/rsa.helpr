@@ -272,11 +272,16 @@ clean_utah <- function(data,
   # [9] "E70_Plan_Cultural_Barriers_911"      "E71_Plan_Single_Parent_911"
   # [11] "E72_Plan_Displaced_Homemaker_911"
 
+
+  post_sec_complete_col <- grep("(?i)(?=.*postsecondary)(?=.*complet)(?!.*(_desc|_date))",
+                            names(data), value = TRUE, perl = TRUE)
+
+
   demographic_cols <- c(race_cols, veteran_col, has_disability_col,
                         q1_q1_employ_col, adult_cols, service_work_cols,
                         plan_cols)
 
-  binary_cols <- c(prov_purch_cols, demographic_cols)
+  binary_cols <- c(prov_purch_cols, demographic_cols, post_sec_complete_col)
 
   data[, (binary_cols) :=
          lapply(.SD, function(x) handle_nines(x, unidentified_to_0)),
@@ -466,8 +471,9 @@ clean_utah <- function(data,
                             value = TRUE, perl = TRUE)
 
   # Apply the handle_values function and convert to ordered factor
+
   data[, (other_factor_cols) := lapply(.SD, function(x) {
-    factor(handle_values(x, c(0, 1, 2)), levels = c(0, 1, 2), ordered = TRUE)
+    factor(handle_values(x, c(0, 1, 2)))
   }), .SDcols = other_factor_cols]
 
 

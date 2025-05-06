@@ -27,9 +27,6 @@ dim(have_dates)
 length(unique(have_dates$Participant_ID))
 
 
-have_dates <- merged[!is.na(E7_Application_Date_911), ]
-dim(have_dates)
-length(unique(have_dates$Participant_ID)) # 326
 
 merged <- merge_scores(data_clean, scores_clean)
 
@@ -37,7 +34,7 @@ length(unique(merged$Participant_ID)) ## 2206
 
 have_dates <- merged[!is.na(E7_Application_Date_911), ]
 dim(have_dates)
-length(unique(have_dates$Participant_ID)) # 326
+length(unique(have_dates$Participant_ID)) # 525
 
 metadata <- create_metadata(merged)
 
