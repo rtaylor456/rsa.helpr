@@ -206,7 +206,8 @@ clean_utah <- function(data,
                       value = TRUE, perl = TRUE)
 
   data[, (vendor_cols) := lapply(.SD, function(x) {
-    handle_values(x, values = c(1, 2, 3, 4))
+    numeric_x <- as.numeric(as.character(x))
+    handle_values(numeric_x, values = c(1, 2, 3, 4))
   }), .SDcols = vendor_cols]
 
   #######################################
@@ -296,7 +297,8 @@ clean_utah <- function(data,
                         names(data), value = TRUE, perl = TRUE)
 
   data[, (farm_work_col) := lapply(.SD, function(x) {
-    handle_values(x, c(1:3, 9), blank_value = 0)
+    numeric_x <- as.numeric(as.character(x))
+    handle_values(numeric_x, c(1:3, 9), blank_value = 0)
   }),
   .SDcols = farm_work_col]
 
@@ -350,7 +352,8 @@ clean_utah <- function(data,
                    value = TRUE, perl = TRUE)
 
   data[, (sex_cols) := lapply(.SD, function(x) {
-    handle_values(x, c(1, 2, 3, 9), blank_value = 9)
+    numeric_x <- as.numeric(as.character(x))
+    handle_values(numeric_x, c(1, 2, 3, 9), blank_value = 9)
   }), .SDcols = sex_cols]
 
 
@@ -361,7 +364,8 @@ clean_utah <- function(data,
                            value = TRUE, perl = TRUE)
 
   data[, (exit_reason_cols) := lapply(.SD, function(x) {
-    handle_values(x, c(02, 03, 04, 06, 07, 08, 13:22))
+    numeric_x <- as.numeric(as.character(x))
+    handle_values(numeric_x, c(02, 03, 04, 06, 07, 08, 13:22))
   }),
   .SDcols = exit_reason_cols]
 
@@ -379,7 +383,8 @@ clean_utah <- function(data,
 
   # Convert 9s to 0s as well, if user chooses to set unidentified_to_0 = TRUE
   data[, (employ_cols) := lapply(.SD, function(x) {
-    handle_nines(x, unidentified_to_0)
+    numeric_x <- as.numeric(as.character(x))
+    handle_nines(numeric_x, unidentified_to_0)
   }),
   .SDcols = employ_cols]
 
@@ -390,7 +395,8 @@ clean_utah <- function(data,
                         names(data), value = TRUE, perl = TRUE)
 
   data[, (exit_work_col) := lapply(.SD, function(x) {
-    handle_values(x, c(1:5, 7), blank_value = 0)
+    numeric_x <- as.numeric(as.character(x))
+    handle_values(numeric_x, c(1:5, 7), blank_value = 0)
   }),
   .SDcols = exit_work_col]
 
@@ -473,7 +479,8 @@ clean_utah <- function(data,
   # Apply the handle_values function and convert to ordered factor
 
   data[, (other_factor_cols) := lapply(.SD, function(x) {
-    factor(handle_values(x, c(0, 1, 2)))
+    numeric_x <- as.numeric(as.character(x))
+    factor(handle_values(numeric_x, c(0, 1, 2)))
   }), .SDcols = other_factor_cols]
 
 
@@ -482,11 +489,19 @@ clean_utah <- function(data,
   post_sec_cols <- grep("(?i)_postsecondary_enroll(?!.*(?i)_desc|(?i)_date)",
                         names(data), value = TRUE, perl = TRUE)
 
-  data[, (post_sec_cols) := lapply(.SD, function(x) {
-    factor(handle_values(x, 0:3, blank_value = 0),
-           levels = c(0, 3, 2, 1), ordered = TRUE)
-  }), .SDcols = post_sec_cols]
+  # data[, (post_sec_cols) := lapply(.SD, function(x) {
+  #   factor(handle_values(x, 0:3, blank_value = 0),
+  #          levels = c(0, 3, 2, 1), ordered = TRUE)
+  # }), .SDcols = post_sec_cols]
 
+  # data[, (post_sec_cols) := lapply(.SD, function(x) {
+  #   handle_values(x, 0:3, blank_value = 0)
+  # }), .SDcols = post_sec_cols]
+
+  data[, (post_sec_cols) := lapply(.SD, function(x) {
+    numeric_x <- as.numeric(as.character(x))  # convert "0" → 0, "1" → 1, etc.
+    as.factor(handle_values(numeric_x, 0:3, blank_value = 0))
+  }), .SDcols = post_sec_cols]
 
   # E354_Exit_Type_911
   exit_var_cols <- grep("((?i)_exit_type)(?!.*(?i)_desc|(?i)_date)",
@@ -494,7 +509,8 @@ clean_utah <- function(data,
 
   # (order is a little weird for this one)
   data[, (exit_var_cols) := lapply(.SD, function(x) {
-    factor(handle_values(x, 0:7, blank_value = 0),
+    numeric_x <- as.numeric(as.character(x))
+    factor(handle_values(numeric_x, 0:7, blank_value = 0),
            levels = c(0, 7, 1, 2, 3, 4, 5, 6),
            ordered = TRUE)
   }), .SDcols = exit_var_cols]
@@ -507,7 +523,8 @@ clean_utah <- function(data,
 
   # (order is a little weird for this one too)
   data[, (exit_cred_cols) := lapply(.SD, function(x) {
-    factor(handle_values(x, 1:8, blank_value = 0),
+    numeric_x <- as.numeric(as.character(x))
+    factor(handle_values(numeric_x, 1:8, blank_value = 0),
            levels = c(8, 6, 7, 5, 1, 2, 3, 4),
            ordered = TRUE)
   }), .SDcols = exit_cred_cols]
