@@ -169,13 +169,20 @@ clean_utah <- function(data,
        .SDcols = numeric_cols]
 
 
-  ### Calculate Birth Year
+  ### Calculate Birth Year and create Has_App_Date
   app_date_col <- grep("(?i)(?=.*app)(?=.*date)(?!.*_desc)", names(data),
                        value = TRUE, perl = TRUE)
 
   if (length(app_date_col) == 1) {
     data[, Birth_Year := year(data[[app_date_col]]) -
            data[["Age_At_Application"]]]
+  }
+
+  # Create Has_App_Date as 1 if not missing, 0 if missing
+  if (length(app_date_col) == 1) {
+    data[, Has_App_Date := fifelse(!is.na(get(app_date_col)), 1, 0)]
+  } else {
+    warning("Application date column not uniquely identified.")
   }
 
   # add to numeric columns list, so that it doesn't get counted as a factor

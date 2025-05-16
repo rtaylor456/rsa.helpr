@@ -153,6 +153,30 @@ create_metadata <- function(data, includes_scores = TRUE) {
 
   }
 
+  ## ROUND AGE VARIABLES
+  # Identify numeric variables that contain "age" (case-insensitive)
+  # age_cols <- grep("(?i)^(?=.*age)(?!.*(desc|amt))", names(data),
+  #                  value = TRUE, perl = TRUE)
+  #
+  # # Round them to the nearest whole number
+  # data[, (age_cols) := lapply(.SD, round), .SDcols = age_cols]
+
+  # age_cols <- grep("Age_", names(merged_data), value = TRUE)
+
+  # age_cols <- names(data)[grepl("Age_", names(data)) &
+  #                                  names(data) != "E74_SWD_Age_911" &
+  #                                  names(data) != "Age_Group"]
+
+  age_cols <- names(data)[grepl("Age", names(data)) &
+                                   names(data) != "E74_SWD_Age_911" &
+                                   names(data) != "Age_Group" &
+                                   names(data) != "E4_Agency_Code_911" &
+                                   names(data) != "E394_App_SSI_Aged_Amt" &
+                                   names(data) != "E396_Exit_SSI_Aged_Amt"]
+
+
+  data[, (age_cols) := lapply(.SD, round), .SDcols = age_cols]
+
   ## CONDENSE! CREATE METADATA
   # Summarise to condense rows, keeping one row per participant
   metadata <- data[, lapply(.SD, first), by = Participant_ID]

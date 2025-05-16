@@ -76,9 +76,9 @@ merge_scores <- function(quarterly_data, scores_data,
       merged_data[[age_col]] <- year_vals - merged_data$Birth_Year
     }
 
-    # ---- Round Age Columns to Whole Numbers ----
-    age_cols <- grep("^Age_At_", names(merged_data), value = TRUE)
-    merged_data[, (age_cols) := lapply(.SD, round), .SDcols = age_cols]
+    # # ---- Round Age Columns to Whole Numbers ----
+    # age_cols <- grep("^Age_At_", names(merged_data), value = TRUE)
+    # merged_data[, (age_cols) := lapply(.SD, round), .SDcols = age_cols]
 
     # ---- Filter Rows Where All Age Columns Are Between 14 and 22 ----
     # merged_data <- merged_data[apply(merged_data[, age_cols, with = FALSE], 1,
@@ -103,7 +103,13 @@ merge_scores <- function(quarterly_data, scores_data,
       post_col <- paste0("Age_At_Post_Date_", service)
       diff_col <- paste0("Age_Diff_", service)
 
+      median_age_col <- paste0("Median_Age_", service)
+
       merged_data[, (diff_col) := get(post_col) - get(pre_col)]
+
+      merged_data[, (median_age_col) :=
+                    apply(.SD, 1, function(x) median(x, na.rm = TRUE)),
+                  .SDcols = c(pre_col, post_col)]
     }
 
     merged_data[, (diff_col) := fifelse(!is.na(get(post_col)) &
@@ -137,6 +143,27 @@ merge_scores <- function(quarterly_data, scores_data,
 
     ## GET THE OVERALL TOTAL TIME BETWEEN EARLIEST PRE AND LATEST POST
     merged_data[, Total_Age_Diff_TRT := Max_Post_Age - Min_Pre_Age]
+
+
+    ## GET OVERALL MEDIAN AGE ACROSS ALL SERVICES AND BOTH PRE & POST
+    all_age_cols <- unlist(lapply(services, function(service) {
+      c(paste0("Age_At_Pre_Date_", service), paste0("Age_At_Post_Date_",
+                                                    service))
+    }))
+
+    merged_data[, Median_Age := apply(.SD, 1, function(x) median(x,
+                                                                 na.rm = TRUE)),
+                .SDcols = all_age_cols]
+
+    # age_cols <- grep("Age_", names(merged_data), value = TRUE)
+    age_cols <- names(merged_data)[grepl("Age", names(merged_data)) &
+                                names(merged_data) != "E74_SWD_Age_911" &
+                                  names(merged_data) != "Age_Group" &
+                                  names(merged_data) != "E4_Agency_Code_911" &
+                                  names(merged_data) != "E394_App_SSI_Aged_Amt" &
+                                  names(merged_data) != "E396_Exit_SSI_Aged_Amt"]
+
+    merged_data[, (age_cols) := lapply(.SD, round), .SDcols = age_cols]
 
     return(merged_data)
   }
