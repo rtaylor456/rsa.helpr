@@ -110,8 +110,8 @@ create_metadata <- function(data, includes_scores = TRUE) {
     ## CREATE NEW VARIABLES--new MEDIANS and DIFFERENCES
     # Identify scores and time passed
     difference_cols <- grep("^Difference_", names(data), value = TRUE)
-    pre_cols <- grep("^Pre_", names(data), value = TRUE)
-    post_cols <- grep("^Post_", names(data), value = TRUE)
+    pre_cols <- grep("^Pre_Score", names(data), value = TRUE)
+    post_cols <- grep("^Post_Score", names(data), value = TRUE)
 
     time_cols <- grep("^Time_Passed_Days", names(data), value = TRUE)
 

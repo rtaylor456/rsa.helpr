@@ -130,19 +130,25 @@ compare_densities(pse_complete, pse_not_complete, variable = "PSE Completion",
 ## FACING ANY STRUGGLE
 #######################
 
-facing_struggle <- has_dates[Income_Struggle == 1 |
-                               Cultural_Struggle == 1 |
-                               Housing_Struggle == 1 |
-                               Support_Struggle == 1]
+# facing_struggle <- has_dates[Income_Struggle == 1 |
+#                                Cultural_Struggle == 1 |
+#                                Housing_Struggle == 1 |
+#                                Support_Struggle == 1]
+
+facing_struggle <- has_dates[Facing_Struggle == 1]
+
 
 summary_facing_struggle <- summarize_scores_formatted(facing_struggle,
                                                robust_measures = TRUE)
 summary_facing_struggle
 
-no_struggle <- has_dates[Income_Struggle != 1 &
-                               Cultural_Struggle != 1 &
-                               Housing_Struggle != 1 &
-                               Support_Struggle != 1]
+# no_struggle <- has_dates[Income_Struggle != 1 &
+#                                Cultural_Struggle != 1 &
+#                                Housing_Struggle != 1 &
+#                                Support_Struggle != 1]
+
+no_struggle <- has_dates[Facing_Struggle == 0]
+
 
 summary_no_struggle <- summarize_scores_formatted(no_struggle,
                                                robust_measures = TRUE)
@@ -716,3 +722,858 @@ summary_dt <- metadata_corrected[!is.na(Median_Age), .(
 ), by = Median_Age][order(Median_Age)]
 
 summary_dt
+
+
+
+library(ggplot2)
+
+ggplot(has_dates, aes(x = Median_Age, y = Median_Difference_Score)) +
+  geom_point(color = "steelblue", size = 2, alpha = 0.7) +
+  geom_smooth(method = "lm", color = "darkblue", se = FALSE) +
+  labs(
+    title = "Relationship Between TRT Age and Difference Score",
+    x = "Median Age",
+    y = "Median Difference Score"
+  ) +
+  theme_minimal(base_size = 14)
+cor(has_dates$Median_Age, has_dates$Median_Difference_Score,
+    use = "complete.obs")
+
+ggplot(has_dates, aes(x = Median_Age, y = Median_Pre_Score)) +
+  geom_point(color = "steelblue", size = 2, alpha = 0.7) +
+  geom_smooth(method = "lm", color = "darkblue", se = FALSE) +
+  labs(
+    title = "Relationship Between TRT Age and Pre Score",
+    x = "Median Age",
+    y = "Median Pre Score"
+  ) +
+  theme_minimal(base_size = 14)
+cor(has_dates$Median_Age, has_dates$Median_Pre_Score, use = "complete.obs")
+
+
+ggplot(has_dates, aes(x = Median_Age, y = Median_Post_Score)) +
+  geom_point(color = "steelblue", size = 2, alpha = 0.7) +
+  geom_smooth(method = "lm", color = "darkblue", se = FALSE) +
+  labs(
+    title = "Relationship Between TRT Age and Post Score",
+    x = "Median Age",
+    y = "Median Post Score"
+  ) +
+  theme_minimal(base_size = 14)
+
+cor(has_dates$Median_Age, has_dates$Median_Post_Score, use = "complete.obs")
+
+
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+
+# Reshape the data to long format
+plot_data <- has_dates |>
+  dplyr::select(Median_Age,
+         Median_Difference_Score,
+         Median_Pre_Score,
+         Median_Post_Score) |>
+  pivot_longer(cols = starts_with("Median_"),
+               names_to = "Score_Type",
+               values_to = "Score_Value") |>
+  # Optional: make the labels prettier
+  mutate(Score_Type = recode(Score_Type,
+                             "Median_Difference_Score" = "Difference Score",
+                             "Median_Pre_Score" = "Pre Score",
+                             "Median_Post_Score" = "Post Score"
+  ))
+
+# Use dplyr::select to avoid namespace conflict
+plot_data <- has_dates %>%
+  dplyr::select(Median_Age, Median_Difference_Score, Median_Pre_Score, Median_Post_Score) %>%
+  pivot_longer(cols = -Median_Age,
+               names_to = "Score_Type",
+               values_to = "Score_Value") %>%
+  mutate(Score_Type = recode(Score_Type,
+                             "Median_Difference_Score" = "Difference Score",
+                             "Median_Pre_Score" = "Pre Score",
+                             "Median_Post_Score" = "Post Score"
+  ))
+
+
+# Plot
+ggplot(plot_data, aes(x = Median_Age, y = Score_Value)) +
+  geom_point(color = "steelblue", size = 2, alpha = 0.7) +
+  geom_smooth(method = "lm", color = "darkblue", se = FALSE) +
+  facet_wrap(~ Score_Type, nrow = 1) +
+  labs(
+    title = "Relationship Between TRT Age and Scores",
+    x = "Median Age",
+    y = "Score"
+  ) +
+  theme_minimal(base_size = 14)
+
+
+
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+
+plot_data <- has_dates %>%
+  dplyr::select(Median_Age, Median_Difference_Score, Median_Pre_Score, Median_Post_Score) %>%
+  pivot_longer(cols = -Median_Age,
+               names_to = "Score_Type",
+               values_to = "Score_Value") %>%
+  mutate(
+    Score_Type = recode(Score_Type,
+                        "Median_Difference_Score" = "Difference Score",
+                        "Median_Pre_Score" = "Pre Score",
+                        "Median_Post_Score" = "Post Score"
+    ),
+    Score_Type = factor(Score_Type, levels = c("Pre Score", "Post Score", "Difference Score"))
+  )
+
+# Plot
+ggplot(plot_data, aes(x = Median_Age, y = Score_Value)) +
+  geom_point(color = "steelblue", size = 2, alpha = 0.7) +
+  geom_smooth(method = "lm", color = "darkblue", se = FALSE) +
+  facet_wrap(~ Score_Type, nrow = 1) +
+  labs(
+    title = "Relationship Between TRT Age and Scores",
+    x = "Median Age",
+    y = "Score"
+  ) +
+  theme_minimal(base_size = 14)
+
+
+################################################################################
+################################################################################
+##############
+## MODELING ##
+##############
+################################################################################
+################################################################################
+
+# Response variables:
+# Median_Pre_Score
+# Median_Post_Score
+# Median_Difference_Score
+
+
+# predictor variables to include
+
+# Age_At_Application
+# Median_Age
+# E9_Gender_911
+# E14_White_911
+# E45_Disability_Priority_911
+# E84_PostSecondary_Enrollment_911
+# E86_PostSecondary_Partial_Completion_911
+
+# Cultural_Struggle
+# Housing_Struggle
+# Income_Struggle
+# Cultural_Struggle
+
+# Facing_Struggle
+
+###############################################################################@
+## VIF values ##
+#   Check for multicollinearity
+###############################################################################@
+
+car::vif(lm(Median_Difference_Score ~ Median_Age +
+              E9_Gender_911 +
+              E14_White_911 +
+              E45_Disability_Priority_911 +
+              E84_PostSecondary_Enrollment_911 +
+              E86_PostSecondary_Partial_Completion_911 +
+              Facing_Struggle,
+            data = has_dates))
+
+
+car::vif(lm(Median_Pre_Score ~ Median_Age +
+              E9_Gender_911 +
+              E14_White_911 +
+              E45_Disability_Priority_911 +
+              E84_PostSecondary_Enrollment_911 +
+              E86_PostSecondary_Partial_Completion_911 +
+              Facing_Struggle,
+            data = has_dates))
+
+
+# add in median_pre_score as a predictor
+car::vif(lm(Median_Post_Score ~ Median_Pre_Score + Median_Age +
+              E9_Gender_911 +
+              E14_White_911 +
+              E45_Disability_Priority_911 +
+              E84_PostSecondary_Enrollment_911 +
+              E86_PostSecondary_Partial_Completion_911 +
+              Facing_Struggle,
+            data = has_dates))
+
+###############################################################################@
+## BASIC OLS ##
+#   Good for:
+#   Simplicity
+#   Baseline (expect it to be a poor performing model)
+###############################################################################@
+
+median_diff_ols <- lm(Median_Difference_Score ~ Median_Age + E9_Gender_911 +
+                        E14_White_911 + E45_Disability_Priority_911 +
+                         E84_PostSecondary_Enrollment_911 +
+                         E86_PostSecondary_Partial_Completion_911 +
+                         Facing_Struggle,
+                       data = has_dates)
+
+summary(median_diff_ols)
+
+plot(median_diff_ols)
+
+
+
+median_pre_ols <- lm(Median_Pre_Score ~ Median_Age + E9_Gender_911 +
+                        E14_White_911 + E45_Disability_Priority_911 +
+                        E84_PostSecondary_Enrollment_911 +
+                        E86_PostSecondary_Partial_Completion_911 +
+                        Facing_Struggle,
+                      data = has_dates)
+
+summary(median_pre_ols)
+
+plot(median_pre_ols)
+
+
+median_post_ols <- lm(Median_Post_Score ~
+                        Median_Age + E9_Gender_911 +
+                       E14_White_911 + E45_Disability_Priority_911 +
+                       E84_PostSecondary_Enrollment_911 +
+                       E86_PostSecondary_Partial_Completion_911 +
+                       Facing_Struggle,
+                     data = has_dates)
+
+summary(median_post_ols)
+
+plot(median_post_ols)
+
+###############################################################################@
+## ELASTIC NET
+#   Good for:
+#   High dimensionality (many [predictors, fewer obs])
+#   Multicollinearity
+###############################################################################@
+
+
+
+###############################################################################@
+## LASSO
+#   Good for:
+#   High dimensionality (many [predictors, fewer obs])
+#   Variable importance
+###############################################################################@
+vars_to_use <- c(
+  "Median_Difference_Score",  # target variable
+  "Median_Age",
+  "E9_Gender_911",
+  "E14_White_911",
+  "E45_Disability_Priority_911",
+  "E84_PostSecondary_Enrollment_911",
+  "E86_PostSecondary_Partial_Completion_911",
+  "Facing_Struggle"
+)
+
+subset_data <- has_dates_drop[, ..vars_to_use, drop = FALSE]
+
+subset_data <- na.omit(subset_data)
+
+library(glmnet)
+X <- model.matrix(Median_Difference_Score ~ . -1, data = subset_data)
+y <- subset_data$Median_Difference_Score
+
+
+median_diff_lasso <- cv.glmnet(X, y, alpha = 1)
+coef(median_diff_lasso, s = "lambda.min")
+
+
+################
+vars_to_use2 <- c(
+  "Median_Pre_Score",  # target variable
+  "Median_Age",
+  "E9_Gender_911",
+  "E14_White_911",
+  "E45_Disability_Priority_911",
+  "E84_PostSecondary_Enrollment_911",
+  "E86_PostSecondary_Partial_Completion_911",
+  "Facing_Struggle"
+)
+
+subset_data2 <- has_dates_drop[, ..vars_to_use2, drop = FALSE]
+
+subset_data2 <- na.omit(subset_data2)
+
+library(glmnet)
+X2 <- model.matrix(Median_Pre_Score ~ . -1, data = subset_data2)
+y2 <- subset_data2$Median_Pre_Score
+
+
+median_pre_lasso <- cv.glmnet(X2, y2, alpha = 1)
+coef(median_pre_lasso, s = "lambda.min")
+
+
+##################
+
+vars_to_use3 <- c(
+  "Median_Post_Score",  # target variable
+  "Median_Age",
+  "E9_Gender_911",
+  "E14_White_911",
+  "E45_Disability_Priority_911",
+  "E84_PostSecondary_Enrollment_911",
+  "E86_PostSecondary_Partial_Completion_911",
+  "Facing_Struggle"
+)
+
+subset_data3 <- has_dates_drop[, ..vars_to_use3, drop = FALSE]
+
+subset_data3 <- na.omit(subset_data3)
+
+library(glmnet)
+X3 <- model.matrix(Median_Post_Score ~ . -1, data = subset_data3)
+y3 <- subset_data3$Median_Post_Score
+
+
+median_post_lasso <- cv.glmnet(X3, y3, alpha = 1)
+coef(median_post_lasso, s = "lambda.min")
+
+
+###############################################################################@
+## M Estimation,
+#   Good for:
+#   Outliers, heavier tails
+###############################################################################@
+
+has_dates_drop <- droplevels(has_dates)
+
+median_diff_m_est <- MASS::rlm(Median_Difference_Score ~ Median_Age +
+                                 E9_Gender_911 +
+                                 E14_White_911 +
+                                 E45_Disability_Priority_911 +
+                                 E84_PostSecondary_Enrollment_911 +
+                                 E86_PostSecondary_Partial_Completion_911 +
+                                 Facing_Struggle,
+                               data = has_dates_drop)
+
+# car::vif(lm(Median_Difference_Score ~ Median_Age +
+#               E9_Gender_911 +
+#               E14_White_911 +
+#               E45_Disability_Priority_911 +
+#               E84_PostSecondary_Enrollment_911 +
+#               E86_PostSecondary_Partial_Completion_911 +
+#               Facing_Struggle,
+#             data = has_dates))
+#
+# X <- model.matrix(~ Median_Age +
+#                     E9_Gender_911 +
+#                     E14_White_911 +
+#                     E45_Disability_Priority_911 +
+#                     E84_PostSecondary_Enrollment_911 +
+#                     E86_PostSecondary_Partial_Completion_911 +
+#                     Facing_Struggle,
+#                   data = has_dates)
+#
+# cat("Rank of matrix:", qr(X)$rank, "\n")
+# cat("Number of columns:", ncol(X), "\n")
+#
+#
+# alias(lm(Median_Difference_Score ~ Median_Age +
+#            E9_Gender_911 +
+#            E14_White_911 +
+#            E45_Disability_Priority_911 +
+#            E84_PostSecondary_Enrollment_911 +
+#            E86_PostSecondary_Partial_Completion_911 +
+#            Facing_Struggle,
+#          data = has_dates))
+
+summary(median_diff_m_est)
+
+#############
+median_pre_m_est <- MASS::rlm(Median_Pre_Score ~ Median_Age +
+                                 E9_Gender_911 +
+                                 E14_White_911 +
+                                 E45_Disability_Priority_911 +
+                                 E84_PostSecondary_Enrollment_911 +
+                                 E86_PostSecondary_Partial_Completion_911 +
+                                 Facing_Struggle,
+                               data = has_dates_drop)
+summary(median_pre_m_est)
+
+
+###############
+median_post_m_est <- MASS::rlm(Median_Post_Score ~ Median_Age +
+                                E9_Gender_911 +
+                                E14_White_911 +
+                                E45_Disability_Priority_911 +
+                                E84_PostSecondary_Enrollment_911 +
+                                E86_PostSecondary_Partial_Completion_911 +
+                                Facing_Struggle,
+                              data = has_dates_drop)
+summary(median_post_m_est)
+
+###############################################################################@
+## Least Trimmed Squares
+#   Good for:
+#   Outliers
+###############################################################################@
+median_diff_lts <- robustbase::ltsReg(Median_Difference_Score ~ Median_Age +
+                                        E9_Gender_911 +
+                                        E14_White_911 +
+                                        E45_Disability_Priority_911 +
+                                        E84_PostSecondary_Enrollment_911 +
+                                        E86_PostSecondary_Partial_Completion_911 +
+                                        Facing_Struggle,
+                                      data = has_dates_drop)
+summary(median_diff_lts)
+
+
+median_pre_lts <- robustbase::ltsReg(Median_Pre_Score ~ Median_Age +
+                                        E9_Gender_911 +
+                                        E14_White_911 +
+                                        E45_Disability_Priority_911 +
+                                        E84_PostSecondary_Enrollment_911 +
+                                        E86_PostSecondary_Partial_Completion_911 +
+                                        Facing_Struggle,
+                                      data = has_dates_drop)
+summary(median_pre_lts)
+
+
+median_post_lts <- robustbase::ltsReg(Median_Post_Score ~ Median_Age +
+                                       E9_Gender_911 +
+                                       E14_White_911 +
+                                       E45_Disability_Priority_911 +
+                                       E84_PostSecondary_Enrollment_911 +
+                                       E86_PostSecondary_Partial_Completion_911 +
+                                       Facing_Struggle,
+                                     data = has_dates_drop)
+summary(median_post_lts)
+
+###############################################################################@
+## MM Estimation
+#   Good for:
+#   Outliers
+###############################################################################@
+
+median_diff_mm_est <- robustbase::lmrob(Median_Difference_Score ~ Median_Age +
+                                        E9_Gender_911 +
+                                        E14_White_911 +
+                                        E45_Disability_Priority_911 +
+                                        E84_PostSecondary_Enrollment_911 +
+                                        E86_PostSecondary_Partial_Completion_911 +
+                                        Facing_Struggle,
+                                      data = has_dates_drop)
+summary(median_diff_mm_est)
+
+
+median_pre_mm_est <- robustbase::lmrob(Median_Pre_Score ~ Median_Age +
+                                          E9_Gender_911 +
+                                          E14_White_911 +
+                                          E45_Disability_Priority_911 +
+                                          E84_PostSecondary_Enrollment_911 +
+                                          E86_PostSecondary_Partial_Completion_911 +
+                                          Facing_Struggle,
+                                        data = has_dates_drop)
+summary(median_pre_mm_est)
+
+
+median_post_mm_est <- robustbase::lmrob(Median_Post_Score ~ Median_Age +
+                                         E9_Gender_911 +
+                                         E14_White_911 +
+                                         E45_Disability_Priority_911 +
+                                         E84_PostSecondary_Enrollment_911 +
+                                         E86_PostSecondary_Partial_Completion_911 +
+                                         Facing_Struggle,
+                                       data = has_dates_drop)
+summary(median_post_mm_est)
+
+###############################################################################@
+## Regression Tree
+#   Good for:
+#.  Data that do not meet any assumptions
+#.  Investigating variable importance
+###############################################################################@
+library(rpart)
+library(rpart.plot)
+
+median_diff_tree <- rpart(
+  Median_Difference_Score ~ Median_Age +
+    E9_Gender_911 +
+    E14_White_911 +
+    E45_Disability_Priority_911 +
+    E84_PostSecondary_Enrollment_911 +
+    E86_PostSecondary_Partial_Completion_911 +
+    Facing_Struggle,
+  data = has_dates,
+  method = "anova",  # For regression (numeric outcome),
+  control = rpart.control(
+    cp = 0.001,          # Lower complexity penalty to allow more splits
+    minsplit = 10,       # Try a smaller minimum split size
+    minbucket = 5,       # Smaller terminal node size
+    maxdepth = 5         # Optional: allow deeper trees
+  )
+)
+
+rpart.plot(median_diff_tree, type = 2, extra = 101,
+           fallen.leaves = TRUE)
+
+printcp(median_diff_tree)  # View CP table
+
+best_cp <- median_diff_tree$cptable[which.min(
+  median_diff_tree$cptable[,"xerror"]), "CP"]
+
+pruned_tree <- prune(median_diff_tree, cp = best_cp)
+
+rpart.plot(pruned_tree, type = 2, extra = 101)
+
+median_diff_tree$variable.importance
+
+############
+
+median_pre_tree <- rpart(
+  Median_Pre_Score ~ Median_Age +
+    E9_Gender_911 +
+    E14_White_911 +
+    E45_Disability_Priority_911 +
+    E84_PostSecondary_Enrollment_911 +
+    E86_PostSecondary_Partial_Completion_911 +
+    Facing_Struggle,
+  data = has_dates,
+  method = "anova",  # For regression (numeric outcome),
+  control = rpart.control(
+    cp = 0.001,          # Lower complexity penalty to allow more splits
+    minsplit = 5,       # Try a smaller minimum split size
+    minbucket = 5,       # Smaller terminal node size
+    maxdepth = 5         # Optional: allow deeper trees
+  )
+)
+
+rpart.plot(median_pre_tree, type = 2, extra = 101,
+           fallen.leaves = TRUE)
+
+printcp(median_pre_tree)  # View CP table
+
+best_cp <- median_pre_tree$cptable[which.min(
+  median_pre_tree$cptable[,"xerror"]), "CP"]
+
+pruned_tree <- prune(median_pre_tree, cp = best_cp)
+
+rpart.plot(pruned_tree, type = 2, extra = 101)
+
+median_pre_tree$variable.importance
+
+
+####################
+
+
+median_post_tree <- rpart(
+  Median_Post_Score ~ Median_Age +
+    E9_Gender_911 +
+    E14_White_911 +
+    E45_Disability_Priority_911 +
+    E84_PostSecondary_Enrollment_911 +
+    E86_PostSecondary_Partial_Completion_911 +
+    Facing_Struggle,
+  data = has_dates,
+  method = "anova",  # For regression (numeric outcome),
+  control = rpart.control(
+    cp = 0.001,          # Lower complexity penalty to allow more splits
+    minsplit = 5,       # Try a smaller minimum split size
+    minbucket = 5,       # Smaller terminal node size
+    maxdepth = 5         # Optional: allow deeper trees
+  )
+)
+
+rpart.plot(median_post_tree, type = 2, extra = 101,
+           fallen.leaves = TRUE)
+
+printcp(median_post_tree)  # View CP table
+
+best_cp <- median_post_tree$cptable[which.min(
+  median_post_tree$cptable[,"xerror"]), "CP"]
+
+pruned_tree <- prune(median_post_tree, cp = best_cp)
+
+rpart.plot(pruned_tree, type = 2, extra = 101)
+
+median_post_tree$variable.importance
+
+
+###############################################################################@
+## Random Forests
+#   Good for:
+###############################################################################@
+library(randomForest)
+
+# Fit random forest regression
+set.seed(765)  # for reproducibility
+
+set.seed(3456)
+
+median_diff_rf <- randomForest(
+  Median_Difference_Score ~ Median_Age +
+    E9_Gender_911 +
+    E14_White_911 +
+    E45_Disability_Priority_911 +
+    E84_PostSecondary_Enrollment_911 +
+    E86_PostSecondary_Partial_Completion_911 +
+    Facing_Struggle,
+  data = subset_data,
+  importance = TRUE,
+  ntree = 500
+)
+
+# Check model summary
+print(median_diff_rf)
+
+varImpPlot(median_diff_rf, main = "Random Forest Variable Importance")
+
+importance_values <- importance(median_diff_rf)
+print(importance_values)
+
+# %IncMSE (Percent Increase in Mean Squared Error) <-- use this one!
+# This measures how much the prediction error (MSE) increases when that
+#   variable’s values are randomly permuted.
+# It’s generally considered a more reliable and interpretable measure of
+#   variable importance, especially for regression.
+
+
+# IncNodePurity
+# This measures how much splitting on that variable reduces the residual sum of
+#   squares (RSS) across all trees.
+# This is a measure based on the internal structure of the trees, but can
+#   sometimes be biased towards variables with more categories or continuous
+#   variables.
+
+
+# If you want to plot just one, you can extract importance(rf_model)[, "%IncMSE"]
+#   or importance(rf_model)[, "IncNodePurity"] and plot it yourself with
+#   barplot() or ggplot2.
+
+importance(median_diff_rf)[, "%IncMSE"]
+
+varImpPlot(median_diff_rf, main = "Random Forest Variable Importance",
+           type = 1)
+
+
+# Extract and prepare data
+incmse <- importance(median_diff_rf)[, "%IncMSE"]
+imp_df <- data.frame(
+  Variable = names(incmse),
+  IncMSE = incmse
+)
+
+# Plot using ggplot2
+library(ggplot2)
+ggplot(imp_df, aes(x = reorder(Variable, IncMSE), y = IncMSE)) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  labs(
+    title = "Difference Scores: % Increase in MSE (Random Forest Variable Importance)",
+    x = "Variable",
+    y = "%IncMSE"
+  ) +
+  theme_minimal()
+
+
+
+#####################
+set.seed(765)  # for reproducibility
+
+set.seed(3456)
+
+median_pre_rf <- randomForest(
+  Median_Pre_Score ~ Median_Age +
+    E9_Gender_911 +
+    E14_White_911 +
+    E45_Disability_Priority_911 +
+    E84_PostSecondary_Enrollment_911 +
+    E86_PostSecondary_Partial_Completion_911 +
+    Facing_Struggle,
+  data = subset_data2,
+  importance = TRUE,
+  ntree = 500
+)
+
+# Check model summary
+# print(median_pre_rf)
+
+
+importance_values2 <- importance(median_pre_rf)
+importance_values2
+
+
+
+varImpPlot(median_pre_rf, main = "Random Forest Variable Importance",
+           type = 1)
+
+
+# Extract and prepare data
+incmse2 <- importance(median_pre_rf)[, "%IncMSE"]
+imp_df2 <- data.frame(
+  Variable = names(incmse2),
+  IncMSE = incmse2
+)
+
+# Plot using ggplot2
+library(ggplot2)
+ggplot(imp_df2, aes(x = reorder(Variable, IncMSE), y = IncMSE)) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  labs(
+    title = "Pre Scores: % Increase in MSE (Random Forest Variable Importance)",
+    x = "Variable",
+    y = "%IncMSE"
+  ) +
+  theme_minimal()
+
+
+
+
+#########################
+
+set.seed(765)  # for reproducibility
+
+set.seed(3456)
+
+median_post_rf <- randomForest(
+  Median_Post_Score ~ Median_Age +
+    E9_Gender_911 +
+    E14_White_911 +
+    E45_Disability_Priority_911 +
+    E84_PostSecondary_Enrollment_911 +
+    E86_PostSecondary_Partial_Completion_911 +
+    Facing_Struggle,
+  data = subset_data3,
+  importance = TRUE,
+  ntree = 500
+)
+
+# Check model summary
+# print(median_pre_rf)
+
+
+importance_values3 <- importance(median_post_rf)
+importance_values3
+
+
+
+varImpPlot(median_post_rf, main = "Random Forest Variable Importance",
+           type = 1)
+
+
+# Extract and prepare data
+incmse3 <- importance(median_post_rf)[, "%IncMSE"]
+imp_df3 <- data.frame(
+  Variable = names(incmse3),
+  IncMSE = incmse3
+)
+
+# Plot using ggplot2
+library(ggplot2)
+ggplot(imp_df3, aes(x = reorder(Variable, IncMSE), y = IncMSE)) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  labs(
+    title = "Post Scores: % Increase in MSE (Random Forest Variable Importance)",
+    x = "Variable",
+    y = "%IncMSE"
+  ) +
+  theme_minimal()
+
+
+
+
+################################################################################
+## Random forests variable importance for each service
+################################################################################
+
+vars_to_use <- c(
+  "Pre_Score_CPSO",  # target variable
+  "Median_Age",
+  "E9_Gender_911",
+  "E14_White_911",
+  "E45_Disability_Priority_911",
+  "E84_PostSecondary_Enrollment_911",
+  "E86_PostSecondary_Partial_Completion_911",
+  "Facing_Struggle"
+)
+
+subset_data3 <- has_dates_drop[, ..vars_to_use3, drop = FALSE]
+
+subset_data3 <- na.omit(subset_data3)
+
+
+var_imp_service <- function(var, seed = 765) {
+  vars_to_use <- c(
+    var,  # target variable
+    "Median_Age",
+    "E9_Gender_911",
+    "E14_White_911",
+    "E45_Disability_Priority_911",
+    "E84_PostSecondary_Enrollment_911",
+    "E86_PostSecondary_Partial_Completion_911",
+    "Facing_Struggle"
+  )
+
+  subset_data <- has_dates_drop[, ..vars_to_use, drop = FALSE]
+
+  subset_data <- na.omit(subset_data)
+
+
+  set.seed(seed)
+
+  model <- randomForest(
+    formula = reformulate(
+      c("Median_Age", "E9_Gender_911", "E14_White_911",
+        "E45_Disability_Priority_911",
+        "E84_PostSecondary_Enrollment_911",
+        "E86_PostSecondary_Partial_Completion_911",
+        "Facing_Struggle"),
+      response = var
+    ),
+    data = subset_data,
+    importance = TRUE,
+    ntree = 500
+  )
+
+
+  incmse <- importance(model)[, "%IncMSE"]
+  imp_df <- data.frame(
+    Variable = names(incmse),
+    IncMSE = incmse
+  )
+
+  # Plot using ggplot2
+  library(ggplot2)
+  ggplot(imp_df, aes(x = reorder(Variable, IncMSE), y = IncMSE)) +
+    geom_col(fill = "steelblue") +
+    coord_flip() +
+    labs(
+      title = paste0(var,": % Increase in MSE (Random Forest Variable Importance)"),
+      x = "Variable",
+      y = "%IncMSE"
+    ) +
+    theme_minimal()
+
+
+}
+
+difference_cols <- grep("^Difference_", names(has_dates_drop), value = TRUE)
+pre_cols <- grep("^Pre_Score", names(has_dates_drop), value = TRUE)
+pre_cols <- setdiff(pre_cols, "Pre_Score_QWEX")
+
+post_cols <- grep("^Post_Score", names(has_dates_drop), value = TRUE)
+
+
+
+lapply(difference_cols, var_imp_service)
+
+lapply(pre_cols, var_imp_service)
+
+lapply(post_cols, var_imp_service)
+
+

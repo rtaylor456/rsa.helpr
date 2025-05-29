@@ -352,6 +352,12 @@ clean_utah <- function(data,
        .SDcols = housing_cols]
 
 
+  data[, Facing_Struggle := as.integer(
+    rowSums(.SD, na.rm = TRUE) > 0),
+    .SDcols = c("Income_Struggle", "Cultural_Struggle", "Support_Struggle",
+                "Housing_Struggle")]
+
+
   ####################################
 
   # SEX column
