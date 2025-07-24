@@ -434,7 +434,7 @@ This function is to be run on cleaned RSA-911 quarterly and TRT scores datasets.
 Note that this function allows the user to specify the ID variable names in each
 dataset being merged, but the defaults are `Participant_ID` for each. 
 ```{r merge_scores}
-rsa_clean <- clean_utah(rsa_simulated)
+rsa_clean <- clean_utah(rsa_simulated, aggregate = FALSE)
 scores_clean <- clean_scores(scores_simulated, state_filter = "Utah")
 
 merged_data <- merge_scores(rsa_clean, scores_clean)
@@ -455,7 +455,7 @@ metadata using `rsa.helpr` functions:
 
 ```{r example, eval = FALSE}
 # Cleaning an RSA-911 datset using defaults
-rsa_clean <- clean_utah(rsa_simulated)
+rsa_clean <- clean_utah(rsa_simulated, aggregate = FALSE)
 
 # Cleaning a scores dataset using defaults and extracting only Utah data
 scores_clean <- clean_scores(scores_simulated, state_filter = "Utah")
@@ -527,7 +527,7 @@ visualize_metadata(metadata, option = "general_demo",
 ```
 
 
-```{r visualize_metadata2}
+```{r visualize_metadata2, eval = FALSE}
 
 rsa.helpr::visualize_metadata(metadata, option = "investigate_scores",
                               one_window = TRUE)
