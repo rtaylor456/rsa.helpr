@@ -20,7 +20,7 @@
 #' @export
 #' @import data.table
 #' @import stats
-
+#'
 clean_scores <- function(data, state_filter = NULL, clean_id = TRUE,
                          aggregate = TRUE, id_col = NULL) {
 
@@ -272,35 +272,26 @@ clean_scores <- function(data, state_filter = NULL, clean_id = TRUE,
   #. should result in a dataframe with two columns, Participant_ID and
   #  Most_Common_Provider, with just one row per unique participant
   common_provider <- merged_data[!is.na(Provider.x) | !is.na(Provider.y),
-                               .(Most_Common_Provider =
-                                   names(sort(table(c(Provider.x, Provider.y)),
-                                              decreasing = TRUE)[1])),
-                               by = Participant_ID]
+                                 .(Most_Common_Provider =
+                                     names(sort(table(c(Provider.x,
+                                                        Provider.y)),
+                                                decreasing = TRUE)[1])),
+                                 by = Participant_ID]
 
   # Do the same thing for State and Mode
   # Most common State
   common_state <- merged_data[!is.na(Pre_State) | !is.na(Post_State),
-                              .(Most_Common_State = names(sort(table(c(Pre_State, Post_State)), decreasing = TRUE)[1])),
-                              by = Participant_ID
+    .(Most_Common_State = names(sort(table(c(Pre_State, Post_State)),
+                                     decreasing = TRUE)[1])),
+    by = Participant_ID
   ]
 
   # Most common Mode
   common_mode <- merged_data[!is.na(Pre_Mode) | !is.na(Post_Mode),
-                             .(Most_Common_Mode = names(sort(table(c(Pre_Mode, Post_Mode)), decreasing = TRUE)[1])),
-                             by = Participant_ID
+    .(Most_Common_Mode = names(sort(table(c(Pre_Mode, Post_Mode)),
+                                    decreasing = TRUE)[1])),
+    by = Participant_ID
   ]
-
-
-  # Merge back the most common provider into the dataset
-  # merged_data <- merge(merged_data, common_provider, by = "Participant_ID",
-  #                      all.x = TRUE)
-  #
-  # # Remove redundant columns if necessary
-  # merged_data[, c("Provider.x", "Provider.y") := NULL]
-  #
-  # # Rename the 'Most_Common_Provider' as new Provider column
-  # setnames(merged_data, "Most_Common_Provider", "Provider")
-
 
   # Merge all back into main dataset
   merged_data <- merge(merged_data, common_provider, by = "Participant_ID",

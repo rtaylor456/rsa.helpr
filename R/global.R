@@ -11,7 +11,17 @@ utils::globalVariables(c(
   "Overall_Quarter", "Enroll_Length", "Max_Overall_Quarter",
   "Min_Overall_Quarter", "Enroll_Length_Grp", "Primary_Impairment_Group",
   "State_Abbrev", "State", "Has_Race", "..required_cols_pre",
-  "..response_col"
+  "..response_col",
+  "Birth_Year",
+  "Has_App_Date",
+  "Income_Struggle",
+  "Cultural_Struggle",
+  "Support_Struggle",
+  "Housing_Struggle",
+  "Facing_Struggle",
+  "NonMissingCount",
+  "AppDateRank",
+  "Median_Age_Diff_TRT"
 ))
 
 # function for some reason not recognized as from data.table during checks

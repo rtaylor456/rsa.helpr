@@ -74,10 +74,6 @@ clean_utah <- function(data,
 
   # ADMIN columns
   # remove the extra administrative columns, not needed for analysis
-  # extra_cols <- grep("(?i)_data_|(?i)VR_Case_Type_Flag(?!.*(?i)_desc)",
-  #                    names(data),
-  #                    value = TRUE, perl = TRUE)
-
   extra_cols <- grep("(?i)_data_", names(data), value = TRUE, perl = TRUE)
 
   if (length(extra_cols) > 0) {
@@ -102,13 +98,11 @@ clean_utah <- function(data,
   ## DATE             ##
   ######################
   # DATE columns - in excel date format
-  # start, extension, end
+  # columns with start, extension, end dates
   date_cols <- grep(paste0("(?i)_date|(?i)_skill_gain|(?i)_start|(?i)_end_|",
                            "(?i)_extension(?!.*(?i)_desc)"),
                     names(data), value = TRUE,
                     perl = TRUE)
-
-  # data[, (date_cols) := lapply(.SD, handle_excel_date), .SDcols = date_cols]
 
   data[, (date_cols) := lapply(.SD, handle_mixed_date), .SDcols = date_cols]
 
@@ -138,15 +132,12 @@ clean_utah <- function(data,
   data[, (age_cols) := lapply(.SD, function(x) suppressWarnings(as.numeric(x))),
        .SDcols = age_cols]
 
-  # Combine the age columns into one
+  # Combine the age columns into one, call it "Age_At_Application"
   data[, Age_At_Application := round(do.call(fcoalesce, .SD)),
        .SDcols = age_cols]
 
   # Drop the original column names
   data[, (age_cols) := NULL]
-
-  # Rename Age column
-  # names(data)[names(data) %in% age_col] <- "Age_At_Application"
 
 
   # AMT and TITLE columns (TITLEI columns are funds expended for different
@@ -281,8 +272,9 @@ clean_utah <- function(data,
   # [11] "E72_Plan_Displaced_Homemaker_911"
 
 
-  post_sec_complete_col <- grep("(?i)(?=.*postsecondary)(?=.*complet)(?!.*(_desc|_date))",
-                            names(data), value = TRUE, perl = TRUE)
+  post_sec_complete_col <- grep(paste0("(?i)(?=.*postsecondary)(?=.*complet)",
+                                       "(?!.*(_desc|_date))"),
+                                names(data), value = TRUE, perl = TRUE)
 
 
   demographic_cols <- c(race_cols, veteran_col, has_disability_col,
@@ -326,13 +318,13 @@ clean_utah <- function(data,
 
   cultural_cols <- grep(paste0("(?i)(english_learner|skills_deficient|",
                                "cultural_barriers|offender)",
-                             "(?!.*(_desc|_amt|amount|_title|_date))"),
-                      names(data), value = TRUE, perl = TRUE)
-
-  support_cols <- grep(paste0("(?i)(foster_care|low_income|single_parent|",
-                               "displaced_homemaker)",
                                "(?!.*(_desc|_amt|amount|_title|_date))"),
                         names(data), value = TRUE, perl = TRUE)
+
+  support_cols <- grep(paste0("(?i)(foster_care|low_income|single_parent|",
+                              "displaced_homemaker)",
+                              "(?!.*(_desc|_amt|amount|_title|_date))"),
+                       names(data), value = TRUE, perl = TRUE)
 
   housing_cols <- grep(paste0("(?i)(foster_care|homeless)",
                               "(?!.*(_desc|_amt|amount|_title|_date))"),
@@ -353,9 +345,9 @@ clean_utah <- function(data,
 
 
   data[, Facing_Struggle := as.integer(
-    rowSums(.SD, na.rm = TRUE) > 0),
-    .SDcols = c("Income_Struggle", "Cultural_Struggle", "Support_Struggle",
-                "Housing_Struggle")]
+                                       rowSums(.SD, na.rm = TRUE) > 0),
+  .SDcols = c("Income_Struggle", "Cultural_Struggle", "Support_Struggle",
+              "Housing_Struggle")]
 
 
   ####################################
@@ -502,15 +494,6 @@ clean_utah <- function(data,
   post_sec_cols <- grep("(?i)_postsecondary_enroll(?!.*(?i)_desc|(?i)_date)",
                         names(data), value = TRUE, perl = TRUE)
 
-  # data[, (post_sec_cols) := lapply(.SD, function(x) {
-  #   factor(handle_values(x, 0:3, blank_value = 0),
-  #          levels = c(0, 3, 2, 1), ordered = TRUE)
-  # }), .SDcols = post_sec_cols]
-
-  # data[, (post_sec_cols) := lapply(.SD, function(x) {
-  #   handle_values(x, 0:3, blank_value = 0)
-  # }), .SDcols = post_sec_cols]
-
   data[, (post_sec_cols) := lapply(.SD, function(x) {
     numeric_x <- as.numeric(as.character(x))  # convert "0" → 0, "1" → 1, etc.
     as.factor(handle_values(numeric_x, 0:3, blank_value = 0))
@@ -567,9 +550,6 @@ clean_utah <- function(data,
       perl = TRUE
     )
 
-#     year_col <- grep("(?i)_year|(?i)_yr_(?!.*(?i)_desc)", names(data),
-#                      value = TRUE, perl = TRUE)
-
     year_col <- grep("(?i)(?<!birth)_year|_yr_(?!.*_desc)", names(data),
                      value = TRUE, perl = TRUE)
 
@@ -616,41 +596,6 @@ clean_utah <- function(data,
       # Raise flag to skip aggregation
       skip_aggregation <- TRUE
     }
-
-    ## RUN AGGREGATION PROCESS
-    # If we pass these two checks, then run the aggregation code
-
-    # if (!skip_aggregation) {
-    #   # Rename the variables in the case that they don't match the codebook,
-    #   #  for easier referencing
-    #   names(data)[names(data) %in% participant_col] <- "Participant_ID"
-    #   names(data)[names(data) %in% year_col] <- "E1_Year_911"
-    #   names(data)[names(data) %in% quarter_col] <- "E2_Quarter_911"
-    #   names(data)[names(data) %in% app_date_col] <- "E7_Application_Date_911"
-    #
-    #   # Remove rows where application date is missing --these are typically
-    #   #   fully missing data rows anyway.
-    #   data <- data[!is.na(E7_Application_Date_911)]
-    #
-    #   # Order the data by Participant_ID, year, quarter, and reverse order
-    #   #   application date
-    #   setorder(data, Participant_ID, E1_Year_911, E2_Quarter_911,
-    #            -E7_Application_Date_911)
-    #
-    #
-    #   # Create a helper column to identify the first occurrence within each
-    #   #   group
-    #   data[, Occurrences_Per_Quarter := .N, by = .(Participant_ID,
-    #                                                E1_Year_911,
-    #                                                E2_Quarter_911)]
-    #   # Save only the first occurrence
-    #   data <- data[, .SD[1], by = .(Participant_ID,
-    #                                 E1_Year_911,
-    #                                 E2_Quarter_911)]
-    #
-    #   # Sort by year and quarter
-    #   setorder(data, E1_Year_911, E2_Quarter_911)
-    # }
 
     if (!skip_aggregation) {
       # Rename for consistency

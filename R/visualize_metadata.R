@@ -327,18 +327,10 @@ visualize_metadata <- function(data, option = c("general_demo",
             col = "steelblue")
 
     ## PLOT 4
-    # gender_mapping <- c("1" = "Male", "2" = "Female", "3" = "Other",
-    #                     "9" = "Did not identify")
-    #
-    # # Create a new column in the dataset that applies the mapping
-    # gender_values <- gender_mapping[data[[sex_col]]]
-
     visualize_densities(cat_var = data[[sex_col]],
                         num_var = data[[median_diff_col]],
                         cat_var_name = "Gender",
                         num_var_name = "Median Difference Scores",
-                        # level_labels = c("Males", "Females",
-                        #                  "Other", "Did not identify"),
                         main = "Difference Scores by Gender",
                         colors = c("steelblue4", "darkblue", "gray"))
 
@@ -730,8 +722,9 @@ visualize_metadata <- function(data, option = c("general_demo",
     unique_genders <- unique(data[[sex_col]])
 
     # Map the unique gender values to the labels
-    colnames(employment_gender_table) <- names(gender_labels)[match(
-      unique_genders, gender_labels)]
+    colnames(employment_gender_table) <- names(gender_labels)[
+      match(unique_genders, gender_labels)
+    ]
 
     # Set the row names as before
     rownames(employment_gender_table) <- c("Non-competitive Employment",

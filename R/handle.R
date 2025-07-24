@@ -30,59 +30,28 @@ handle_excel_date <- function(x) {
 #' This function converts a RSA-911 date variable with different entered
 #'   formats.
 #'
-#' @param x An Excel date variable, origin 1899-12-30.
+#' @param x An date variable (if Excel date, origin 1899-12-30).
 #' @returns The converted date variable.
 #' @export
-# handle_mixed_date <- function(x) {
-#   # Ensure x is character
-#   x <- as.character(x)
-#
-#   # Output vector
-#   cleaned <- rep(as.Date(NA), length(x))
-#
-#   for (i in seq_along(x)) {
-#     val <- x[i]
-#
-#     # Treat NULL, blank, or NA as NA
-#     if (is.na(val) || val == "" || tolower(val) == "null") {
-#       cleaned[i] <- NA
-#
-#       # If value contains "/", assume m/d/Y
-#     } else if (grepl("/", val)) {
-#       cleaned[i] <- suppressWarnings(as.Date(val, format = "%m/%d/%Y"))
-#
-#       # If value contains "-", assume Y-m-d
-#     } else if (grepl("-", val)) {
-#       cleaned[i] <- suppressWarnings(as.Date(val, format = "%Y-%m-%d"))
-#
-#       # If it's all digits, treat it as Excel numeric date
-#     } else if (grepl("^\\d+$", val)) {
-#       cleaned[i] <- suppressWarnings(as.Date(as.numeric(val), origin = "1899-12-30"))
-#     } else {
-#       cleaned[i] <- NA
-#     }
-#   }
-#
-#   return(cleaned)
-# }
-
 
 handle_mixed_date <- function(x) {
   x <- as.character(x)
   cleaned <- rep(as.Date(NA), length(x))
 
   # Identify types of entries
-  is_na_or_blank <- is.na(x) | x == "" | tolower(x) == "null"
   is_slash <- grepl("/", x)
   is_dash <- grepl("-", x)
   is_numeric <- grepl("^\\d+$", x)
 
   # Apply parsing
-  cleaned[is_slash] <- suppressWarnings(as.IDate(x[is_slash], format = "%m/%d/%Y"))
-  cleaned[is_dash]  <- suppressWarnings(as.IDate(x[is_dash], format = "%Y-%m-%d"))
-  cleaned[is_numeric] <- suppressWarnings(as.IDate(as.numeric(x[is_numeric]), origin = "1899-12-30"))
+  cleaned[is_slash] <- suppressWarnings(as.IDate(x[is_slash],
+                                                 format = "%m/%d/%Y"))
+  cleaned[is_dash]  <- suppressWarnings(as.IDate(x[is_dash],
+                                                 format = "%Y-%m-%d"))
+  cleaned[is_numeric] <- suppressWarnings(as.IDate(as.numeric(x[is_numeric]),
+                                                   origin = "1899-12-30"))
 
-  return(cleaned)
+  cleaned
 }
 
 
