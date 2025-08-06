@@ -109,10 +109,12 @@ visualize_metadata <- function(data, option = c("general_demo",
          col = "steelblue",
          main = "Distribution of Enrollment Lengths",
          xlab = "Enrollment Length (Quarters)")
+
     min_val <- floor(min(data[[enroll_len_col]], na.rm = TRUE))
     max_val <- ceiling(max(data[[enroll_len_col]], na.rm = TRUE))
 
-    axis(1, at = min_val:max_val, labels = min_val:max_val)
+    ticks <- pretty(c(min_val, max_val), n = 6)  # aims for ~6 ticks
+    axis(1, at = ticks, labels = ticks)
 
     ## PLOT 3: Gender
     gender_mapping <- c("1" = "Male", "2" = "Female", "3" = "Other",
